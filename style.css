@@ -14,16 +14,13 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 2rem;            /* Padding left/right only */
-  height: 70px;               /* Locks the header bar to a clear, fixed height */
-  
-  /* Gradient contained exclusively inside the 70px header */
+  padding: 0 2rem;
+  height: 70px;
   background: linear-gradient(180deg, #3D2F4C 0%, #120d1a 100%);
-  
-  border-bottom: 2px solid #3D2F4C; /* Bright purple border clearly marks the bottom edge */
+  border-bottom: 2px solid #3D2F4C;
   position: sticky;
   top: 0;
-  z-index: 1000;              /* Keeps header above other content when scrolling */
+  z-index: 1000;
 }
 
 .logo img {
@@ -48,4 +45,27 @@ body {
 
 .nav-links a:hover {
   color: #ffffff;
+}
+
+/* Hero Section / Centered Intro Content */
+.hero-section {
+  text-align: center;
+  padding: 4rem 1.5rem; /* Generous top/bottom spacing below header */
+  max-width: 800px;     /* Keeps text from stretching too wide on wide screens */
+  margin: 0 auto;        /* Horizontally centers the section container */
+}
+
+.hero-title {
+  color: #ffffff;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 10px rgba(134, 38, 237, 0.4); /* Soft purple glow */
+}
+
+.hero-description {
+  color: #ffffff;
+  font-size: 1.15rem;
+  line-height: 1.6;     /* Increases readability */
+  opacity: 0.9;         /* Slight softening for long reading */
 }
