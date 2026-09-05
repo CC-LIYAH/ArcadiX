@@ -106,3 +106,37 @@ body {
   transform: translateY(-2px);
   border-color: #8626ed; /* Brightens border when hovered */
 }
+
+/* Category Header Banner Box */
+.category-card {
+  width: 90%;                /* Spans nearly full width of the container */
+  max-width: 750px;          /* Prevents it from getting too large on huge screens */
+  margin: 0 auto;            /* Centers the box horizontally */
+  padding: 0.6rem 0;         /* Slim vertical height matching your reference image */
+  
+  /* Gradient & Border styling */
+  background: linear-gradient(180deg, #3D2F4C 0%, #120d1a 100%);
+  border: 2px solid #3D2F4C;
+  border-radius: 8px;        /* Sleek rounded corners matching the reference */
+  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: border-color 0.3s ease, transform 0.2s ease;
+}
+
+.category-card a {
+  color: #ffffff;
+  text-decoration: none;     /* Removes link underline */
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: block;
+  width: 100%;               /* Makes the entire box clickable */
+  text-align: center;
+}
+
+/* Hover effect */
+.category-card:hover {
+  border-color: #8626ed;     /* Brightens border on hover */
+  transform: translateY(-2px);
+}
