@@ -1,11 +1,11 @@
-* { 
+* {
   margin: 0;
-  paddding: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
 body {
-  background-color: #1e1529 /* Dark purple */
+  background-color: #1e1529; /* Dark purple */
   font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
   color: #ffffff;
 }
@@ -32,6 +32,7 @@ body {
   list-style: none;
   gap: 2rem; /* 32px spacing */
 }
+
 .nav-links a {
   color: #b6a0c0;
   text-decoration: none;
@@ -39,9 +40,7 @@ body {
   font-weight: 600;
   transition: color 0.3s ease;
 }
-nav.links a:hover {
+
+.nav-links a:hover {
   color: #8626ed;
 }
-  
-
-  
