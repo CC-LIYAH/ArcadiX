@@ -5,7 +5,7 @@
 }
 
 body {
-  background-color: #1e1529; /* Dark purple */
+  background-color: #000000; /* Dark purple */
   font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
   color: #ffffff;
 }
@@ -15,8 +15,8 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background-color: #1e1529;
-  border-bottom: 2px solid #6c18c7;
+  background: linear-gradient(180deg, #3D2F4C 0&, #000000 100%)
+  border-bottom: 2px solid #3D2F4C;
   position: sticky;
   top: 0;
 }
@@ -34,7 +34,7 @@ body {
 }
 
 .nav-links a {
-  color: #b6a0c0;
+  color: #3D2F4C;
   text-decoration: none;
   font-size: 1rem; /* 16px */
   font-weight: 600;
