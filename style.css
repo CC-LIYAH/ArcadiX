@@ -5,7 +5,7 @@
 }
 
 body {
-  background-color: #000000; /* Dark purple */
+  background-color: #000000; /* Pure black body background */
   font-family: 'Source Sans 3', 'Source Sans Pro', sans-serif;
   color: #ffffff;
 }
@@ -14,11 +14,16 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  background: linear-gradient(180deg, #3D2F4C 0%, #000000 100%)
-  border-bottom: 2px solid #3D2F4C;
+  padding: 0 2rem;            /* Padding left/right only */
+  height: 70px;               /* Locks the header bar to a clear, fixed height */
+  
+  /* Gradient contained exclusively inside the 70px header */
+  background: linear-gradient(180deg, #3D2F4C 0%, #120d1a 100%);
+  
+  border-bottom: 2px solid #8626ed; /* Bright purple border clearly marks the bottom edge */
   position: sticky;
   top: 0;
+  z-index: 1000;              /* Keeps header above other content when scrolling */
 }
 
 .logo img {
@@ -30,17 +35,17 @@ body {
 .nav-links {
   display: flex;
   list-style: none;
-  gap: 2rem; /* 32px spacing */
+  gap: 2rem;
 }
 
 .nav-links a {
-  color: #3D2F4C;
+  color: #cbb6db;
   text-decoration: none;
-  font-size: 1rem; /* 16px */
+  font-size: 1rem;
   font-weight: 600;
   transition: color 0.3s ease;
 }
 
 .nav-links a:hover {
-  color: #8626ed;
+  color: #ffffff;
 }
