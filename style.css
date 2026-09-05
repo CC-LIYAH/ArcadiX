@@ -15,7 +15,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: linear-gradient(180deg, #3D2F4C 0&, #000000 100%)
+  background: linear-gradient(180deg, #3D2F4C 0%, #000000 100%)
   border-bottom: 2px solid #3D2F4C;
   position: sticky;
   top: 0;
