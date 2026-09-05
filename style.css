@@ -68,4 +68,41 @@ body {
   font-size: 1.15rem;
   line-height: 1.6;     /* Increases readability */
   opacity: 0.9;         /* Slight softening for long reading */
+  margin-bottom: 3rem;  /* Space between text and the header box */
+}
+
+/* Category Header Box */
+.category-card-link {
+  text-decoration: none;
+  display: block;
+}
+
+.category-card {
+  width: 100%;
+  padding: 1.25rem 2rem;
+  
+  /* Matches header gradient and border stroke */
+  background: linear-gradient(180deg, #3D2F4C 0%, #120d1a 100%);
+  border: 2px solid #3D2F4C;
+  
+  /* Rounded corners */
+  border-radius: 12px;
+  
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.category-card h2 {
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Interactive Hover State */
+.category-card:hover {
+  transform: translateY(-2px);
+  border-color: #8626ed; /* Brightens border when hovered */
 }
