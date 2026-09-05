@@ -20,7 +20,7 @@ body {
   /* Gradient contained exclusively inside the 70px header */
   background: linear-gradient(180deg, #3D2F4C 0%, #120d1a 100%);
   
-  border-bottom: 2px solid #8626ed; /* Bright purple border clearly marks the bottom edge */
+  border-bottom: 2px solid #3D2F4C; /* Bright purple border clearly marks the bottom edge */
   position: sticky;
   top: 0;
   z-index: 1000;              /* Keeps header above other content when scrolling */
