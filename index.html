@@ -1003,6 +1003,15 @@
       const overlay = document.getElementById('permissions-modal-overlay');
       if (overlay) overlay.classList.remove('active');
     };
+
+    // Close Profile Menu when clicking outside
+    window.addEventListener('click', function(e) {
+      const menu = document.querySelector('.user-profile-menu');
+      const dropdown = document.getElementById('profile-dropdown');
+      if (dropdown && dropdown.classList.contains('active') && menu && !menu.contains(e.target)) {
+        dropdown.classList.remove('active');
+      }
+    });
   </script>
 
   <!-- Consolidated Firebase Modular SDK & Single App Script -->
@@ -1562,6 +1571,61 @@
       } else if (tabName === 'themes') {
         renderThemesTab(body);
       }
+    };
+
+    window.renderTrafficChart = function(dates, trafficData) {
+      const chartEl = document.getElementById('trafficChart');
+      if (!chartEl) return;
+      const ctx = chartEl.getContext('2d');
+      const views = dates.map(d => trafficData[d].views || 0);
+      const sessions = dates.map(d => trafficData[d].sessions || 0);
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: dates.length ? dates : ['Today'],
+          datasets: [
+            {
+              label: 'Page Views',
+              data: views.length ? views : [0],
+              borderColor: '#a855f7',
+              backgroundColor: 'rgba(168, 85, 247, 0.2)',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Unique Sessions',
+              data: sessions.length ? sessions : [0],
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              fill: true,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: {
+                color: '#ffffff',
+                font: { family: 'Orbitron' }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#888888', font: { family: 'Orbitron' } },
+              grid: { color: '#2a1832' }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#888888', font: { family: 'Orbitron' }, stepSize: 1 },
+              grid: { color: '#2a1832' }
+            }
+          }
+        }
+      });
     };
 
     async function renderAnalyticsTab(body) {
@@ -2425,59 +2489,6 @@
           </div>
         </div>`;
     }
-
-    window.renderTrafficChart = function(dates, trafficData) {
-      const ctx = document.getElementById('trafficChart').getContext('2d');
-      const views = dates.map(d => trafficData[d].views || 0);
-      const sessions = dates.map(d => trafficData[d].sessions || 0);
-
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: dates.length ? dates : ['Today'],
-          datasets: [
-            {
-              label: 'Page Views',
-              data: views.length ? views : [0],
-              borderColor: '#a855f7',
-              backgroundColor: 'rgba(168, 85, 247, 0.2)',
-              fill: true,
-              tension: 0.3
-            },
-            {
-              label: 'Unique Sessions',
-              data: sessions.length ? sessions : [0],
-              borderColor: '#38bdf8',
-              backgroundColor: 'rgba(56, 189, 248, 0.1)',
-              fill: true,
-              tension: 0.3
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              labels: {
-                color: '#ffffff',
-                font: { family: 'Orbitron' }
-              }
-            }
-          },
-          scales: {
-            x: {
-              ticks: { color: '#888888', font: { family: 'Orbitron' } },
-              grid: { color: '#2a1832' }
-            },
-            y: {
-              beginAtZero: true,
-              ticks: { color: '#888888', font: { family: 'Orbitron' }, stepSize: 1 },
-              grid: { color: '#2a1832' }
-            }
-          }
-        }
-      });
-    };
   </script>
 
 </body>
