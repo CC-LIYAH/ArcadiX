@@ -1195,12 +1195,12 @@
             }
           }
           
-          // HARDCODED ID 1 FRONTEND SUPER ADMIN OVERRIDE
           if (currentUserData.userId === 1) {
             const superAdminPermissions = { 
               manageUpdates: true, 
               manageUsers: true, 
               approveAssets: true, 
+              manageGames: true,
               addGames: true,
               hideGames: true,
               deleteGames: true,
@@ -1340,6 +1340,7 @@
             manageUpdates: isSuperAdmin,
             manageUsers: isSuperAdmin,
             approveAssets: isSuperAdmin,
+            manageGames: isSuperAdmin,
             addGames: isSuperAdmin,
             hideGames: isSuperAdmin,
             deleteGames: isSuperAdmin,
@@ -1359,7 +1360,6 @@
         window.showArcadiXAlert("Sign Up Error: " + error.message, "Error");
       }
     };
-
     window.handleSignIn = async function() {
       const identifier = document.getElementById('auth-identifier').value.trim();
       const password = document.getElementById('auth-password').value;
@@ -1671,11 +1671,12 @@
 
     async function renderAdminGamesTab(body) {
       const isSuperAdmin = currentUserData?.permissions?.isSuperAdmin;
-      const canAdd = isSuperAdmin || currentUserData?.permissions?.addGames;
-      const canHide = isSuperAdmin || currentUserData?.permissions?.hideGames;
-      const canDelete = isSuperAdmin || currentUserData?.permissions?.deleteGames;
+      const canManageGames = isSuperAdmin || currentUserData?.permissions?.manageGames;
+      const canAdd = isSuperAdmin || currentUserData?.permissions?.addGames || canManageGames;
+      const canHide = isSuperAdmin || currentUserData?.permissions?.hideGames || canManageGames;
+      const canDelete = isSuperAdmin || currentUserData?.permissions?.deleteGames || canManageGames;
 
-      if (!isSuperAdmin && !canAdd && !canHide && !canDelete) {
+      if (!isSuperAdmin && !canManageGames && !canAdd && !canHide && !canDelete) {
         body.innerHTML = `<p style="color:#ef4444; text-align:center;">You do not have permission to manage games.</p>`;
         return;
       }
@@ -2281,6 +2282,7 @@
           "permissions.manageUpdates": grantState,
           "permissions.manageUsers": grantState,
           "permissions.approveAssets": grantState,
+          "permissions.manageGames": grantState,
           "permissions.addGames": grantState,
           "permissions.hideGames": grantState,
           "permissions.deleteGames": grantState,
