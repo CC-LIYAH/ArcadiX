@@ -14,7 +14,17 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <link rel="stylesheet" href="style.css">
-  <style>
+  <style id="dynamic-theme-style">
+    :root {
+      --bg-color: #000000;
+      --header-bg: linear-gradient(180deg, #1f1224 0%, #120916 100%);
+      --header-border: #2a1832;
+      --card-bg: #120916;
+      --card-border: #331940;
+      --accent-color: #a855f7;
+      --text-color: #ffffff;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -23,8 +33,8 @@
     body {
       font-family: 'Orbitron', sans-serif;
       font-weight: 700;
-      background: #000000;
-      color: #ffffff;
+      background: var(--bg-color);
+      color: var(--text-color);
       display: flex;
       flex-direction: column;
       height: 100vh;
@@ -35,12 +45,12 @@
     header {
       position: relative;
       z-index: 9999;
-      background: linear-gradient(180deg, #1f1224 0%, #120916 100%);
+      background: var(--header-bg);
       padding: 0.8rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #2a1832;
+      border-bottom: 1px solid var(--header-border);
       height: 65px;
       flex-shrink: 0;
     }
@@ -57,10 +67,10 @@
       object-fit: contain;
     }
     .game-title-display {
-      color: #a855f7;
+      color: var(--accent-color);
       font-size: 1.1rem;
       font-weight: 900;
-      border-left: 2px solid #4a285d;
+      border-left: 2px solid var(--header-border);
       padding-left: 1rem;
     }
     .nav-links {
@@ -69,7 +79,7 @@
       gap: 1.5rem;
     }
     .nav-links a, .user-nav-btn {
-      color: #ffffff;
+      color: var(--text-color);
       text-decoration: none;
       font-weight: 700;
       font-size: 0.95rem;
@@ -80,7 +90,7 @@
       cursor: pointer;
     }
     .nav-links a:hover, .user-nav-btn:hover {
-      color: #a855f7;
+      color: var(--accent-color);
     }
 
     /* Profile Dropdown Component UI */
@@ -91,8 +101,8 @@
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      background: #120916;
-      border: 1px solid #4a285d;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       padding: 0.3rem 0.8rem;
       border-radius: 20px;
       cursor: pointer;
@@ -100,14 +110,14 @@
       transition: border-color 0.2s;
     }
     .profile-trigger:hover {
-      border-color: #a855f7;
+      border-color: var(--accent-color);
     }
     .avatar-img {
       width: 32px;
       height: 32px;
       border-radius: 50%;
       object-fit: cover;
-      background: #2a1832;
+      background: var(--header-border);
       display: inline-block;
     }
     .avatar-img[src=""] {
@@ -117,8 +127,8 @@
       position: absolute;
       top: 120%;
       right: 0;
-      background: #120916;
-      border: 1px solid #4a285d;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 8px;
       width: 180px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.8);
@@ -132,7 +142,7 @@
     }
     .profile-dropdown a, .profile-dropdown button {
       padding: 0.8rem 1rem;
-      color: #ffffff;
+      color: var(--text-color);
       text-decoration: none;
       font-size: 0.85rem;
       text-align: left;
@@ -141,12 +151,12 @@
       cursor: pointer;
       font-family: 'Orbitron', sans-serif;
       font-weight: 700;
-      border-bottom: 1px solid #2a1832;
+      border-bottom: 1px solid var(--header-border);
       transition: background 0.2s, color 0.2s;
     }
     .profile-dropdown a:hover, .profile-dropdown button:hover {
-      background: #2a1832;
-      color: #a855f7;
+      background: var(--header-border);
+      color: var(--accent-color);
     }
 
     /* Main Area Container */
@@ -154,7 +164,7 @@
       flex: 1;
       width: 100%;
       height: calc(100vh - 65px);
-      background: #000000;
+      background: var(--bg-color);
       overflow: hidden;
     }
 
@@ -208,8 +218,8 @@
       text-align: center;
     }
     .section-header-box {
-      background: linear-gradient(180deg, #2b1836 0%, #180c1f 100%);
-      border: 1px solid #4a285d;
+      background: var(--header-bg);
+      border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 0.8rem 1rem;
       font-size: 1.25rem;
@@ -227,8 +237,8 @@
     }
     .admin-sidebar {
       width: 240px;
-      background: #120916;
-      border-right: 1px solid #331940;
+      background: var(--card-bg);
+      border-right: 1px solid var(--card-border);
       padding: 1.5rem 1rem;
       display: flex;
       flex-direction: column;
@@ -238,7 +248,7 @@
     .admin-sidebar button {
       background: none;
       border: 1px solid transparent;
-      color: #ffffff;
+      color: var(--text-color);
       padding: 0.8rem 1rem;
       text-align: left;
       font-family: 'Orbitron', sans-serif;
@@ -249,9 +259,9 @@
       transition: background 0.2s, border-color 0.2s, color 0.2s;
     }
     .admin-sidebar button:hover, .admin-sidebar button.active {
-      background: #2a1832;
-      border-color: #a855f7;
-      color: #a855f7;
+      background: var(--header-border);
+      border-color: var(--accent-color);
+      color: var(--accent-color);
     }
     .admin-body {
       flex: 1;
@@ -259,10 +269,10 @@
       overflow-y: auto;
     }
 
-    /* Admin User Table & Cards */
-    .user-list-card {
-      background: #120916;
-      border: 1px solid #331940;
+    /* Admin User & Theme Cards */
+    .user-list-card, .theme-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 1.2rem;
       margin-bottom: 1rem;
@@ -270,23 +280,23 @@
       flex-direction: column;
       gap: 1rem;
     }
-    .user-card-header {
+    .user-card-header, .theme-card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #2a1832;
+      border-bottom: 1px solid var(--header-border);
       padding-bottom: 0.6rem;
     }
-    .user-actions {
+    .user-actions, .theme-actions {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
       margin-top: 0.5rem;
     }
     .action-btn {
-      background: #2a1832;
-      border: 1px solid #4a285d;
-      color: #ffffff;
+      background: var(--header-border);
+      border: 1px solid var(--card-border);
+      color: var(--text-color);
       padding: 0.4rem 0.8rem;
       font-family: 'Orbitron', sans-serif;
       font-size: 0.75rem;
@@ -295,14 +305,38 @@
       transition: background 0.2s, border-color 0.2s;
     }
     .action-btn:hover {
-      background: #a855f7;
+      background: var(--accent-color);
       color: #000;
+    }
+
+    /* Color Input Swatches */
+    .color-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .color-field {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-color);
+      padding: 0.6rem 0.8rem;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+    }
+    .color-field input[type="color"] {
+      border: none;
+      background: none;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
     }
 
     /* User Profile Cards */
     .profile-card {
-      background: #120916;
-      border: 1px solid #331940;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 1.8rem;
       margin-bottom: 1.5rem;
@@ -318,17 +352,17 @@
       width: 90px;
       height: 90px;
       border-radius: 50%;
-      border: 2px solid #a855f7;
+      border: 2px solid var(--accent-color);
       object-fit: cover;
-      background: #2a1832;
+      background: var(--header-border);
     }
     .profile-avatar-large[src=""] {
       display: none;
     }
     .user-id-badge {
       display: inline-block;
-      background: #2a1832;
-      color: #a855f7;
+      background: var(--header-border);
+      color: var(--accent-color);
       font-size: 0.8rem;
       padding: 0.2rem 0.6rem;
       border-radius: 4px;
@@ -337,8 +371,8 @@
 
     /* Updates Timeline Styling */
     .update-card {
-      background: #120916;
-      border: 1px solid #331940;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 1.5rem;
       margin-bottom: 1.5rem;
@@ -349,12 +383,12 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 0.8rem;
-      border-bottom: 1px solid #2a1832;
+      border-bottom: 1px solid var(--header-border);
       padding-bottom: 0.5rem;
     }
     .update-title {
       font-size: 1.2rem;
-      color: #a855f7;
+      color: var(--accent-color);
     }
     .update-date {
       font-size: 0.85rem;
@@ -376,21 +410,21 @@
       margin-bottom: 2rem;
     }
     .metric-card {
-      background: #120916;
-      border: 1px solid #331940;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 1.2rem;
       text-align: center;
     }
     .metric-value {
       font-size: 1.8rem;
-      color: #a855f7;
+      color: var(--accent-color);
       font-weight: 900;
       margin-top: 0.4rem;
     }
     .chart-container {
-      background: #120916;
-      border: 1px solid #331940;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 1.5rem;
       margin-bottom: 2rem;
@@ -398,8 +432,8 @@
 
     /* Auth & Form Controls */
     .auth-box, .admin-box {
-      background: #120916;
-      border: 1px solid #4a285d;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 2rem;
       max-width: 750px;
@@ -415,28 +449,28 @@
     }
     .form-group label {
       font-size: 0.85rem;
-      color: #a855f7;
+      color: var(--accent-color);
     }
     .arcadix-input, .arcadix-textarea {
       width: 100%;
-      background: #000000;
-      border: 1px solid #331940;
+      background: var(--bg-color);
+      border: 1px solid var(--card-border);
       border-radius: 6px;
       padding: 0.8rem;
-      color: #ffffff;
+      color: var(--text-color);
       font-family: 'Orbitron', sans-serif;
       font-weight: 700;
       outline: none;
       transition: border-color 0.2s;
     }
     .arcadix-input:focus, .arcadix-textarea:focus {
-      border-color: #a855f7;
+      border-color: var(--accent-color);
     }
     .arcadix-btn {
       width: 100%;
-      background: linear-gradient(180deg, #2b1836 0%, #180c1f 100%);
-      border: 1px solid #a855f7;
-      color: #ffffff;
+      background: var(--header-bg);
+      border: 1px solid var(--accent-color);
+      color: var(--text-color);
       padding: 0.8rem;
       font-family: 'Orbitron', sans-serif;
       font-weight: 900;
@@ -445,7 +479,7 @@
       transition: background 0.2s, transform 0.1s;
     }
     .arcadix-btn:hover {
-      background: #a855f7;
+      background: var(--accent-color);
       color: #000000;
     }
     .auth-toggle-text {
@@ -455,7 +489,7 @@
       text-align: center;
     }
     .auth-toggle-link {
-      color: #a855f7;
+      color: var(--accent-color);
       cursor: pointer;
       text-decoration: underline;
     }
@@ -481,17 +515,17 @@
       gap: 1.25rem;
     }
     .game-card {
-      background: #120916;
-      border: 1px solid #331940;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 1.5rem;
       text-decoration: none;
-      color: #ffffff;
+      color: var(--text-color);
       transition: transform 0.2s, border-color 0.2s;
     }
     .game-card:hover {
       transform: translateY(-3px);
-      border-color: #8b5cf6;
+      border-color: var(--accent-color);
     }
     .game-card h3 {
       font-size: 1.1rem;
@@ -500,7 +534,7 @@
     }
     .game-card span {
       font-size: 0.85rem;
-      color: #a855f7;
+      color: var(--accent-color);
       font-weight: 700;
     }
 
@@ -541,6 +575,68 @@
   <main class="main-content" id="container">
     <!-- Dynamic Viewport Content -->
   </main>
+
+  <!-- Dynamic Theme System JS -->
+  <script>
+    const DEFAULT_THEMES = [
+      {
+        id: "default-purple",
+        name: "ArcadiX Purple (Default)",
+        bgColor: "#000000",
+        headerBg: "#1f1224",
+        cardBg: "#120916",
+        cardBorder: "#331940",
+        accentColor: "#a855f7",
+        textColor: "#ffffff",
+        isDefault: true
+      },
+      {
+        id: "cyber-cyan",
+        name: "Cyber Neon Cyan",
+        bgColor: "#030712",
+        headerBg: "#0f172a",
+        cardBg: "#0f172a",
+        cardBorder: "#1e293b",
+        accentColor: "#06b6d4",
+        textColor: "#f8fafc",
+        isDefault: false
+      }
+    ];
+
+    function getThemes() {
+      const saved = localStorage.getItem('arcadix_themes');
+      return saved ? JSON.parse(saved) : DEFAULT_THEMES;
+    }
+
+    function saveThemes(themes) {
+      localStorage.setItem('arcadix_themes', JSON.stringify(themes));
+    }
+
+    function applyTheme(theme) {
+      if (!theme) return;
+      const root = document.documentElement;
+      root.style.setProperty('--bg-color', theme.bgColor);
+      root.style.setProperty('--header-bg', theme.headerBg);
+      root.style.setProperty('--card-bg', theme.cardBg);
+      root.style.setProperty('--card-border', theme.cardBorder);
+      root.style.setProperty('--accent-color', theme.accentColor);
+      root.style.setProperty('--text-color', theme.textColor);
+    }
+
+    function initActiveTheme() {
+      const themes = getThemes();
+      const activeId = localStorage.getItem('arcadix_active_theme_id');
+      let activeTheme = themes.find(t => t.id === activeId);
+
+      if (!activeTheme) {
+        activeTheme = themes.find(t => t.isDefault) || themes[0];
+      }
+
+      applyTheme(activeTheme);
+    }
+
+    initActiveTheme();
+  </script>
 
   <!-- Firebase Modular SDK -->
   <script type="module">
@@ -597,7 +693,6 @@
         if (userDoc.exists()) {
           currentUserData = userDoc.data();
           
-          // ID 1 Auto Super-Admin Assignment
           if (currentUserData.userId === 1 && !currentUserData.hasAdminAccess) {
             currentUserData.hasAdminAccess = true;
             currentUserData.permissions = { manageUpdates: true, manageUsers: true, isSuperAdmin: true };
@@ -842,10 +937,11 @@
       container.innerHTML = `
         <div class="admin-layout">
           <div class="admin-sidebar">
-            <div style="font-size:0.9rem; color:#a855f7; font-weight:900; margin-bottom:1rem; text-align:center; padding-bottom:0.5rem; border-bottom:1px solid #331940;">ADMIN PANEL</div>
+            <div style="font-size:0.9rem; color:var(--accent-color); font-weight:900; margin-bottom:1rem; text-align:center; padding-bottom:0.5rem; border-bottom:1px solid var(--card-border);">ADMIN PANEL</div>
             <button id="btn-tab-analytics" class="active" onclick="switchAdminTab('analytics')">Dashboard</button>
             <button id="btn-tab-updates" onclick="switchAdminTab('updates')">Site Updates</button>
             <button id="btn-tab-users" onclick="switchAdminTab('users')">User Management</button>
+            <button id="btn-tab-themes" onclick="switchAdminTab('themes')">Site Themes</button>
           </div>
           <div class="admin-body" id="admin-body">
             <!-- Dynamic Sub-Panel View -->
@@ -869,6 +965,8 @@
         renderUpdatesTab(body);
       } else if (tabName === 'users') {
         renderUsersTab(body);
+      } else if (tabName === 'themes') {
+        renderThemesTab(body);
       }
     };
 
@@ -946,7 +1044,7 @@
             <div class="user-list-card">
               <div class="user-card-header">
                 <div>
-                  <strong style="color:#a855f7; font-size:1.1rem;">${u.username}</strong>
+                  <strong style="color:var(--accent-color); font-size:1.1rem;">${u.username}</strong>
                   <span class="user-id-badge" style="margin-left:0.5rem;">ID: #${u.userId}</span>
                   ${u.hasAdminAccess ? '<span class="user-id-badge" style="background:#4a285d; color:#22c55e; margin-left:0.3rem;">ADMIN</span>' : ''}
                 </div>
@@ -958,7 +1056,7 @@
                 <button class="action-btn" onclick="adminResetUsername('${targetUid}', ${u.userId})">Reset Username</button>
                 <button class="action-btn" onclick="adminResetBio('${targetUid}')">Reset Bio</button>
                 <button class="action-btn" onclick="adminResetPassword('${targetUid}')">Reset Password</button>
-                <button class="action-btn" style="border-color:#a855f7;" onclick="adminToggleAdminAccess('${targetUid}', ${!u.hasAdminAccess})">
+                <button class="action-btn" style="border-color:var(--accent-color);" onclick="adminToggleAdminAccess('${targetUid}', ${!u.hasAdminAccess})">
                   ${u.hasAdminAccess ? 'Revoke Admin' : 'Grant Admin'}
                 </button>
                 ${isSuperAdmin ? `
@@ -975,6 +1073,119 @@
         body.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load users: ${err.message}</p>`;
       }
     }
+
+    function renderThemesTab(body) {
+      const themes = getThemes();
+      const activeId = localStorage.getItem('arcadix_active_theme_id');
+
+      let themesHTML = themes.map(t => {
+        const isActive = t.id === activeId || (!activeId && t.isDefault);
+        return `
+          <div class="theme-card">
+            <div class="theme-card-header">
+              <div>
+                <strong style="color:var(--accent-color); font-size:1rem;">${t.name}</strong>
+                ${t.isDefault ? '<span class="user-id-badge" style="margin-left:0.5rem; background:#4a285d;">DEFAULT</span>' : ''}
+                ${isActive ? '<span class="user-id-badge" style="margin-left:0.5rem; background:#22c55e; color:#000;">ACTIVE</span>' : ''}
+              </div>
+            </div>
+            <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+              <div style="width:24px; height:24px; border-radius:50%; background:${t.bgColor}; border:1px solid #fff;" title="Background"></div>
+              <div style="width:24px; height:24px; border-radius:50%; background:${t.headerBg}; border:1px solid #fff;" title="Header"></div>
+              <div style="width:24px; height:24px; border-radius:50%; background:${t.cardBg}; border:1px solid #fff;" title="Cards"></div>
+              <div style="width:24px; height:24px; border-radius:50%; background:${t.accentColor}; border:1px solid #fff;" title="Accent"></div>
+            </div>
+            <div class="theme-actions">
+              <button class="action-btn" onclick="activateTheme('${t.id}')">Apply Theme</button>
+              ${!t.isDefault ? `<button class="action-btn" onclick="setDefaultTheme('${t.id}')">Set as Default</button>` : ''}
+              ${themes.length > 1 ? `<button class="delete-btn" onclick="deleteTheme('${t.id}')">Delete</button>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+
+      body.innerHTML = `
+        <div class="section-header-box" style="margin-top:0;">Create Custom Theme</div>
+        <div class="form-group">
+          <label>Theme Name</label>
+          <input type="text" id="theme-name-input" class="arcadix-input" placeholder="e.g. ArcadiX Emerald">
+        </div>
+        <div class="color-picker-grid">
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Page Background</label>
+            <input type="color" id="theme-bg" value="#000000">
+          </div>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Header Background</label>
+            <input type="color" id="theme-header" value="#1f1224">
+          </div>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Card Background</label>
+            <input type="color" id="theme-card" value="#120916">
+          </div>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Card Border</label>
+            <input type="color" id="theme-border" value="#331940">
+          </div>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Accent Color</label>
+            <input type="color" id="theme-accent" value="#a855f7">
+          </div>
+        </div>
+        <button onclick="createNewTheme()" class="arcadix-btn" style="margin-bottom:2rem;">Save & Register Theme</button>
+
+        <div class="section-header-box">Available Site Themes</div>
+        ${themesHTML}`;
+    }
+
+    window.createNewTheme = function() {
+      const name = document.getElementById('theme-name-input').value.trim();
+      if (!name) return alert("Please enter a name for the theme.");
+
+      const newTheme = {
+        id: "theme-" + Date.now(),
+        name: name,
+        bgColor: document.getElementById('theme-bg').value,
+        headerBg: document.getElementById('theme-header').value,
+        cardBg: document.getElementById('theme-card').value,
+        cardBorder: document.getElementById('theme-border').value,
+        accentColor: document.getElementById('theme-accent').value,
+        textColor: "#ffffff",
+        isDefault: false
+      };
+
+      const themes = getThemes();
+      themes.push(newTheme);
+      saveThemes(themes);
+
+      alert("Theme saved successfully!");
+      window.switchAdminTab('themes');
+    };
+
+    window.activateTheme = function(themeId) {
+      const themes = getThemes();
+      const theme = themes.find(t => t.id === themeId);
+      if (theme) {
+        localStorage.setItem('arcadix_active_theme_id', theme.id);
+        applyTheme(theme);
+        window.switchAdminTab('themes');
+      }
+    };
+
+    window.setDefaultTheme = function(themeId) {
+      let themes = getThemes();
+      themes = themes.map(t => ({ ...t, isDefault: t.id === themeId }));
+      saveThemes(themes);
+      alert("Site default theme updated.");
+      window.switchAdminTab('themes');
+    };
+
+    window.deleteTheme = function(themeId) {
+      if (!confirm("Are you sure you want to delete this theme?")) return;
+      let themes = getThemes();
+      themes = themes.filter(t => t.id !== themeId);
+      saveThemes(themes);
+      window.switchAdminTab('themes');
+    };
 
     window.adminResetUsername = async function(targetUid, userId) {
       const defaultUsername = `PAX_USER_${userId}`;
@@ -1012,7 +1223,7 @@
       const newPassword = prompt("Enter a new temporary password for this account:");
       if (!newPassword) return;
 
-      alert("Note: Updating password via client SDK requires user re-authentication or Firebase Admin SDK backend. Firestore flag updated.");
+      alert("Note: Password reset flag set.");
     };
 
     window.adminToggleAdminAccess = async function(targetUid, grantState) {
@@ -1051,10 +1262,8 @@
   </script>
 
   <script>
-    // Access Passcode for Admin Panel
     const ADMIN_CODE = "LIY-LUV901";
 
-    // --- SITE TRAFFIC TRACKING SYSTEM ---
     function recordPageView() {
       const today = new Date().toISOString().split('T')[0];
       let trafficData = JSON.parse(localStorage.getItem('arcadix_traffic')) || {};
@@ -1159,7 +1368,7 @@
         <div class="status-msg">
           <h2>Game Not Found</h2>
           <p>No game registered under id: <strong>${gameId}</strong></p>
-          <a href="./" style="color: #a855f7; text-decoration: none;">Return to Home</a>
+          <a href="./" style="color: var(--accent-color); text-decoration: none;">Return to Home</a>
         </div>`;
 
     } else if (!pageId && !userId) {
