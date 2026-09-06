@@ -569,7 +569,13 @@
       border: 2px solid var(--accent-color);
     }
 
-    /* User List Dropdown Accordion */
+    /* User List Dropdown Accordion & Search Controls */
+    .search-filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
     .user-list-container {
       display: flex;
       flex-direction: column;
@@ -627,6 +633,32 @@
     }
     .user-item-details.active {
       display: block;
+    }
+
+    /* Permissions Manager UI Elements */
+    .permissions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.8rem;
+      margin: 1rem 0;
+      text-align: left;
+    }
+    .perm-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--bg-color);
+      border: 1px solid var(--card-border);
+      padding: 0.6rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .perm-checkbox-label input[type="checkbox"] {
+      accent-color: var(--accent-color);
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
     }
 
     /* Custom Site Modal System Styles */
@@ -766,6 +798,38 @@
       <div class="custom-modal-actions" style="margin-top:1.5rem;">
         <button class="action-btn" style="padding: 0.6rem 1.2rem;" onclick="closeBanModal()">Cancel</button>
         <button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="ban-modal-submit-btn">Apply Ban</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated Manage Permissions Modal -->
+  <div class="custom-modal-overlay" id="permissions-modal-overlay">
+    <div class="custom-modal-box" style="max-width: 520px;">
+      <div class="custom-modal-title">Manage Account Permissions</div>
+      <div class="custom-modal-msg" id="perm-modal-subtitle" style="font-size:0.85rem; color:#aaa; margin-bottom:0.5rem;">Select access permissions for user:</div>
+      <div class="permissions-grid">
+        <label class="perm-checkbox-label">
+          <input type="checkbox" id="perm-chk-updates"> Manage Updates
+        </label>
+        <label class="perm-checkbox-label">
+          <input type="checkbox" id="perm-chk-users"> Manage Users
+        </label>
+        <label class="perm-checkbox-label">
+          <input type="checkbox" id="perm-chk-assets"> Approve Assets
+        </label>
+        <label class="perm-checkbox-label">
+          <input type="checkbox" id="perm-chk-reset"> Reset User Info
+        </label>
+        <label class="perm-checkbox-label">
+          <input type="checkbox" id="perm-chk-banuser"> Ban User
+        </label>
+        <label class="perm-checkbox-label">
+          <input type="checkbox" id="perm-chk-bandevice"> Ban Device
+        </label>
+      </div>
+      <div class="custom-modal-actions" style="margin-top:1.5rem;">
+        <button class="action-btn" style="padding: 0.6rem 1.2rem;" onclick="closePermissionsModal()">Cancel</button>
+        <button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="perm-modal-submit-btn">Save Permissions</button>
       </div>
     </div>
   </div>
@@ -928,6 +992,11 @@
       const overlay = document.getElementById('ban-modal-overlay');
       if (overlay) overlay.classList.remove('active');
     };
+
+    window.closePermissionsModal = function() {
+      const overlay = document.getElementById('permissions-modal-overlay');
+      if (overlay) overlay.classList.remove('active');
+    };
   </script>
 
   <!-- Firebase Modular SDK -->
@@ -973,6 +1042,7 @@
     const db = getFirestore(app);
 
     let currentUserData = null;
+    let loadedUsersCache = [];
 
     const urlParams = new URLSearchParams(window.location.search);
     const userIdParam = urlParams.get('user');
@@ -1028,10 +1098,10 @@
           
           if (currentUserData.userId === 1 && !currentUserData.hasAdminAccess) {
             currentUserData.hasAdminAccess = true;
-            currentUserData.permissions = { manageUpdates: true, manageUsers: true, approveAssets: true, isSuperAdmin: true };
+            currentUserData.permissions = { manageUpdates: true, manageUsers: true, approveAssets: true, resetUserInfo: true, banUser: true, banDevice: true, isSuperAdmin: true };
             await updateDoc(doc(db, "users", user.uid), {
               hasAdminAccess: true,
-              permissions: { manageUpdates: true, manageUsers: true, approveAssets: true, isSuperAdmin: true }
+              permissions: { manageUpdates: true, manageUsers: true, approveAssets: true, resetUserInfo: true, banUser: true, banDevice: true, isSuperAdmin: true }
             });
           }
 
@@ -1127,6 +1197,9 @@
             manageUpdates: isSuperAdmin,
             manageUsers: isSuperAdmin,
             approveAssets: isSuperAdmin,
+            resetUserInfo: isSuperAdmin,
+            banUser: isSuperAdmin,
+            banDevice: isSuperAdmin,
             isSuperAdmin: isSuperAdmin
           }
         };
@@ -1425,55 +1498,97 @@
           return;
         }
 
-        let usersHTML = '';
-        querySnapshot.forEach((userDoc) => {
-          const user = userDoc.data();
-          const uniqueId = `user-row-${user.uid}`;
-          
-          let banExpiryBadgeText = '';
-          if (user.isBanned) {
-            if (user.banUntil === "PERMANENT" || !user.banUntil) {
-              banExpiryBadgeText = '(PERMANENT)';
-            } else {
-              banExpiryBadgeText = `(Until: ${new Date(user.banUntil).toLocaleDateString()})`;
-            }
-          }
-
-          usersHTML += `
-            <div class="user-list-item">
-              <div class="user-item-header" onclick="toggleUserCard('${uniqueId}')">
-                <div class="user-item-info">
-                  <strong>${user.username}</strong>
-                  <span class="user-badge">ID: #${user.userId}</span>
-                  ${user.hasAdminAccess ? '<span class="user-badge admin">ADMIN</span>' : ''}
-                  ${user.isBanned ? `<span class="user-badge banned">BANNED ${banExpiryBadgeText}</span>` : ''}
-                  ${user.isDeviceBanned ? '<span class="user-badge device-banned">DEVICE BANNED</span>' : ''}
-                </div>
-                <span style="color:var(--accent-color);">&#9660;</span>
-              </div>
-              <div class="user-item-details" id="${uniqueId}">
-                <p style="margin-bottom:0.5rem;"><strong>Bio:</strong> ${user.bio || 'User bio text not provided.'}</p>
-                <p style="margin-bottom:0.5rem; font-size:0.75rem; color:#aaa;"><strong>Device ID:</strong> ${user.registeredDeviceId || 'Not registered'}</p>
-                <div class="user-actions">
-                  <button class="action-btn" onclick="adminResetUsername('${user.uid}', ${user.userId})">Reset Username</button>
-                  <button class="action-btn" onclick="adminResetBio('${user.uid}')">Reset Bio</button>
-                  <button class="action-btn" onclick="adminResetPassword('${user.uid}')">Reset Password</button>
-                  <button class="action-btn" onclick="adminToggleAdminAccess('${user.uid}', ${!user.hasAdminAccess})">${user.hasAdminAccess ? 'Revoke Admin' : 'Grant Admin'}</button>
-                  <button class="action-btn" onclick="adminManagePermissions('${user.uid}')">Manage Permissions</button>
-                  <button class="action-btn danger" onclick="openBanModal('${user.uid}', ${!user.isBanned})">${user.isBanned ? 'Unban Account' : 'Ban Account'}</button>
-                  <button class="action-btn danger" onclick="toggleDeviceBan('${user.uid}', '${user.registeredDeviceId || ''}', ${!user.isDeviceBanned})">${user.isDeviceBanned ? 'Unban Device' : 'Ban Device'}</button>
-                </div>
-              </div>
-            </div>`;
+        loadedUsersCache = [];
+        querySnapshot.forEach((doc) => {
+          loadedUsersCache.push(doc.data());
         });
 
         body.innerHTML = `
           <div class="section-header-box" style="margin-top:0;">Registered Players</div>
-          <div class="user-list-container">${usersHTML}</div>`;
+          <div class="search-filter-grid">
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Filter by ID</label>
+              <input type="text" id="filter-user-id" class="arcadix-input" placeholder="e.g. 1" oninput="window.filterUsersList()">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Filter by Username</label>
+              <input type="text" id="filter-user-name" class="arcadix-input" placeholder="e.g. Arcade..." oninput="window.filterUsersList()">
+            </div>
+          </div>
+          <div class="user-list-container" id="user-list-container"></div>`;
+
+        window.filterUsersList();
       } catch (err) {
         body.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load users: ${err.message}</p>`;
       }
     }
+
+    window.filterUsersList = function() {
+      const container = document.getElementById('user-list-container');
+      if (!container) return;
+
+      const idFilter = (document.getElementById('filter-user-id')?.value || '').trim();
+      const nameFilter = (document.getElementById('filter-user-name')?.value || '').trim().toLowerCase();
+
+      const filtered = loadedUsersCache.filter(user => {
+        const matchId = !idFilter || user.userId.toString().includes(idFilter);
+        const matchName = !nameFilter || user.username.toLowerCase().includes(nameFilter);
+        return matchId && matchName;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p style="text-align:center; color:#888; padding:1.5rem;">No players match your search criteria.</p>`;
+        return;
+      }
+
+      const isSuperAdmin = currentUserData?.permissions?.isSuperAdmin;
+      const canReset = isSuperAdmin || currentUserData?.permissions?.resetUserInfo;
+      const canBanUser = isSuperAdmin || currentUserData?.permissions?.banUser;
+      const canBanDev = isSuperAdmin || currentUserData?.permissions?.banDevice;
+
+      let usersHTML = '';
+      filtered.forEach((user) => {
+        const uniqueId = `user-row-${user.uid}`;
+        
+        let banExpiryBadgeText = '';
+        if (user.isBanned) {
+          if (user.banUntil === "PERMANENT" || !user.banUntil) {
+            banExpiryBadgeText = '(PERMANENT)';
+          } else {
+            banExpiryBadgeText = `(Until: ${new Date(user.banUntil).toLocaleDateString()})`;
+          }
+        }
+
+        usersHTML += `
+          <div class="user-list-item">
+            <div class="user-item-header" onclick="toggleUserCard('${uniqueId}')">
+              <div class="user-item-info">
+                <strong>${user.username}</strong>
+                <span class="user-badge">ID: #${user.userId}</span>
+                ${user.hasAdminAccess ? '<span class="user-badge admin">ADMIN</span>' : ''}
+                ${user.isBanned ? `<span class="user-badge banned">BANNED ${banExpiryBadgeText}</span>` : ''}
+                ${user.isDeviceBanned ? '<span class="user-badge device-banned">DEVICE BANNED</span>' : ''}
+              </div>
+              <span style="color:var(--accent-color);">&#9660;</span>
+            </div>
+            <div class="user-item-details" id="${uniqueId}">
+              <p style="margin-bottom:0.5rem;"><strong>Bio:</strong> ${user.bio || 'User bio text not provided.'}</p>
+              <p style="margin-bottom:0.5rem; font-size:0.75rem; color:#aaa;"><strong>Device ID:</strong> ${user.registeredDeviceId || 'Not registered'}</p>
+              <div class="user-actions">
+                ${canReset ? `<button class="action-btn" onclick="adminResetUsername('${user.uid}', ${user.userId})">Reset Username</button>` : ''}
+                ${canReset ? `<button class="action-btn" onclick="adminResetBio('${user.uid}')">Reset Bio</button>` : ''}
+                ${canReset ? `<button class="action-btn" onclick="adminResetPassword('${user.uid}')">Reset Password</button>` : ''}
+                <button class="action-btn" onclick="adminToggleAdminAccess('${user.uid}', ${!user.hasAdminAccess})">${user.hasAdminAccess ? 'Revoke Admin' : 'Grant Admin'}</button>
+                <button class="action-btn" onclick="adminManagePermissions('${user.uid}')">Manage Permissions</button>
+                ${canBanUser ? `<button class="action-btn danger" onclick="openBanModal('${user.uid}', ${!user.isBanned})">${user.isBanned ? 'Unban Account' : 'Ban Account'}</button>` : ''}
+                ${canBanDev ? `<button class="action-btn danger" onclick="toggleDeviceBan('${user.uid}', '${user.registeredDeviceId || ''}', ${!user.isDeviceBanned})">${user.isDeviceBanned ? 'Unban Device' : 'Ban Device'}</button>` : ''}
+              </div>
+            </div>
+          </div>`;
+      });
+
+      container.innerHTML = usersHTML;
+    };
 
     window.toggleUserCard = function(elementId) {
       const card = document.getElementById(elementId);
@@ -1781,7 +1896,10 @@
           hasAdminAccess: grantState,
           "permissions.manageUpdates": grantState,
           "permissions.manageUsers": grantState,
-          "permissions.approveAssets": grantState
+          "permissions.approveAssets": grantState,
+          "permissions.resetUserInfo": grantState,
+          "permissions.banUser": grantState,
+          "permissions.banDevice": grantState
         });
         await window.showArcadiXAlert(`Admin access ${grantState ? 'granted' : 'revoked'}.`, "Permissions Updated");
         window.switchAdminTab('users');
@@ -1791,21 +1909,42 @@
     };
 
     window.adminManagePermissions = async function(targetUid) {
-      const canManageUpdates = await window.showArcadiXConfirm("Grant permission: Manage Updates?", "Permission Setup");
-      const canManageUsers = await window.showArcadiXConfirm("Grant permission: Manage Users?", "Permission Setup");
-      const canApproveAssets = await window.showArcadiXConfirm("Grant permission: Approve Assets?", "Permission Setup");
+      const targetDoc = await getDoc(doc(db, "users", targetUid));
+      if (!targetDoc.exists()) return;
 
-      try {
-        await updateDoc(doc(db, "users", targetUid), {
-          "permissions.manageUpdates": canManageUpdates,
-          "permissions.manageUsers": canManageUsers,
-          "permissions.approveAssets": canApproveAssets
-        });
-        await window.showArcadiXAlert("Permissions updated!", "Success");
-        window.switchAdminTab('users');
-      } catch (err) {
-        window.showArcadiXAlert("Error updating permissions: " + err.message, "Error");
-      }
+      const p = targetDoc.data().permissions || {};
+      const overlay = document.getElementById('permissions-modal-overlay');
+      const submitBtn = document.getElementById('perm-modal-submit-btn');
+      
+      document.getElementById('perm-modal-subtitle').innerText = `Select access permissions for user: ${targetDoc.data().username}`;
+      document.getElementById('perm-chk-updates').checked = !!p.manageUpdates;
+      document.getElementById('perm-chk-users').checked = !!p.manageUsers;
+      document.getElementById('perm-chk-assets').checked = !!p.approveAssets;
+      document.getElementById('perm-chk-reset').checked = !!p.resetUserInfo;
+      document.getElementById('perm-chk-banuser').checked = !!p.banUser;
+      document.getElementById('perm-chk-bandevice').checked = !!p.banDevice;
+
+      overlay.classList.add('active');
+
+      submitBtn.onclick = async () => {
+        const updatedPerms = {
+          "permissions.manageUpdates": document.getElementById('perm-chk-updates').checked,
+          "permissions.manageUsers": document.getElementById('perm-chk-users').checked,
+          "permissions.approveAssets": document.getElementById('perm-chk-assets').checked,
+          "permissions.resetUserInfo": document.getElementById('perm-chk-reset').checked,
+          "permissions.banUser": document.getElementById('perm-chk-banuser').checked,
+          "permissions.banDevice": document.getElementById('perm-chk-bandevice').checked
+        };
+
+        try {
+          await updateDoc(doc(db, "users", targetUid), updatedPerms);
+          overlay.classList.remove('active');
+          await window.showArcadiXAlert("Permissions updated!", "Success");
+          window.switchAdminTab('users');
+        } catch (err) {
+          window.showArcadiXAlert("Error updating permissions: " + err.message, "Error");
+        }
+      };
     };
 
     if (userIdParam) {
