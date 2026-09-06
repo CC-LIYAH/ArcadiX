@@ -1013,7 +1013,6 @@
       }
     });
   </script>
-
   <!-- Consolidated Firebase Modular SDK & Single App Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -1520,7 +1519,6 @@
         window.showArcadiXAlert("Error updating profile: " + error.message, "Error");
       }
     };
-
     // ADMIN PANEL FUNCTIONS
     window.renderAdminLayout = function() {
       const isAuthorizedAdmin = currentUserData && currentUserData.hasAdminAccess;
@@ -1736,6 +1734,7 @@
       }
     }
 
+    // UPDATED FUNCTION: Extracts src attribute properly from iframe snippet input
     window.addNewGame = async function() {
       const title = document.getElementById('admin-game-title').value.trim();
       const iconUrl = document.getElementById('admin-game-icon').value.trim();
@@ -1745,9 +1744,12 @@
         return window.showArcadiXAlert("Please fill in both the Title and Link fields.", "Error");
       }
 
-      if (rawUrl.includes('<iframe') && rawUrl.includes('src=')) {
-        const srcMatch = rawUrl.match(/src=["']([^"']+)["']/);
-        if (srcMatch && srcMatch[1]) rawUrl = srcMatch[1];
+      // Extracts exact URL if input was an full <iframe> element string
+      if (rawUrl.includes('<iframe') || rawUrl.includes('src=')) {
+        const srcMatch = rawUrl.match(/src=["']([^"']+)["']/i);
+        if (srcMatch && srcMatch[1]) {
+          rawUrl = srcMatch[1];
+        }
       }
 
       const gameId = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || ('game-' + Date.now());
@@ -1789,7 +1791,6 @@
         }
       }
     };
-
     async function renderUpdatesTab(body) {
       body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Updates...</div>`;
       
