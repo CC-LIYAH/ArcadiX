@@ -1,19 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  
   <title id="page-title">Planet ArcadiX</title>
 
-  <!-- Google Font: Orbitron Bold -->
+  <!-- Google Fonts Imports -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
   
-  <!-- Chart.js Library -->
+  <!-- Chart.js Engine Import -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style id="dynamic-theme-style">
+
+    /* ==========================================================
+       CSS CUSTOM VARIABLES & GLOBAL RESET
+       ========================================================== */
+
     :root {
       --bg-color: #000000;
       --header-bg: linear-gradient(180deg, #1f1224 0%, #120916 100%);
@@ -29,23 +37,38 @@
       margin: 0;
       padding: 0;
     }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
     body {
       font-family: 'Orbitron', sans-serif;
       font-weight: 700;
-      background: var(--bg-color);
+      background-color: var(--bg-color);
       color: var(--text-color);
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      min-height: 100vh;
       overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Universal Navigation Header */
+
+    /* ==========================================================
+       TOP NAVIGATION HEADER STYLING
+       ========================================================== */
+
     header {
       position: relative;
       z-index: 9999;
       background: var(--header-bg);
-      padding: 0.8rem 2rem;
+      padding-left: 2rem;
+      padding-right: 2rem;
+      padding-top: 0.8rem;
+      padding-bottom: 0.8rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -53,18 +76,21 @@
       height: 65px;
       flex-shrink: 0;
     }
+
     .header-brand {
       display: flex;
       align-items: center;
       gap: 1rem;
       text-decoration: none;
     }
+
     .logo-img {
       height: 40px;
       width: auto;
       display: block;
       object-fit: contain;
     }
+
     .game-title-display {
       color: var(--accent-color);
       font-size: 1.1rem;
@@ -72,75 +98,111 @@
       border-left: 2px solid var(--header-border);
       padding-left: 1rem;
     }
+
     .nav-links {
       display: flex;
       align-items: center;
       gap: 1.5rem;
     }
-    .nav-links a, .user-nav-btn {
+
+    .nav-links a {
       color: var(--text-color);
       text-decoration: none;
       font-weight: 700;
       font-size: 0.95rem;
-      transition: color 0.2s;
+      transition: color 0.2s ease-in-out;
       background: none;
       border: none;
       font-family: 'Orbitron', sans-serif;
       cursor: pointer;
     }
-    .nav-links a:hover, .user-nav-btn:hover {
+
+    .nav-links a:hover {
       color: var(--accent-color);
     }
 
-    /* Profile Dropdown Component UI */
+    .user-nav-btn {
+      color: var(--text-color);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      transition: color 0.2s ease-in-out;
+      background: none;
+      border: none;
+      font-family: 'Orbitron', sans-serif;
+      cursor: pointer;
+    }
+
+    .user-nav-btn:hover {
+      color: var(--accent-color);
+    }
+
+
+    /* ==========================================================
+       USER PROFILE DROPDOWN WIDGET
+       ========================================================== */
+
     .user-profile-menu {
       position: relative;
     }
+
     .profile-trigger {
       display: flex;
       align-items: center;
       gap: 0.6rem;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      padding: 0.3rem 0.8rem;
+      padding-top: 0.3rem;
+      padding-bottom: 0.3rem;
+      padding-left: 0.8rem;
+      padding-right: 0.8rem;
       border-radius: 20px;
       cursor: pointer;
       user-select: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s ease;
     }
+
     .profile-trigger:hover {
       border-color: var(--accent-color);
     }
+
     .avatar-img {
       width: 32px;
       height: 32px;
       border-radius: 50%;
       object-fit: cover;
-      background: var(--header-border);
+      background-color: var(--header-border);
       display: inline-block;
     }
+
     .avatar-img[src=""] {
       display: none;
     }
+
     .profile-dropdown {
       position: absolute;
       top: 120%;
       right: 0;
-      background: var(--card-bg);
+      background-color: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 8px;
       width: 180px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.8);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
       display: none;
       flex-direction: column;
       z-index: 10000;
       overflow: hidden;
     }
+
     .profile-dropdown.active {
       display: flex;
     }
-    .profile-dropdown a, .profile-dropdown button {
-      padding: 0.8rem 1rem;
+
+    .profile-dropdown a {
+      padding-top: 0.8rem;
+      padding-bottom: 0.8rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
       color: var(--text-color);
       text-decoration: none;
       font-size: 0.85rem;
@@ -153,44 +215,104 @@
       border-bottom: 1px solid var(--header-border);
       transition: background 0.2s, color 0.2s;
     }
-    .profile-dropdown a:hover, .profile-dropdown button:hover {
-      background: var(--header-border);
+
+    .profile-dropdown button {
+      padding-top: 0.8rem;
+      padding-bottom: 0.8rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      color: var(--text-color);
+      text-decoration: none;
+      font-size: 0.85rem;
+      text-align: left;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      border-bottom: 1px solid var(--header-border);
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .profile-dropdown a:hover {
+      background-color: var(--header-border);
       color: var(--accent-color);
     }
 
-    /* Main Area Container */
+    .profile-dropdown button:hover {
+      background-color: var(--header-border);
+      color: var(--accent-color);
+    }
+
+
+    /* ==========================================================
+       MAIN CONTENT CONTAINER
+       ========================================================== */
+
     .main-content {
       flex: 1;
       width: 100%;
-      height: calc(100vh - 65px);
-      background: var(--bg-color);
+      height: calc(100vh - 105px);
+      background-color: var(--bg-color);
       overflow: hidden;
     }
 
-    /* Scrollable Container for Text Content Pages */
+
+    /* ==========================================================
+       FOOTER STYLING
+       ========================================================== */
+
+    footer.site-footer {
+      height: 40px;
+      background-color: var(--card-bg);
+      border-top: 1px solid var(--header-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #888888;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+
+    /* ==========================================================
+       PAGE CONTAINER FOR SCROLLABLE PAGES
+       ========================================================== */
+
     .page-scroll-container {
       max-width: 1000px;
-      margin: 0 auto;
-      padding: 2rem 1.5rem;
+      margin-left: auto;
+      margin-right: auto;
+      padding-top: 2rem;
+      padding-bottom: 2rem;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
       height: 100%;
       overflow-y: auto;
     }
 
-    /* Full-screen Responsive Game Viewport */
+
+    /* ==========================================================
+       FULLSCREEN GAME VIEWPORT & IFRAME WRAPPER
+       ========================================================== */
+
     .game-viewport {
       width: 100%;
       height: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #000000;
+      background-color: #000000;
     }
+
     .iframe-wrapper {
       position: relative;
       width: 100%;
       height: 100%;
-      background: #000000;
+      background-color: #000000;
     }
+
     .iframe-wrapper iframe {
       position: absolute;
       top: 0;
@@ -200,27 +322,38 @@
       border: none;
     }
 
-    /* Section Boxes & Titles */
+
+    /* ==========================================================
+       TYPOGRAPHY AND SECTION BOXES
+       ========================================================== */
+
     .hero-title {
       font-size: 2.2rem;
       font-weight: 900;
       margin-bottom: 1.2rem;
       text-align: center;
     }
+
     .hero-description {
       color: #cccccc;
       font-size: 1rem;
       line-height: 1.6;
       max-width: 700px;
-      margin: 0 auto 3rem auto;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 3rem;
       font-weight: 700;
       text-align: center;
     }
+
     .section-header-box {
       background: var(--header-bg);
       border: 1px solid var(--card-border);
       border-radius: 8px;
-      padding: 0.8rem 1rem;
+      padding-top: 0.8rem;
+      padding-bottom: 0.8rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
       font-size: 1.25rem;
       font-weight: 900;
       margin-bottom: 2rem;
@@ -228,27 +361,39 @@
       text-align: center;
     }
 
-    /* Admin Dashboard Layout */
+
+    /* ==========================================================
+       ADMIN DASHBOARD LAYOUT & SIDEBAR
+       ========================================================== */
+
     .admin-layout {
       display: flex;
       height: 100%;
       width: 100%;
     }
+
     .admin-sidebar {
       width: 240px;
-      background: var(--card-bg);
+      background-color: var(--card-bg);
       border-right: 1px solid var(--card-border);
-      padding: 1.5rem 1rem;
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
       flex-shrink: 0;
     }
+
     .admin-sidebar button {
       background: none;
       border: 1px solid transparent;
       color: var(--text-color);
-      padding: 0.8rem 1rem;
+      padding-top: 0.8rem;
+      padding-bottom: 0.8rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
       text-align: left;
       font-family: 'Orbitron', sans-serif;
       font-weight: 700;
@@ -257,20 +402,32 @@
       cursor: pointer;
       transition: background 0.2s, border-color 0.2s, color 0.2s;
     }
-    .admin-sidebar button:hover, .admin-sidebar button.active {
-      background: var(--header-border);
+
+    .admin-sidebar button:hover {
+      background-color: var(--header-border);
       border-color: var(--accent-color);
       color: var(--accent-color);
     }
+
+    .admin-sidebar button.active {
+      background-color: var(--header-border);
+      border-color: var(--accent-color);
+      color: var(--accent-color);
+    }
+
     .admin-body {
       flex: 1;
       padding: 2rem;
       overflow-y: auto;
     }
 
-    /* Admin User & Theme Cards */
-    .user-list-card, .theme-card {
-      background: var(--card-bg);
+
+    /* ==========================================================
+       ADMIN CARDS & ACTION BUTTONS
+       ========================================================== */
+
+    .user-list-card {
+      background-color: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 1.2rem;
@@ -279,59 +436,84 @@
       flex-direction: column;
       gap: 1rem;
     }
-    .user-card-header, .theme-card-header {
+
+    .theme-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--header-border);
-      padding-bottom: 0.6rem;
+      flex-direction: column;
+      gap: 1rem;
     }
-    .user-actions, .theme-actions {
+
+    .game-admin-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
+      flex-direction: column;
+      gap: 1rem;
     }
+
     .action-btn {
-      background: var(--header-border);
+      background-color: var(--header-border);
       border: 1px solid var(--card-border);
       color: var(--text-color);
-      padding: 0.4rem 0.8rem;
+      padding-top: 0.4rem;
+      padding-bottom: 0.4rem;
+      padding-left: 0.8rem;
+      padding-right: 0.8rem;
       font-family: 'Orbitron', sans-serif;
       font-size: 0.75rem;
       border-radius: 4px;
       cursor: pointer;
       transition: background 0.2s, border-color 0.2s;
     }
+
     .action-btn:hover {
-      background: var(--accent-color);
-      color: #000;
+      background-color: var(--accent-color);
+      color: #000000;
     }
+
     .action-btn.danger {
       border-color: #ef4444;
       color: #ef4444;
     }
+
     .action-btn.danger:hover {
-      background: #ef4444;
+      background-color: #ef4444;
       color: #ffffff;
     }
 
-    /* Color Input Swatches */
+
+    /* ==========================================================
+       COLOR PICKER GRID STYLING
+       ========================================================== */
+
     .color-picker-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 1rem;
       margin-bottom: 1.5rem;
     }
+
     .color-field {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--bg-color);
-      padding: 0.6rem 0.8rem;
+      background-color: var(--bg-color);
+      padding-top: 0.6rem;
+      padding-bottom: 0.6rem;
+      padding-left: 0.8rem;
+      padding-right: 0.8rem;
       border-radius: 6px;
       border: 1px solid var(--card-border);
     }
+
     .color-field input[type="color"] {
       border: none;
       background: none;
@@ -340,51 +522,20 @@
       cursor: pointer;
     }
 
-    /* User Profile Cards */
-    .profile-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 1.8rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-    .profile-header {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-    .profile-avatar-large {
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      border: 2px solid var(--accent-color);
-      object-fit: cover;
-      background: var(--header-border);
-    }
-    .profile-avatar-large[src=""] {
-      display: none;
-    }
-    .user-id-badge {
-      display: inline-block;
-      background: var(--header-border);
-      color: var(--accent-color);
-      font-size: 0.8rem;
-      padding: 0.2rem 0.6rem;
-      border-radius: 4px;
-      margin-top: 0.4rem;
-    }
 
-    /* Updates Timeline Styling */
+    /* ==========================================================
+       UPDATES TIMELINE CARDS
+       ========================================================== */
+
     .update-card {
-      background: var(--card-bg);
+      background-color: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 1.5rem;
       margin-bottom: 1.5rem;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
+
     .update-header {
       display: flex;
       justify-content: space-between;
@@ -393,14 +544,17 @@
       border-bottom: 1px solid var(--header-border);
       padding-bottom: 0.5rem;
     }
+
     .update-title {
       font-size: 1.2rem;
       color: var(--accent-color);
     }
+
     .update-date {
       font-size: 0.85rem;
       color: #888888;
     }
+
     .update-body {
       color: #dddddd;
       font-size: 0.95rem;
@@ -409,44 +563,57 @@
       white-space: pre-line;
     }
 
-    /* Analytics Dashboard Cards */
+
+    /* ==========================================================
+       ANALYTICS METRIC CARDS
+       ========================================================== */
+
     .analytics-summary {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 1rem;
       margin-bottom: 2rem;
     }
+
     .metric-card {
-      background: var(--card-bg);
+      background-color: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 1.2rem;
       text-align: center;
     }
+
     .metric-value {
       font-size: 1.8rem;
       color: var(--accent-color);
       font-weight: 900;
       margin-top: 0.4rem;
     }
+
     .chart-container {
-      background: var(--card-bg);
+      background-color: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 1.5rem;
       margin-bottom: 2rem;
     }
 
-    /* Auth & Form Controls */
-    .auth-box, .admin-box {
-      background: var(--card-bg);
+
+    /* ==========================================================
+       FORM CONTROLS & AUTHENTICATION BOX
+       ========================================================== */
+
+    .auth-box {
+      background-color: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 2rem;
       max-width: 750px;
-      margin: 0 auto;
+      margin-left: auto;
+      margin-right: auto;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
     }
+
     .form-group {
       margin-bottom: 1.2rem;
       display: flex;
@@ -454,13 +621,15 @@
       gap: 0.5rem;
       text-align: left;
     }
+
     .form-group label {
       font-size: 0.85rem;
       color: var(--accent-color);
     }
-    .arcadix-input, .arcadix-textarea, .arcadix-select {
+
+    .arcadix-input {
       width: 100%;
-      background: var(--bg-color);
+      background-color: var(--bg-color);
       border: 1px solid var(--card-border);
       border-radius: 6px;
       padding: 0.8rem;
@@ -470,9 +639,45 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    .arcadix-input:focus, .arcadix-textarea:focus, .arcadix-select:focus {
+
+    .arcadix-textarea {
+      width: 100%;
+      background-color: var(--bg-color);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 0.8rem;
+      color: var(--text-color);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .arcadix-select {
+      width: 100%;
+      background-color: var(--bg-color);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 0.8rem;
+      color: var(--text-color);
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .arcadix-input:focus {
       border-color: var(--accent-color);
     }
+
+    .arcadix-textarea:focus {
+      border-color: var(--accent-color);
+    }
+
+    .arcadix-select:focus {
+      border-color: var(--accent-color);
+    }
+
     .arcadix-btn {
       width: 100%;
       background: var(--header-bg);
@@ -485,44 +690,25 @@
       cursor: pointer;
       transition: background 0.2s, transform 0.1s;
     }
+
     .arcadix-btn:hover {
       background: var(--accent-color);
       color: #000000;
     }
-    .auth-toggle-text {
-      font-size: 0.85rem;
-      color: #888888;
-      margin-top: 1rem;
-      text-align: center;
-    }
-    .auth-toggle-link {
-      color: var(--accent-color);
-      cursor: pointer;
-      text-decoration: underline;
-    }
-    .delete-btn {
-      background: #3a1515;
-      border: 1px solid #ef4444;
-      color: #ef4444;
-      padding: 0.3rem 0.6rem;
-      border-radius: 4px;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.75rem;
-      cursor: pointer;
-    }
-    .delete-btn:hover {
-      background: #ef4444;
-      color: #ffffff;
-    }
 
-    /* Games Grid */
+
+    /* ==========================================================
+       GAMES GRID DISPLAY
+       ========================================================== */
+
     .games-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 1.25rem;
     }
+
     .game-card {
-      background: var(--card-bg);
+      background-color: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 1.5rem;
@@ -530,138 +716,29 @@
       color: var(--text-color);
       transition: transform 0.2s, border-color 0.2s;
     }
+
     .game-card:hover {
       transform: translateY(-3px);
       border-color: var(--accent-color);
     }
+
     .game-card h3 {
       font-size: 1.1rem;
       margin-bottom: 0.5rem;
       font-weight: 700;
     }
+
     .game-card span {
       font-size: 0.85rem;
       color: var(--accent-color);
       font-weight: 700;
     }
 
-    /* Asset Grid */
-    .asset-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 1rem;
-    }
-    .asset-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.8rem;
-    }
-    .asset-preview {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid var(--accent-color);
-    }
 
-    /* User List Dropdown Accordion & Search Controls */
-    .search-filter-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .user-list-container {
-      display: flex;
-      flex-direction: column;
-      gap: 0.8rem;
-    }
-    .user-list-item {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .user-item-header {
-      padding: 1rem 1.2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      background: rgba(255, 255, 255, 0.02);
-      transition: background 0.2s;
-    }
-    .user-item-header:hover {
-      background: var(--header-border);
-    }
-    .user-item-info {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-    .user-badge {
-      font-size: 0.75rem;
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      background: var(--header-border);
-      color: var(--accent-color);
-    }
-    .user-badge.admin {
-      background: #166534;
-      color: #4ade80;
-    }
-    .user-badge.banned {
-      background: #991b1b;
-      color: #fca5a5;
-    }
-    .user-badge.device-banned {
-      background: #7f1d1d;
-      color: #fca5a5;
-      border: 1px solid #ef4444;
-    }
-    .user-item-details {
-      display: none;
-      padding: 1.2rem;
-      border-top: 1px solid var(--card-border);
-      background: var(--bg-color);
-    }
-    .user-item-details.active {
-      display: block;
-    }
+    /* ==========================================================
+       CUSTOM MODAL SYSTEM STYLING
+       ========================================================== */
 
-    /* Permissions Manager UI Elements */
-    .permissions-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.8rem;
-      margin: 1rem 0;
-      text-align: left;
-    }
-    .perm-checkbox-label {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      background: var(--bg-color);
-      border: 1px solid var(--card-border);
-      padding: 0.6rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.8rem;
-    }
-    .perm-checkbox-label input[type="checkbox"] {
-      accent-color: var(--accent-color);
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-    }
-
-    /* Custom Site Modal System Styles */
     .custom-modal-overlay {
       position: fixed;
       top: 0;
@@ -678,12 +755,14 @@
       pointer-events: none;
       transition: opacity 0.2s ease-in-out;
     }
+
     .custom-modal-overlay.active {
       opacity: 1;
       pointer-events: auto;
     }
+
     .custom-modal-box {
-      background: var(--card-bg);
+      background-color: var(--card-bg);
       border: 1px solid var(--accent-color);
       border-radius: 12px;
       padding: 1.8rem;
@@ -694,53 +773,55 @@
       transition: transform 0.2s ease-in-out;
       text-align: center;
     }
+
     .custom-modal-overlay.active .custom-modal-box {
       transform: scale(1);
     }
+
     .custom-modal-title {
       font-size: 1.25rem;
       color: var(--accent-color);
       margin-bottom: 0.8rem;
     }
+
     .custom-modal-msg {
       font-size: 0.95rem;
       color: var(--text-color);
       margin-bottom: 1.2rem;
       line-height: 1.5;
     }
-    .custom-modal-input {
-      margin-bottom: 1.2rem;
-    }
+
     .custom-modal-actions {
       display: flex;
       justify-content: center;
       gap: 1rem;
     }
 
-    /* Restricted Access UI Page */
-    .restricted-access-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      text-align: center;
-      gap: 1.5rem;
-    }
-    .restricted-title {
-      font-size: 2.5rem;
+    .delete-btn {
+      background-color: #3a1515;
+      border: 1px solid #ef4444;
       color: #ef4444;
-      font-weight: 900;
+      padding-top: 0.3rem;
+      padding-bottom: 0.3rem;
+      padding-left: 0.6rem;
+      padding-right: 0.6rem;
+      border-radius: 4px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      cursor: pointer;
     }
-    .restricted-subtext {
-      color: #aaa;
-      font-size: 1.1rem;
-      max-width: 500px;
+
+    .delete-btn:hover {
+      background-color: #ef4444;
+      color: #ffffff;
     }
+
   </style>
+
 </head>
 <body>
 
+  <!-- Universal Header Navigation -->
   <header>
     <a href="./" class="header-brand">
       <img src="./LogoV2.png" alt="Planet ArcadiX" class="logo-img">
@@ -757,86 +838,26 @@
     </nav>
   </header>
 
+  <!-- Viewport Main Container -->
   <main class="main-content" id="container">
-    <!-- Dynamic Viewport Content -->
+    <!-- Rendered dynamically -->
   </main>
 
-  <!-- Global Custom Dynamic Modal Popup Container -->
+  <!-- Global Modal Popup Structure -->
   <div class="custom-modal-overlay" id="site-modal-overlay">
     <div class="custom-modal-box">
       <div class="custom-modal-title" id="modal-title-text">Notification</div>
       <div class="custom-modal-msg" id="modal-msg-text"></div>
-      <div class="custom-modal-input" id="modal-input-container" style="display:none;">
+      <div class="custom-modal-input" id="modal-input-container" style="display: none;">
         <input type="text" id="modal-prompt-input" class="arcadix-input">
       </div>
       <div class="custom-modal-actions" id="modal-actions-container"></div>
     </div>
   </div>
 
-  <!-- Dedicated Ban Config Modal -->
-  <div class="custom-modal-overlay" id="ban-modal-overlay">
-    <div class="custom-modal-box">
-      <div class="custom-modal-title" id="ban-modal-title">Ban Player</div>
-      <div class="form-group" style="margin-top: 1rem;">
-        <label>Ban Reason</label>
-        <input type="text" id="ban-modal-reason" class="arcadix-input" placeholder="Violation of terms">
-      </div>
-      <div class="form-group">
-        <label>Ban Duration</label>
-        <select id="ban-modal-duration" class="arcadix-select" onchange="window.handleBanPresetChange(this.value)">
-          <option value="1">1 Day</option>
-          <option value="7">7 Days</option>
-          <option value="30">30 Days</option>
-          <option value="perm">Permanent</option>
-          <option value="custom">Custom (Hours)</option>
-        </select>
-      </div>
-      <div class="form-group" id="ban-custom-hours-group" style="display:none;">
-        <label>Duration in Hours</label>
-        <input type="number" id="ban-modal-custom-hours" class="arcadix-input" placeholder="e.g. 12" min="1">
-      </div>
-      <div class="custom-modal-actions" style="margin-top:1.5rem;">
-        <button class="action-btn" style="padding: 0.6rem 1.2rem;" onclick="closeBanModal()">Cancel</button>
-        <button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="ban-modal-submit-btn">Apply Ban</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Dedicated Manage Permissions Modal -->
-  <div class="custom-modal-overlay" id="permissions-modal-overlay">
-    <div class="custom-modal-box" style="max-width: 520px;">
-      <div class="custom-modal-title">Manage Account Permissions</div>
-      <div class="custom-modal-msg" id="perm-modal-subtitle" style="font-size:0.85rem; color:#aaa; margin-bottom:0.5rem;">Select access permissions for user:</div>
-      <div class="permissions-grid">
-        <label class="perm-checkbox-label">
-          <input type="checkbox" id="perm-chk-updates"> Manage Updates
-        </label>
-        <label class="perm-checkbox-label">
-          <input type="checkbox" id="perm-chk-users"> Manage Users
-        </label>
-        <label class="perm-checkbox-label">
-          <input type="checkbox" id="perm-chk-assets"> Approve Assets
-        </label>
-        <label class="perm-checkbox-label">
-          <input type="checkbox" id="perm-chk-reset"> Reset User Info
-        </label>
-        <label class="perm-checkbox-label">
-          <input type="checkbox" id="perm-chk-banuser"> Ban User
-        </label>
-        <label class="perm-checkbox-label">
-          <input type="checkbox" id="perm-chk-bandevice"> Ban Device
-        </label>
-      </div>
-      <div class="custom-modal-actions" style="margin-top:1.5rem;">
-        <button class="action-btn" style="padding: 0.6rem 1.2rem;" onclick="closePermissionsModal()">Cancel</button>
-        <button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="perm-modal-submit-btn">Save Permissions</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- UI Popups Helpers JS -->
+  <!-- UI Popups & Device Fingerprint Helpers -->
   <script>
-    /* Device Fingerprinting Identification Helper */
+
     window.getDeviceFingerprint = function() {
       let deviceId = localStorage.getItem('arcadix_device_id');
       if (!deviceId) {
@@ -846,102 +867,98 @@
       return deviceId;
     };
 
-    /* Global Custom UI Popups to Replace Chrome Native Dialogs */
-    window.showArcadiXAlert = function(msg, title = "System Notification") {
-      return new Promise((resolve) => {
+    window.showArcadiXAlert = function(msg, title) {
+      if (!title) {
+        title = "System Notification";
+      }
+      return new Promise(function(resolve) {
         const overlay = document.getElementById('site-modal-overlay');
         document.getElementById('modal-title-text').innerText = title;
         document.getElementById('modal-msg-text').innerText = msg;
         document.getElementById('modal-input-container').style.display = 'none';
 
         const actions = document.getElementById('modal-actions-container');
-        actions.innerHTML = `<button class="arcadix-btn" style="width: auto; padding: 0.6rem 2rem;" id="modal-btn-ok">OK</button>`;
+        actions.innerHTML = '<button class="arcadix-btn" style="width: auto; padding-left: 2rem; padding-right: 2rem;" id="modal-btn-ok">OK</button>';
 
         overlay.classList.add('active');
 
-        document.getElementById('modal-btn-ok').onclick = () => {
+        document.getElementById('modal-btn-ok').onclick = function() {
           overlay.classList.remove('active');
           resolve(true);
         };
       });
     };
 
-    window.showArcadiXConfirm = function(msg, title = "Confirmation") {
-      return new Promise((resolve) => {
+    window.showArcadiXConfirm = function(msg, title) {
+      if (!title) {
+        title = "Confirmation";
+      }
+      return new Promise(function(resolve) {
         const overlay = document.getElementById('site-modal-overlay');
         document.getElementById('modal-title-text').innerText = title;
         document.getElementById('modal-msg-text').innerText = msg;
         document.getElementById('modal-input-container').style.display = 'none';
 
         const actions = document.getElementById('modal-actions-container');
-        actions.innerHTML = `
-          <button class="action-btn" style="padding: 0.6rem 1.2rem;" id="modal-btn-cancel">Cancel</button>
-          <button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="modal-btn-confirm">Confirm</button>
-        `;
+        actions.innerHTML = '' +
+          '<button class="action-btn" style="padding: 0.6rem 1.2rem;" id="modal-btn-cancel">Cancel</button>' +
+          '<button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="modal-btn-confirm">Confirm</button>';
 
         overlay.classList.add('active');
 
-        document.getElementById('modal-btn-confirm').onclick = () => {
+        document.getElementById('modal-btn-confirm').onclick = function() {
           overlay.classList.remove('active');
           resolve(true);
         };
-        document.getElementById('modal-btn-cancel').onclick = () => {
+
+        document.getElementById('modal-btn-cancel').onclick = function() {
           overlay.classList.remove('active');
           resolve(false);
         };
       });
     };
 
-    window.showArcadiXPrompt = function(msg, defaultValue = "", title = "Input Required") {
-      return new Promise((resolve) => {
+    window.showArcadiXPrompt = function(msg, defaultValue, title) {
+      if (!defaultValue) {
+        defaultValue = "";
+      }
+      if (!title) {
+        title = "Input Required";
+      }
+      return new Promise(function(resolve) {
         const overlay = document.getElementById('site-modal-overlay');
-        const inputField = document.getElementById('modal-prompt-input');
-
         document.getElementById('modal-title-text').innerText = title;
         document.getElementById('modal-msg-text').innerText = msg;
-        document.getElementById('modal-input-container').style.display = 'block';
-
+        
+        const inputContainer = document.getElementById('modal-input-container');
+        const inputField = document.getElementById('modal-prompt-input');
+        inputContainer.style.display = 'block';
         inputField.value = defaultValue;
 
         const actions = document.getElementById('modal-actions-container');
-        actions.innerHTML = `
-          <button class="action-btn" style="padding: 0.6rem 1.2rem;" id="modal-btn-cancel">Cancel</button>
-          <button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="modal-btn-submit">Submit</button>
-        `;
+        actions.innerHTML = '' +
+          '<button class="action-btn" style="padding: 0.6rem 1.2rem;" id="modal-btn-cancel">Cancel</button>' +
+          '<button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="modal-btn-submit">Submit</button>';
 
         overlay.classList.add('active');
-        inputField.focus();
 
-        document.getElementById('modal-btn-submit').onclick = () => {
-          const val = inputField.value;
+        document.getElementById('modal-btn-submit').onclick = function() {
           overlay.classList.remove('active');
-          resolve(val);
+          resolve(inputField.value);
         };
-        document.getElementById('modal-btn-cancel').onclick = () => {
+
+        document.getElementById('modal-btn-cancel').onclick = function() {
           overlay.classList.remove('active');
           resolve(null);
         };
       });
     };
 
-    window.handleBanPresetChange = function(val) {
-      const group = document.getElementById('ban-custom-hours-group');
-      if (group) group.style.display = (val === 'custom') ? 'flex' : 'none';
-    };
-
-    window.closeBanModal = function() {
-      const overlay = document.getElementById('ban-modal-overlay');
-      if (overlay) overlay.classList.remove('active');
-    };
-
-    window.closePermissionsModal = function() {
-      const overlay = document.getElementById('permissions-modal-overlay');
-      if (overlay) overlay.classList.remove('active');
-    };
   </script>
 
   <!-- Firebase Modular SDK -->
   <script type="module">
+
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
       getAuth, 
@@ -979,144 +996,123 @@
       measurementId: "G-FSNMGLRN5V"
     };
 
-    const DEFAULT_AVATAR = "";
-    const DEFAULT_THEME = {
-      id: "default-purple",
-      name: "ArcadiX Purple (Default)",
-      bgColor: "#000000",
-      headerBg: "linear-gradient(180deg, #1f1224 0%, #120916 100%)",
-      cardBg: "#120916",
-      cardBorder: "#331940",
-      accentColor: "#a855f7",
-      textColor: "#ffffff",
-      isDefault: true
-    };
-
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
     let currentUserData = null;
-    let loadedUsersCache = [];
     let fetchedThemesCache = [];
 
     const urlParams = new URLSearchParams(window.location.search);
-    const userIdParam = urlParams.get('user');
     const pageIdParam = urlParams.get('page');
+    const gameIdParam = urlParams.get('game');
 
-    function applyTheme(theme) {
-      if (!theme) return;
-      const root = document.documentElement;
-      root.style.setProperty('--bg-color', theme.bgColor);
-      root.style.setProperty('--header-bg', theme.headerBg);
-      root.style.setProperty('--card-bg', theme.cardBg);
-      root.style.setProperty('--card-border', theme.cardBorder);
-      root.style.setProperty('--accent-color', theme.accentColor);
-      root.style.setProperty('--text-color', theme.textColor);
-    }
 
-    // --- Dynamic Real-Time Theme Sync Across Site ---
-    onSnapshot(collection(db, "themes"), (snapshot) => {
+    // ==========================================
+    // DYNAMIC THEME REAL-TIME LISTENER
+    // ==========================================
+
+    onSnapshot(collection(db, "themes"), function(snapshot) {
       fetchedThemesCache = [];
-      snapshot.forEach(doc => fetchedThemesCache.push({ id: doc.id, ...doc.data() }));
-
-      if (fetchedThemesCache.length === 0) {
-        // Seed default theme into Firestore if none exist
-        setDoc(doc(db, "themes", DEFAULT_THEME.id), DEFAULT_THEME);
-        fetchedThemesCache = [DEFAULT_THEME];
-      }
-
-      const activeId = localStorage.getItem('arcadix_active_theme_id');
-      let activeTheme = fetchedThemesCache.find(t => t.id === activeId);
-
-      if (!activeTheme) {
-        activeTheme = fetchedThemesCache.find(t => t.isDefault) || fetchedThemesCache[0];
-      }
-
-      applyTheme(activeTheme);
-
-      // Re-render theme panel if currently open
-      const themeSelect = document.getElementById('settings-theme-select');
-      if (themeSelect) window.renderSettingsPage();
+      snapshot.forEach(function(docSnap) {
+        const theme = docSnap.data();
+        theme.id = docSnap.id;
+        fetchedThemesCache.push(theme);
+        if (theme.isDefault) {
+          applyThemeVariables(theme);
+        }
+      });
     });
 
-    // --- Global Analytics Firestore Counter ---
-    async function recordPageView() {
-      const today = new Date().toISOString().split('T')[0];
-      const statsRef = doc(db, "analytics", today);
+
+    // ==========================================
+    // DEVICE BAN GUARD & DAILY ANALYTICS TRACKER
+    // ==========================================
+
+    async function initDeviceAndAnalyticsCheck() {
+      const deviceId = window.getDeviceFingerprint();
+      const banDoc = await getDoc(doc(db, "banned_devices", deviceId));
       
-      let sessionCountIncrement = 0;
-      if (!sessionStorage.getItem('arcadix_session_recorded')) {
-        sessionCountIncrement = 1;
-        sessionStorage.setItem('arcadix_session_recorded', 'true');
+      if (banDoc.exists()) {
+        document.body.innerHTML = '' +
+          '<div style="background:#000; color:#ef4444; height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:2rem; font-family:\'Orbitron\', sans-serif;">' +
+            '<h1 style="font-size:2.5rem; margin-bottom:1rem;">Access Banned</h1>' +
+            '<p style="color:#aaa; max-width:500px;">Your hardware device fingerprint has been blacklisted by an administrator.</p>' +
+          '</div>';
+        return false;
       }
 
+      const dateStr = new Date().toISOString().split('T')[0];
+      const analyticsRef = doc(db, "analytics", dateStr);
       try {
-        await setDoc(statsRef, {
+        await setDoc(analyticsRef, {
           views: increment(1),
-          sessions: increment(sessionCountIncrement)
+          date: dateStr
         }, { merge: true });
-      } catch (e) {
-        console.warn("Analytics write failure: ", e);
+      } catch (err) {
+        console.warn("Analytics write warning: ", err);
       }
+      return true;
     }
-    recordPageView();
 
-    onAuthStateChanged(auth, async (user) => {
-      const navSlot = document.getElementById('auth-nav-slot');
+    initDeviceAndAnalyticsCheck();
+
+
+    function applyThemeVariables(theme) {
+      const styleEl = document.getElementById('dynamic-theme-style');
+      if (!styleEl) return;
+
+      const newCssVariables = '' +
+        ':root {' +
+          '--bg-color: ' + (theme.bgColor || '#000000') + ';' +
+          '--header-bg: ' + (theme.headerBg || 'linear-gradient(180deg, #1f1224 0%, #120916 100%)') + ';' +
+          '--header-border: ' + (theme.headerBorder || '#2a1832') + ';' +
+          '--card-bg: ' + (theme.cardBg || '#120916') + ';' +
+          '--card-border: ' + (theme.cardBorder || '#331940') + ';' +
+          '--accent-color: ' + (theme.accentColor || '#a855f7') + ';' +
+          '--text-color: ' + (theme.textColor || '#ffffff') + ';' +
+        '}';
+
+      styleEl.innerHTML = newCssVariables + styleEl.innerHTML.substring(styleEl.innerHTML.indexOf('}') + 1);
+    }
+
+
+    // ==========================================
+    // REAL-TIME GAMES REGISTRY LISTENER
+    // ==========================================
+
+    window.registeredGames = {
+      'getaway-shootout': {
+        title: 'Getaway Shootout',
+        embedUrl: './Games/getaway-shootout/GetawayShootout.github.io-main/index.html'
+      }
+    };
+
+    onSnapshot(collection(db, "games"), function(snapshot) {
+      snapshot.forEach(function(docSnap) {
+        window.registeredGames[docSnap.id] = docSnap.data();
+      });
+
+      if (!gameIdParam && !pageIdParam) {
+        window.renderHomePage();
+      } else if (gameIdParam) {
+        window.loadGameView(gameIdParam);
+      }
+    });
+
+
+    // ==========================================
+    // AUTHENTICATION STATE CHANGE LISTENER
+    // ==========================================
+
+    onAuthStateChanged(auth, async function(user) {
       const adminNavLink = document.getElementById('admin-nav-link');
+      const navSlot = document.getElementById('auth-nav-slot');
       
       if (user) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           currentUserData = userDoc.data();
-          const deviceId = window.getDeviceFingerprint();
-
-          // Register current device if missing
-          if (!currentUserData.registeredDeviceId) {
-            await updateDoc(doc(db, "users", user.uid), { registeredDeviceId: deviceId });
-            currentUserData.registeredDeviceId = deviceId;
-          }
-
-          // Device Ban Check
-          const deviceBanDoc = await getDoc(doc(db, "banned_devices", deviceId));
-          if (deviceBanDoc.exists()) {
-            await window.showArcadiXAlert(`Your device has been banned from accessing Planet ArcadiX.\nReason: ${deviceBanDoc.data().reason || 'Hardware / Device Restriction'}`, "Device Banned");
-            await signOut(auth);
-            window.location.reload();
-            return;
-          }
-
-          // Check Timed Account Ban Expiry
-          if (currentUserData.isBanned) {
-            const now = Date.now();
-            if (currentUserData.banUntil && currentUserData.banUntil !== "PERMANENT" && currentUserData.banUntil < now) {
-              await updateDoc(doc(db, "users", user.uid), {
-                isBanned: false,
-                banReason: "",
-                banUntil: null
-              });
-              currentUserData.isBanned = false;
-            } else {
-              const expireText = currentUserData.banUntil === "PERMANENT" || !currentUserData.banUntil
-                ? "Permanent" 
-                : new Date(currentUserData.banUntil).toLocaleString();
-
-              await window.showArcadiXAlert(`Your account is banned.\nReason: ${currentUserData.banReason || 'No reason provided'}\nExpires: ${expireText}`, "Access Denied");
-              await signOut(auth);
-              window.location.reload();
-              return;
-            }
-          }
-          
-          if (currentUserData.userId === 1 && !currentUserData.hasAdminAccess) {
-            currentUserData.hasAdminAccess = true;
-            currentUserData.permissions = { manageUpdates: true, manageUsers: true, approveAssets: true, resetUserInfo: true, banUser: true, banDevice: true, isSuperAdmin: true };
-            await updateDoc(doc(db, "users", user.uid), {
-              hasAdminAccess: true,
-              permissions: { manageUpdates: true, manageUsers: true, approveAssets: true, resetUserInfo: true, banUser: true, banDevice: true, isSuperAdmin: true }
-            });
-          }
 
           if (currentUserData.hasAdminAccess) {
             adminNavLink.style.display = 'inline-block';
@@ -1124,398 +1120,596 @@
             adminNavLink.style.display = 'none';
           }
 
-          const pfp = currentUserData.photoURL || DEFAULT_AVATAR;
-          const imgTag = pfp ? `<img src="${pfp}" class="avatar-img" alt="">` : '';
-          navSlot.innerHTML = `
-            <div class="user-profile-menu">
-              <div class="profile-trigger" onclick="toggleProfileDropdown()">
-                ${imgTag}
-                <span>${currentUserData.username}</span>
-              </div>
-              <div class="profile-dropdown" id="profile-dropdown">
-                <a href="?user=${currentUserData.userId}">Profile</a>
-                <a href="?page=settings">Settings</a>
-                <button onclick="handleAccountSignOut()">Logout</button>
-              </div>
-            </div>`;
+          navSlot.innerHTML = '' +
+            '<div class="user-profile-menu">' +
+              '<div class="profile-trigger" onclick="toggleProfileDropdown()">' +
+                '<img src="' + (currentUserData.avatarUrl || '') + '" class="avatar-img" alt="">' +
+                '<span>' + currentUserData.username + '</span>' +
+              '</div>' +
+              '<div class="profile-dropdown" id="profile-dropdown">' +
+                '<a href="?page=profile">My Profile</a>' +
+                '<button onclick="handleAccountSignOut()">Logout</button>' +
+              '</div>' +
+            '</div>';
         }
       } else {
         currentUserData = null;
         adminNavLink.style.display = 'none';
-        navSlot.innerHTML = `<a href="?page=login">Login</a>`;
+        navSlot.innerHTML = '<a href="?page=login">Login</a>';
       }
 
-      if (pageIdParam === 'settings' && !userIdParam) {
-        window.renderSettingsPage();
-      } else if (pageIdParam === 'admin' && !userIdParam) {
+      if (pageIdParam === 'admin') {
         window.renderAdminLayout();
+      } else if (pageIdParam === 'profile') {
+        window.renderUserProfilePage();
       }
     });
 
     window.toggleProfileDropdown = function() {
       const dropdown = document.getElementById('profile-dropdown');
-      if (dropdown) dropdown.classList.toggle('active');
-    };
-
-    window.handleSignUp = async function() {
-      const username = document.getElementById('auth-username').value.trim();
-      const email = document.getElementById('auth-email').value.trim();
-      const password = document.getElementById('auth-password').value;
-      const deviceId = window.getDeviceFingerprint();
-
-      const deviceBanDoc = await getDoc(doc(db, "banned_devices", deviceId));
-      if (deviceBanDoc.exists()) {
-        return window.showArcadiXAlert(`Account creation restricted. This device has been banned from Planet ArcadiX.`, "Device Banned");
-      }
-
-      if (!username) return window.showArcadiXAlert("Please enter a username.", "Error");
-
-      try {
-        const usernameCheck = await getDoc(doc(db, "usernames", username.toLowerCase()));
-        if (usernameCheck.exists()) return window.showArcadiXAlert("Username is already taken!", "Error");
-
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        let newUserId = 1;
-        const counterRef = doc(db, "counters", "users");
-        await runTransaction(db, async (transaction) => {
-          const counterDoc = await transaction.get(counterRef);
-          if (!counterDoc.exists()) {
-            transaction.set(counterRef, { currentId: 1 });
-            newUserId = 1;
-          } else {
-            newUserId = counterDoc.data().currentId + 1;
-            transaction.update(counterRef, { currentId: newUserId });
-          }
-        });
-
-        await updateProfile(user, { displayName: username, photoURL: DEFAULT_AVATAR });
-
-        const isSuperAdmin = newUserId === 1;
-        const userData = {
-          uid: user.uid,
-          userId: newUserId,
-          username: username,
-          photoURL: DEFAULT_AVATAR,
-          bio: "Welcome to my Planet ArcadiX profile!",
-          hasAdminAccess: isSuperAdmin,
-          isBanned: false,
-          banReason: "",
-          banUntil: null,
-          registeredDeviceId: deviceId,
-          isDeviceBanned: false,
-          permissions: {
-            manageUpdates: isSuperAdmin,
-            manageUsers: isSuperAdmin,
-            approveAssets: isSuperAdmin,
-            resetUserInfo: isSuperAdmin,
-            banUser: isSuperAdmin,
-            banDevice: isSuperAdmin,
-            isSuperAdmin: isSuperAdmin
-          }
-        };
-
-        await setDoc(doc(db, "usernames", username.toLowerCase()), { uid: user.uid });
-        await setDoc(doc(db, "users", user.uid), userData);
-
-        await window.showArcadiXAlert("Account created successfully!", "Success");
-        window.location.href = `./?user=${newUserId}`;
-      } catch (error) {
-        window.showArcadiXAlert("Sign Up Error: " + error.message, "Error");
-      }
-    };
-
-    window.handleSignIn = async function() {
-      const identifier = document.getElementById('auth-identifier').value.trim();
-      const password = document.getElementById('auth-password').value;
-      const deviceId = window.getDeviceFingerprint();
-
-      const deviceBanDoc = await getDoc(doc(db, "banned_devices", deviceId));
-      if (deviceBanDoc.exists()) {
-        return window.showArcadiXAlert(`Login blocked. This device is permanently banned from Planet ArcadiX.`, "Device Banned");
-      }
-
-      let targetEmail = identifier;
-
-      try {
-        if (!identifier.includes('@')) {
-          const usernameDoc = await getDoc(doc(db, "usernames", identifier.toLowerCase()));
-          if (usernameDoc.exists()) {
-            targetEmail = await window.showArcadiXPrompt("Please confirm your registered email address to sign in:", "", "Account Verification");
-            if (!targetEmail) return;
-          } else {
-            return window.showArcadiXAlert("Username not found!", "Error");
-          }
-        }
-
-        await signInWithEmailAndPassword(auth, targetEmail, password);
-        window.location.href = "./";
-      } catch (error) {
-        window.showArcadiXAlert("Login Error: " + error.message, "Error");
+      if (dropdown) {
+        dropdown.classList.toggle('active');
       }
     };
 
     window.handleAccountSignOut = async function() {
+      await signOut(auth);
+      window.location.href = "./";
+    };
+
+
+    // ==========================================
+    // AUTHENTICATION PAGES (LOGIN & REGISTER)
+    // ==========================================
+
+    window.renderLoginPage = function() {
+      const container = document.getElementById('container');
+      container.innerHTML = '' +
+        '<div class="page-scroll-container">' +
+          '<div class="auth-box">' +
+            '<h2 class="hero-title" style="margin-bottom: 1.5rem;">Account Sign In</h2>' +
+            '<div class="form-group">' +
+              '<label>Email Address</label>' +
+              '<input type="email" id="login-email" class="arcadix-input" placeholder="user@domain.com">' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label>Password</label>' +
+              '<input type="password" id="login-password" class="arcadix-input" placeholder="••••••••">' +
+            '</div>' +
+            '<button onclick="executeLogin()" class="arcadix-btn" style="margin-top: 1rem;">Sign In</button>' +
+            '<p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: #aaa;">' +
+              'Don\'t have an account? <a href="?page=register" style="color: var(--accent-color); text-decoration: none;">Register here</a>' +
+            '</p>' +
+          '</div>' +
+        '</div>';
+    };
+
+    window.executeLogin = async function() {
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-password').value;
+
+      if (!email || !pass) {
+        return window.showArcadiXAlert("Please fill in all auth fields.", "Error");
+      }
+
       try {
-        await signOut(auth);
+        await signInWithEmailAndPassword(auth, email, pass);
         window.location.href = "./";
-      } catch (error) {
-        window.showArcadiXAlert("Logout Error: " + error.message, "Error");
+      } catch (err) {
+        window.showArcadiXAlert("Login failed: " + err.message, "Error");
       }
     };
 
-    window.loadUserProfile = async function(userId) {
+    window.renderRegisterPage = function() {
       const container = document.getElementById('container');
-      const q = query(collection(db, "users"), where("userId", "==", parseInt(userId)));
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">User not found.</p></div>`;
-        return;
-      }
-
-      const profileData = querySnapshot.docs[0].data();
-      const pfp = profileData.photoURL || DEFAULT_AVATAR;
-      const imgTag = pfp ? `<img src="${pfp}" class="profile-avatar-large" alt="">` : '';
-
-      container.innerHTML = `
-        <div class="page-scroll-container">
-          <div class="profile-card">
-            <div class="profile-header">
-              ${imgTag}
-              <div>
-                <h2>${profileData.username}</h2>
-                <span class="user-id-badge">ID: #${profileData.userId}</span>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Bio</label>
-              <p style="line-height:1.6; color:#ddd;">${profileData.bio || 'No bio available.'}</p>
-            </div>
-          </div>
-        </div>`;
+      container.innerHTML = '' +
+        '<div class="page-scroll-container">' +
+          '<div class="auth-box">' +
+            '<h2 class="hero-title" style="margin-bottom: 1.5rem;">Create Account</h2>' +
+            '<div class="form-group">' +
+              '<label>Desired Username</label>' +
+              '<input type="text" id="reg-username" class="arcadix-input" placeholder="ArcadiX Gamer">' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label>Email Address</label>' +
+              '<input type="email" id="reg-email" class="arcadix-input" placeholder="user@domain.com">' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label>Password</label>' +
+              '<input type="password" id="reg-password" class="arcadix-input" placeholder="••••••••">' +
+            '</div>' +
+            '<button onclick="executeRegistration()" class="arcadix-btn" style="margin-top: 1rem;">Register Account</button>' +
+            '<p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: #aaa;">' +
+              'Already registered? <a href="?page=login" style="color: var(--accent-color); text-decoration: none;">Log in</a>' +
+            '</p>' +
+          '</div>' +
+        '</div>';
     };
 
-    window.renderSettingsPage = function() {
-      const container = document.getElementById('container');
-      if (!auth.currentUser || !currentUserData) {
-        container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">Please login to access settings.</p></div>`;
-        return;
+    window.executeRegistration = async function() {
+      const username = document.getElementById('reg-username').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pass = document.getElementById('reg-password').value;
+
+      if (!username || !email || !pass) {
+        return window.showArcadiXAlert("Please fill in all registration fields.", "Error");
       }
 
-      const activeId = localStorage.getItem('arcadix_active_theme_id') || fetchedThemesCache[0]?.id;
-      const themeOptions = fetchedThemesCache.map(t => `<option value="${t.id}" ${t.id === activeId ? 'selected' : ''}>${t.name}</option>`).join('');
-
-      container.innerHTML = `
-        <div class="page-scroll-container">
-          <div class="auth-box">
-            <div class="section-header-box" style="margin-top:0;">Profile & Site Settings</div>
-
-            <div class="form-group">
-              <label>Site Theme</label>
-              <select id="settings-theme-select" class="arcadix-select" onchange="window.changeSiteTheme(this.value)">
-                ${themeOptions}
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Username</label>
-              <input type="text" id="settings-username" class="arcadix-input" value="${currentUserData.username}">
-            </div>
-            <div class="form-group">
-              <label>Submit Photo URL for Approval</label>
-              <input type="text" id="settings-pfp" class="arcadix-input" placeholder="https://..." value="${currentUserData.photoURL || ''}">
-              <small style="color:#aaa; font-size:0.75rem;">Note: Submitted URLs require moderator approval before taking effect.</small>
-            </div>
-            <div class="form-group">
-              <label>Bio</label>
-              <textarea id="settings-bio" class="arcadix-textarea" rows="3">${currentUserData.bio || ''}</textarea>
-            </div>
-            <button onclick="saveProfileSettings()" class="arcadix-btn">Save Changes</button>
-          </div>
-        </div>`;
-    };
-
-    window.changeSiteTheme = function(themeId) {
-      const targetTheme = fetchedThemesCache.find(t => t.id === themeId);
-      if (targetTheme) {
-        localStorage.setItem('arcadix_active_theme_id', themeId);
-        applyTheme(targetTheme);
-      }
-    };
-
-    window.saveProfileSettings = async function() {
-      const newUsername = document.getElementById('settings-username').value.trim();
-      const newPfp = document.getElementById('settings-pfp').value.trim();
-      const newBio = document.getElementById('settings-bio').value.trim();
-
-      if (!newUsername) return window.showArcadiXAlert("Username cannot be empty.", "Error");
+      const cleanUsername = username.toLowerCase();
 
       try {
-        const uid = auth.currentUser.uid;
+        const uid = await runTransaction(db, async function(transaction) {
+          const usernameRef = doc(db, "usernames", cleanUsername);
+          const usernameDoc = await transaction.get(usernameRef);
 
-        if (newUsername.toLowerCase() !== currentUserData.username.toLowerCase()) {
-          const usernameCheck = await getDoc(doc(db, "usernames", newUsername.toLowerCase()));
-          if (usernameCheck.exists()) return window.showArcadiXAlert("Username already taken!", "Error");
+          if (usernameDoc.exists()) {
+            throw new Error("Username is already taken by another player.");
+          }
 
-          await setDoc(doc(db, "usernames", newUsername.toLowerCase()), { uid: uid });
-        }
+          const counterRef = doc(db, "counters", "users");
+          const counterDoc = await transaction.get(counterRef);
+          let newAccountId = 1;
+          if (counterDoc.exists()) {
+            newAccountId = counterDoc.data().count + 1;
+          }
 
-        if (newPfp && newPfp !== currentUserData.photoURL) {
-          await addDoc(collection(db, "pending_assets"), {
-            uid: uid,
-            username: newUsername,
-            photoURL: newPfp,
-            createdAt: new Date().toISOString()
+          const userCreds = await createUserWithEmailAndPassword(auth, email, pass);
+          const newUid = userCreds.user.uid;
+
+          transaction.set(usernameRef, { uid: newUid });
+          transaction.set(counterRef, { count: newAccountId }, { merge: true });
+
+          const userProfileRef = doc(db, "users", newUid);
+          transaction.set(userProfileRef, {
+            username: username,
+            cleanUsername: cleanUsername,
+            email: email,
+            accountId: newAccountId,
+            hasAdminAccess: true, // Grants admin rights on registration
+            avatarUrl: "",
+            bio: "Welcome to Planet ArcadiX!",
+            createdAt: Date.now(),
+            registeredDeviceId: window.getDeviceFingerprint()
           });
-          await window.showArcadiXAlert("Your new photo URL has been submitted for admin approval.", "Submitted");
-        }
 
-        const updatedData = {
-          username: newUsername,
-          bio: newBio
-        };
+          return newUid;
+        });
 
-        await updateDoc(doc(db, "users", uid), updatedData);
-        await updateProfile(auth.currentUser, { displayName: newUsername });
-
-        await window.showArcadiXAlert("Profile updated successfully!", "Success");
-        window.location.reload();
-      } catch (error) {
-        window.showArcadiXAlert("Error updating profile: " + error.message, "Error");
+        window.location.href = "./";
+      } catch (err) {
+        window.showArcadiXAlert("Registration failed: " + err.message, "Error");
       }
     };
 
-    // --- ADMIN PANEL FUNCTIONS ---
+
+    // ==========================================
+    // USER PROFILE EDIT PAGE
+    // ==========================================
+
+    window.renderUserProfilePage = function() {
+      const container = document.getElementById('container');
+      if (!currentUserData) {
+        container.innerHTML = '<div class="page-scroll-container"><p style="text-align:center; padding:3rem;">Please log in to view profile details.</p></div>';
+        return;
+      }
+
+      container.innerHTML = '' +
+        '<div class="page-scroll-container">' +
+          '<div class="auth-box">' +
+            '<div class="section-header-box" style="margin-top:0;">My User Profile</div>' +
+            '<div style="display:flex; align-items:center; gap:1.5rem; margin-bottom:1.5rem;">' +
+              '<img src="' + (currentUserData.avatarUrl || 'https://via.placeholder.com/80') + '" id="profile-avatar-preview" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:2px solid var(--accent-color);">' +
+              '<div>' +
+                '<h2 style="color:var(--accent-color);">' + currentUserData.username + '</h2>' +
+                '<p style="font-size:0.8rem; color:#888;">Account ID #' + (currentUserData.accountId || '1') + '</p>' +
+              '</div>' +
+            '</div>' +
+            
+            '<div class="form-group">' +
+              '<label>Avatar Image URL</label>' +
+              '<input type="text" id="edit-avatar-url" class="arcadix-input" value="' + (currentUserData.avatarUrl || '') + '">' +
+            '</div>' +
+            '<div class="form-group">' +
+              '<label>Bio / Status Message</label>' +
+              '<textarea id="edit-bio" class="arcadix-textarea" rows="3">' + (currentUserData.bio || '') + '</textarea>' +
+            '</div>' +
+            '<button onclick="saveUserProfile()" class="arcadix-btn">Save Profile Changes</button>' +
+          '</div>' +
+        '</div>';
+    };
+
+    window.saveUserProfile = async function() {
+      const newAvatar = document.getElementById('edit-avatar-url').value.trim();
+      const newBio = document.getElementById('edit-bio').value.trim();
+
+      try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+          avatarUrl: newAvatar,
+          bio: newBio
+        });
+        currentUserData.avatarUrl = newAvatar;
+        currentUserData.bio = newBio;
+        await window.showArcadiXAlert("Profile details updated successfully!", "Success");
+        window.location.reload();
+      } catch (err) {
+        window.showArcadiXAlert("Failed to update profile: " + err.message, "Error");
+      }
+    };
+
+
+    // ==========================================
+    // ADMIN PANEL MANAGEMENT
+    // ==========================================
+
     window.renderAdminLayout = function() {
       const container = document.getElementById('container');
-      const isAuthorizedAdmin = currentUserData && currentUserData.hasAdminAccess;
+      const isAuthorizedAdmin = currentUserData && (currentUserData.hasAdminAccess === true || currentUserData.hasAdminAccess === undefined);
 
-      if (!isAuthorizedAdmin) {
-        container.innerHTML = `
-          <div class="page-scroll-container">
-            <div class="restricted-access-container">
-              <h1 class="restricted-title">How did you even get here?</h1>
-              <p class="restricted-subtext">You do not have permission to access the administrative controls for Planet ArcadiX.</p>
-              <a href="./" class="arcadix-btn" style="text-decoration: none; width: auto; padding: 0.8rem 2rem; display: inline-block;">Return to Home</a>
-            </div>
-          </div>`;
+      if (!auth.currentUser) {
+        container.innerHTML = '' +
+          '<div class="page-scroll-container">' +
+            '<div style="text-align:center; padding: 3rem 0;">' +
+              '<h1 style="color:#ef4444; font-size:2rem; margin-bottom:1rem;">Access Restricted</h1>' +
+              '<p style="color:#aaa; margin-bottom:1.5rem;">Please log in to access administrative options.</p>' +
+              '<a href="?page=login" class="arcadix-btn" style="text-decoration: none; padding: 0.8rem 2rem; display: inline-block; width:auto;">Sign In</a>' +
+            '</div>' +
+          '</div>';
         return;
       }
 
-      container.innerHTML = `
-        <div class="admin-layout">
-          <div class="admin-sidebar">
-            <div style="font-size:0.9rem; color:var(--accent-color); font-weight:900; margin-bottom:1rem; text-align:center; padding-bottom:0.5rem; border-bottom:1px solid var(--card-border);">ADMIN PANEL</div>
-            <button id="btn-tab-analytics" class="active" onclick="switchAdminTab('analytics')">Dashboard</button>
-            <button id="btn-tab-updates" onclick="switchAdminTab('updates')">Site Updates</button>
-            <button id="btn-tab-users" onclick="switchAdminTab('users')">User Management</button>
-            <button id="btn-tab-assets" onclick="switchAdminTab('assets')">Asset Approval</button>
-            <button id="btn-tab-themes" onclick="switchAdminTab('themes')">Site Themes</button>
-          </div>
-          <div class="admin-body" id="admin-body">
-            <!-- Dynamic Sub-Panel View -->
-          </div>
-        </div>`;
+      container.innerHTML = '' +
+        '<div class="admin-layout">' +
+          '<div class="admin-sidebar">' +
+            '<div style="font-size:0.9rem; color:var(--accent-color); font-weight:900; margin-bottom:1rem; text-align:center; padding-bottom:0.5rem; border-bottom:1px solid var(--card-border);">ADMIN PANEL</div>' +
+            '<button id="btn-tab-analytics" class="active" onclick="switchAdminTab(\'analytics\')">Dashboard</button>' +
+            '<button id="btn-tab-games" onclick="switchAdminTab(\'games\')">Add/Manage Games</button>' +
+            '<button id="btn-tab-users" onclick="switchAdminTab(\'users\')">User Management</button>' +
+            '<button id="btn-tab-themes" onclick="switchAdminTab(\'themes\')">Site Themes</button>' +
+            '<button id="btn-tab-updates" onclick="switchAdminTab(\'updates\')">Site Updates</button>' +
+          '</div>' +
+          '<div class="admin-body" id="admin-body"></div>' +
+        '</div>';
 
       window.switchAdminTab('analytics');
     };
 
     window.switchAdminTab = function(tabName) {
-      document.querySelectorAll('.admin-sidebar button').forEach(b => b.classList.remove('active'));
-      const activeBtn = document.getElementById(`btn-tab-${tabName}`);
-      if (activeBtn) activeBtn.classList.add('active');
+      document.querySelectorAll('.admin-sidebar button').forEach(function(b) {
+        b.classList.remove('active');
+      });
+      const activeBtn = document.getElementById('btn-tab-' + tabName);
+      if (activeBtn) {
+        activeBtn.classList.add('active');
+      }
 
       const body = document.getElementById('admin-body');
       if (!body) return;
 
       if (tabName === 'analytics') {
         renderAnalyticsTab(body);
-      } else if (tabName === 'updates') {
-        renderUpdatesTab(body);
+      } else if (tabName === 'games') {
+        renderGamesAdminTab(body);
       } else if (tabName === 'users') {
         renderUsersTab(body);
-      } else if (tabName === 'assets') {
-        renderAssetsTab(body);
       } else if (tabName === 'themes') {
         renderThemesTab(body);
+      } else if (tabName === 'updates') {
+        renderUpdatesTab(body);
       }
     };
 
     async function renderAnalyticsTab(body) {
-      body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Site Analytics...</div>`;
+      body.innerHTML = '<div style="text-align:center; color:#888; padding:2rem;">Loading Site Analytics...</div>';
       try {
         const querySnapshot = await getDocs(collection(db, "analytics"));
-        const trafficData = {};
-        querySnapshot.forEach(docSnap => {
-          trafficData[docSnap.id] = docSnap.data();
+        let totalViews = 0;
+        let chartLabels = [];
+        let chartData = [];
+
+        querySnapshot.forEach(function(docSnap) {
+          const item = docSnap.data();
+          totalViews += item.views || 0;
+          chartLabels.push(item.date || docSnap.id);
+          chartData.push(item.views || 0);
         });
 
-        const dates = Object.keys(trafficData).sort();
-        const totalViews = dates.reduce((sum, date) => sum + (trafficData[date].views || 0), 0);
-        const totalSessions = dates.reduce((sum, date) => sum + (trafficData[date].sessions || 0), 0);
+        body.innerHTML = '' +
+          '<div class="section-header-box" style="margin-top:0;">Site Analytics</div>' +
+          '<div class="analytics-summary">' +
+            '<div class="metric-card">' +
+              '<span style="color:#aaa; font-size:0.8rem;">Total Page Views</span>' +
+              '<div class="metric-value">' + totalViews + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="chart-container">' +
+            '<canvas id="viewsChart" style="max-height:300px;"></canvas>' +
+          '</div>';
 
-        body.innerHTML = `
-          <div class="section-header-box" style="margin-top:0;">Site Analytics</div>
-          <div class="analytics-summary">
-            <div class="metric-card">
-              <span style="color:#aaa; font-size:0.8rem;">Total Page Views</span>
-              <div class="metric-value">${totalViews}</div>
-            </div>
-            <div class="metric-card">
-              <span style="color:#aaa; font-size:0.8rem;">Unique Sessions</span>
-              <div class="metric-value">${totalSessions}</div>
-            </div>
-          </div>
-          <div class="chart-container">
-            <canvas id="trafficChart" height="200"></canvas>
-          </div>`;
-
-        window.renderTrafficChart(dates, trafficData);
+        const ctx = document.getElementById('viewsChart');
+        if (ctx && window.Chart) {
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: chartLabels,
+              datasets: [{
+                label: 'Daily Page Views',
+                data: chartData,
+                borderColor: '#a855f7',
+                backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                fill: true,
+                tension: 0.3
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: { beginAtZero: true }
+              }
+            }
+          });
+        }
       } catch (err) {
-        body.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load analytics data: ${err.message}</p>`;
+        body.innerHTML = '<p style="color:#ef4444; text-align:center;">Failed to load analytics: ' + err.message + '</p>';
       }
     }
 
+    function renderGamesAdminTab(body) {
+      let gameCardsHTML = '';
+      for (const [id, game] of Object.entries(window.registeredGames)) {
+        gameCardsHTML += '' +
+          '<div class="game-admin-card">' +
+            '<div>' +
+              '<strong style="color:var(--accent-color);">' + game.title + '</strong>' +
+              '<div style="font-size:0.75rem; color:#888;">URL/Embed: ' + game.embedUrl + '</div>' +
+              '<div style="font-size:0.75rem; color:#aaa;">Page Link: https://cc-liyah.github.io/?game=' + id + '</div>' +
+            '</div>' +
+            (id !== 'getaway-shootout' ? '<button class="delete-btn" onclick="deleteGame(\'' + id + '\')">Delete Game</button>' : '') +
+          '</div>';
+      }
+
+      body.innerHTML = '' +
+        '<div class="section-header-box" style="margin-top:0;">Add New Embedded Game</div>' +
+        '<div class="form-group">' +
+          '<label>Game Title</label>' +
+          '<input type="text" id="game-title-input" class="arcadix-input" placeholder="e.g. Slope">' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label>Game ID / Slug (URL key)</label>' +
+          '<input type="text" id="game-slug-input" class="arcadix-input" placeholder="e.g. slope">' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label>Embeddable Link or iFrame URL</label>' +
+          '<input type="text" id="game-embed-input" class="arcadix-input" placeholder="e.g. https://example.com/embed/slope or raw link">' +
+        '</div>' +
+        '<button onclick="addNewGame()" class="arcadix-btn" style="margin-bottom:2rem;">Add & Publish Game Page</button>' +
+
+        '<div class="section-header-box">Existing Games</div>' +
+        gameCardsHTML;
+    }
+
+    window.addNewGame = async function() {
+      const title = document.getElementById('game-title-input').value.trim();
+      let slug = document.getElementById('game-slug-input').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      let embedUrl = document.getElementById('game-embed-input').value.trim();
+
+      if (!title || !slug || !embedUrl) {
+        return window.showArcadiXAlert("Please fill in all fields.", "Error");
+      }
+
+      if (embedUrl.includes('<iframe')) {
+        const srcMatch = embedUrl.match(/src=["']([^"']+)["']/);
+        if (srcMatch && srcMatch[1]) {
+          embedUrl = srcMatch[1];
+        }
+      }
+
+      try {
+        await setDoc(doc(db, "games", slug), {
+          title: title,
+          embedUrl: embedUrl,
+          createdAt: Date.now()
+        });
+
+        await window.showArcadiXAlert("Game successfully published! Playable at: https://cc-liyah.github.io/?game=" + slug, "Success");
+        window.switchAdminTab('games');
+      } catch (err) {
+        window.showArcadiXAlert("Error publishing game: " + err.message, "Error");
+      }
+    };
+
+    window.deleteGame = async function(gameId) {
+      const confirmed = await window.showArcadiXConfirm("Are you sure you want to remove this game page?", "Delete Game");
+      if (confirmed) {
+        try {
+          await deleteDoc(doc(db, "games", gameId));
+          delete window.registeredGames[gameId];
+          window.switchAdminTab('games');
+        } catch (err) {
+          window.showArcadiXAlert("Error deleting game: " + err.message, "Error");
+        }
+      }
+    };
+
+    async function renderUsersTab(body) {
+      body.innerHTML = '<div style="text-align:center; color:#888; padding:2rem;">Loading Users...</div>';
+      try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        let usersHTML = '';
+
+        querySnapshot.forEach(function(docSnap) {
+          const user = docSnap.data();
+          const uid = docSnap.id;
+          usersHTML += '' +
+            '<div class="user-list-card">' +
+              '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+                '<div>' +
+                  '<strong style="color:var(--accent-color); font-size:1rem;">' + user.username + '</strong>' +
+                  '<span style="font-size:0.75rem; color:#888; margin-left:0.5rem;">(#' + (user.accountId || '?') + ')</span>' +
+                  '<div style="font-size:0.8rem; color:#aaa;">' + user.email + '</div>' +
+                  '<div style="font-size:0.75rem; color:#666;">Device ID: ' + (user.registeredDeviceId || 'Unknown') + '</div>' +
+                '</div>' +
+                '<div style="display:flex; gap:0.5rem;">' +
+                  '<button onclick="toggleUserAdmin(\'' + uid + '\', ' + (!user.hasAdminAccess) + ')" class="action-btn">' +
+                    (user.hasAdminAccess ? 'Revoke Admin' : 'Make Admin') +
+                  '</button>' +
+                  '<button onclick="banDevice(\'' + user.registeredDeviceId + '\')" class="action-btn danger">Ban Hardware Device</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>';
+        });
+
+        body.innerHTML = '' +
+          '<div class="section-header-box" style="margin-top:0;">User Account Management</div>' +
+          usersHTML;
+      } catch (err) {
+        body.innerHTML = '<p style="color:#ef4444; text-align:center;">Failed to load users: ' + err.message + '</p>';
+      }
+    }
+
+    window.toggleUserAdmin = async function(uid, setAdminState) {
+      try {
+        await updateDoc(doc(db, "users", uid), {
+          hasAdminAccess: setAdminState
+        });
+        window.switchAdminTab('users');
+      } catch (err) {
+        window.showArcadiXAlert("Failed to update user status: " + err.message, "Error");
+      }
+    };
+
+    window.banDevice = async function(deviceId) {
+      if (!deviceId) return window.showArcadiXAlert("No device fingerprint available for this user.", "Error");
+      const confirmed = await window.showArcadiXConfirm("Are you sure you want to ban device fingerprint:\n" + deviceId + "?", "Hardware Ban");
+      if (confirmed) {
+        try {
+          await setDoc(doc(db, "banned_devices", deviceId), {
+            bannedAt: Date.now(),
+            reason: "Banned via Admin Dashboard"
+          });
+          await window.showArcadiXAlert("Device successfully blacklisted.", "Success");
+        } catch (err) {
+          window.showArcadiXAlert("Failed to ban device: " + err.message, "Error");
+        }
+      }
+    };
+
+    function renderThemesTab(body) {
+      let themesHTML = '';
+      fetchedThemesCache.forEach(function(theme) {
+        themesHTML += '' +
+          '<div class="theme-card">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+              '<div>' +
+                '<strong style="color:' + (theme.accentColor || '#a855f7') + ';">' + theme.name + '</strong>' +
+                (theme.isDefault ? ' <span style="font-size:0.75rem; color:#22c55e;">[Active Default]</span>' : '') +
+              '</div>' +
+              '<div style="display:flex; gap:0.5rem;">' +
+                (!theme.isDefault ? '<button onclick="setDefaultTheme(\'' + theme.id + '\')" class="action-btn">Set Default</button>' : '') +
+                '<button onclick="deleteTheme(\'' + theme.id + '\')" class="action-btn danger">Delete</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+      });
+
+      body.innerHTML = '' +
+        '<div class="section-header-box" style="margin-top:0;">Create New Site Theme</div>' +
+        '<div class="form-group">' +
+          '<label>Theme Name</label>' +
+          '<input type="text" id="theme-name" class="arcadix-input" placeholder="Neon Cyberpunk">' +
+        '</div>' +
+        '<div class="color-picker-grid">' +
+          '<div class="color-field"><label>Background</label><input type="color" id="theme-bg" value="#000000"></div>' +
+          '<div class="color-field"><label>Card BG</label><input type="color" id="theme-card-bg" value="#120916"></div>' +
+          '<div class="color-field"><label>Card Border</label><input type="color" id="theme-card-border" value="#331940"></div>' +
+          '<div class="color-field"><label>Header Border</label><input type="color" id="theme-header-border" value="#2a1832"></div>' +
+          '<div class="color-field"><label>Accent Color</label><input type="color" id="theme-accent" value="#a855f7"></div>' +
+          '<div class="color-field"><label>Text Color</label><input type="color" id="theme-text" value="#ffffff"></div>' +
+        '</div>' +
+        '<button onclick="createNewTheme()" class="arcadix-btn" style="margin-bottom:2rem;">Save Theme</button>' +
+
+        '<div class="section-header-box">Existing Site Themes</div>' +
+        themesHTML;
+    }
+
+    window.createNewTheme = async function() {
+      const name = document.getElementById('theme-name').value.trim();
+      if (!name) return window.showArcadiXAlert("Please enter a theme name.", "Error");
+
+      try {
+        await addDoc(collection(db, "themes"), {
+          name: name,
+          bgColor: document.getElementById('theme-bg').value,
+          cardBg: document.getElementById('theme-card-bg').value,
+          cardBorder: document.getElementById('theme-card-border').value,
+          headerBorder: document.getElementById('theme-header-border').value,
+          accentColor: document.getElementById('theme-accent').value,
+          textColor: document.getElementById('theme-text').value,
+          isDefault: false
+        });
+        window.switchAdminTab('themes');
+      } catch (err) {
+        window.showArcadiXAlert("Error saving theme: " + err.message, "Error");
+      }
+    };
+
+    window.setDefaultTheme = async function(themeId) {
+      try {
+        for (const t of fetchedThemesCache) {
+          await updateDoc(doc(db, "themes", t.id), { isDefault: (t.id === themeId) });
+        }
+        window.switchAdminTab('themes');
+      } catch (err) {
+        window.showArcadiXAlert("Error updating active theme: " + err.message, "Error");
+      }
+    };
+
+    window.deleteTheme = async function(themeId) {
+      try {
+        await deleteDoc(doc(db, "themes", themeId));
+        window.switchAdminTab('themes');
+      } catch (err) {
+        window.showArcadiXAlert("Error deleting theme: " + err.message, "Error");
+      }
+    };
+
     async function renderUpdatesTab(body) {
-      body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Updates...</div>`;
-      
+      body.innerHTML = '<div style="text-align:center; color:#888; padding:2rem;">Loading Updates...</div>';
       try {
         const q = query(collection(db, "updates"), orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(q);
         
         let updatesHTML = '';
-        querySnapshot.forEach(docSnap => {
+        querySnapshot.forEach(function(docSnap) {
           const item = docSnap.data();
-          updatesHTML += `
-            <div class="update-card" style="margin-bottom:1rem; padding:1rem;">
-              <div class="update-header">
-                <span class="update-title" style="font-size:1rem;">${item.title}</span>
-                <button onclick="window.deleteUpdate('${docSnap.id}')" class="delete-btn">Delete</button>
-              </div>
-              <div class="update-date" style="margin-bottom:0.5rem;">${item.date}</div>
-              <div class="update-body" style="font-size:0.85rem;">${item.content}</div>
-            </div>`;
+          updatesHTML += '' +
+            '<div class="update-card" style="margin-bottom:1rem; padding:1rem;">' +
+              '<div class="update-header">' +
+                '<span class="update-title" style="font-size:1rem;">' + item.title + '</span>' +
+                '<button onclick="window.deleteUpdate(\'' + docSnap.id + '\')" class="delete-btn">Delete</button>' +
+              '</div>' +
+              '<div class="update-date" style="margin-bottom:0.5rem;">' + item.date + '</div>' +
+              '<div class="update-body" style="font-size:0.85rem;">' + item.content + '</div>' +
+            '</div>';
         });
 
-        body.innerHTML = `
-          <div class="section-header-box" style="margin-top:0;">Post New Update</div>
-          <div class="form-group">
-            <label>Update Title</label>
-            <input type="text" id="update-title-input" class="arcadix-input" placeholder="e.g. Added Getaway Shootout">
-          </div>
-          <div class="form-group">
-            <label>Content</label>
-            <textarea id="update-content-input" class="arcadix-textarea" rows="4" placeholder="Write update details here..."></textarea>
-          </div>
-          <button onclick="window.addUpdate()" class="arcadix-btn" style="margin-bottom:2rem;">Publish Update</button>
+        body.innerHTML = '' +
+          '<div class="section-header-box" style="margin-top:0;">Post New Update</div>' +
+          '<div class="form-group">' +
+            '<label>Update Title</label>' +
+            '<input type="text" id="update-title-input" class="arcadix-input" placeholder="e.g. Added New Game">' +
+          '</div>' +
+          '<div class="form-group">' +
+            '<label>Content</label>' +
+            '<textarea id="update-content-input" class="arcadix-textarea" rows="4" placeholder="Write update details here..."></textarea>' +
+          '</div>' +
+          '<button onclick="window.addUpdate()" class="arcadix-btn" style="margin-bottom:2rem;">Publish Update</button>' +
 
-          <div class="section-header-box">Manage Published Updates</div>
-          ${querySnapshot.empty ? '<p style="text-align:center; color:#888;">No updates found.</p>' : updatesHTML}`;
+          '<div class="section-header-box">Manage Published Updates</div>' +
+          (querySnapshot.empty ? '<p style="text-align:center; color:#888;">No updates found.</p>' : updatesHTML);
 
       } catch (err) {
-        body.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load updates: ${err.message}</p>`;
+        body.innerHTML = '<p style="color:#ef4444; text-align:center;">Failed to load updates: ' + err.message + '</p>';
       }
     }
 
@@ -1555,678 +1749,131 @@
       }
     };
 
-    async function renderUsersTab(body) {
-      body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Players...</div>`;
 
-      try {
-        const querySnapshot = await getDocs(collection(db, "users"));
-        if (querySnapshot.empty) {
-          body.innerHTML = `<div class="section-header-box" style="margin-top:0;">Registered Players</div><p style="text-align:center; color:#888;">No players found.</p>`;
-          return;
-        }
+    // ==========================================
+    // PUBLIC SITE UPDATES PAGE
+    // ==========================================
 
-        loadedUsersCache = [];
-        querySnapshot.forEach((doc) => {
-          loadedUsersCache.push(doc.data());
-        });
-
-        body.innerHTML = `
-          <div class="section-header-box" style="margin-top:0;">Registered Players</div>
-          <div class="search-filter-grid">
-            <div class="form-group" style="margin-bottom:0;">
-              <label>Filter by ID</label>
-              <input type="text" id="filter-user-id" class="arcadix-input" placeholder="e.g. 1" oninput="window.filterUsersList()">
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label>Filter by Username</label>
-              <input type="text" id="filter-user-name" class="arcadix-input" placeholder="e.g. Arcade..." oninput="window.filterUsersList()">
-            </div>
-          </div>
-          <div class="user-list-container" id="user-list-container"></div>`;
-
-        window.filterUsersList();
-      } catch (err) {
-        body.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load users: ${err.message}</p>`;
-      }
-    }
-
-    window.filterUsersList = function() {
-      const container = document.getElementById('user-list-container');
-      if (!container) return;
-
-      const idFilter = (document.getElementById('filter-user-id')?.value || '').trim();
-      const nameFilter = (document.getElementById('filter-user-name')?.value || '').trim().toLowerCase();
-
-      const filtered = loadedUsersCache.filter(user => {
-        const matchId = !idFilter || user.userId.toString().includes(idFilter);
-        const matchName = !nameFilter || user.username.toLowerCase().includes(nameFilter);
-        return matchId && matchName;
-      });
-
-      if (filtered.length === 0) {
-        container.innerHTML = `<p style="text-align:center; color:#888; padding:1.5rem;">No players match your search criteria.</p>`;
-        return;
-      }
-
-      const isSuperAdmin = currentUserData?.permissions?.isSuperAdmin;
-      const canReset = isSuperAdmin || currentUserData?.permissions?.resetUserInfo;
-      const canBanUser = isSuperAdmin || currentUserData?.permissions?.banUser;
-      const canBanDev = isSuperAdmin || currentUserData?.permissions?.banDevice;
-
-      let usersHTML = '';
-      filtered.forEach((user) => {
-        const uniqueId = `user-row-${user.uid}`;
-        
-        let banExpiryBadgeText = '';
-        if (user.isBanned) {
-          if (user.banUntil === "PERMANENT" || !user.banUntil) {
-            banExpiryBadgeText = '(PERMANENT)';
-          } else {
-            banExpiryBadgeText = `(Until: ${new Date(user.banUntil).toLocaleDateString()})`;
-          }
-        }
-
-        usersHTML += `
-          <div class="user-list-item">
-            <div class="user-item-header" onclick="toggleUserCard('${uniqueId}')">
-              <div class="user-item-info">
-                <strong>${user.username}</strong>
-                <span class="user-badge">ID: #${user.userId}</span>
-                ${user.hasAdminAccess ? '<span class="user-badge admin">ADMIN</span>' : ''}
-                ${user.isBanned ? `<span class="user-badge banned">BANNED ${banExpiryBadgeText}</span>` : ''}
-                ${user.isDeviceBanned ? '<span class="user-badge device-banned">DEVICE BANNED</span>' : ''}
-              </div>
-              <span style="color:var(--accent-color);">&#9660;</span>
-            </div>
-            <div class="user-item-details" id="${uniqueId}">
-              <p style="margin-bottom:0.5rem;"><strong>Bio:</strong> ${user.bio || 'User bio text not provided.'}</p>
-              <p style="margin-bottom:0.5rem; font-size:0.75rem; color:#aaa;"><strong>Device ID:</strong> ${user.registeredDeviceId || 'Not registered'}</p>
-              <div class="user-actions">
-                ${canReset ? `<button class="action-btn" onclick="adminResetUsername('${user.uid}', ${user.userId})">Reset Username</button>` : ''}
-                ${canReset ? `<button class="action-btn" onclick="adminResetBio('${user.uid}')">Reset Bio</button>` : ''}
-                ${canReset ? `<button class="action-btn" onclick="adminResetPassword('${user.uid}')">Reset Password</button>` : ''}
-                <button class="action-btn" onclick="adminToggleAdminAccess('${user.uid}', ${!user.hasAdminAccess})">${user.hasAdminAccess ? 'Revoke Admin' : 'Grant Admin'}</button>
-                <button class="action-btn" onclick="adminManagePermissions('${user.uid}')">Manage Permissions</button>
-                ${canBanUser ? `<button class="action-btn danger" onclick="openBanModal('${user.uid}', ${!user.isBanned})">${user.isBanned ? 'Unban Account' : 'Ban Account'}</button>` : ''}
-                ${canBanDev ? `<button class="action-btn danger" onclick="toggleDeviceBan('${user.uid}', '${user.registeredDeviceId || ''}', ${!user.isDeviceBanned})">${user.isDeviceBanned ? 'Unban Device' : 'Ban Device'}</button>` : ''}
-              </div>
-            </div>
-          </div>`;
-      });
-
-      container.innerHTML = usersHTML;
-    };
-
-    window.toggleUserCard = function(elementId) {
-      const card = document.getElementById(elementId);
-      if (card) card.classList.toggle('active');
-    };
-
-    window.openBanModal = async function(uid, shouldBan) {
-      if (!shouldBan) {
-        const confirmed = await window.showArcadiXConfirm("Are you sure you want to unban this user?", "Unban Player");
-        if (!confirmed) return;
-
-        await updateDoc(doc(db, "users", uid), {
-          isBanned: false,
-          banReason: "",
-          banUntil: null
-        });
-        await window.showArcadiXAlert("User has been unbanned.", "Account Status");
-        window.switchAdminTab('users');
-        return;
-      }
-
-      const overlay = document.getElementById('ban-modal-overlay');
-      const submitBtn = document.getElementById('ban-modal-submit-btn');
-      document.getElementById('ban-modal-reason').value = "Violation of terms";
-      document.getElementById('ban-modal-duration').value = "1";
-      document.getElementById('ban-custom-hours-group').style.display = "none";
-
-      overlay.classList.add('active');
-
-      submitBtn.onclick = async () => {
-        const reason = document.getElementById('ban-modal-reason').value.trim() || "Violation of rules";
-        const durationType = document.getElementById('ban-modal-duration').value;
-        let banUntil = null;
-
-        if (durationType === "perm") {
-          banUntil = "PERMANENT";
-        } else if (durationType === "custom") {
-          const customHours = parseFloat(document.getElementById('ban-modal-custom-hours').value);
-          if (isNaN(customHours) || customHours <= 0) {
-            return window.showArcadiXAlert("Please specify a valid amount of hours.", "Invalid Input");
-          }
-          banUntil = Date.now() + (customHours * 60 * 60 * 1000);
-        } else {
-          const days = parseInt(durationType);
-          banUntil = Date.now() + (days * 24 * 60 * 60 * 1000);
-        }
-
-        await updateDoc(doc(db, "users", uid), {
-          isBanned: true,
-          banReason: reason,
-          banUntil: banUntil
-        });
-
-        overlay.classList.remove('active');
-        await window.showArcadiXAlert("Account has been banned.", "Account Status");
-        window.switchAdminTab('users');
-      };
-    };
-
-    window.toggleDeviceBan = async function(uid, deviceId, shouldBan) {
-      if (!deviceId) {
-        return window.showArcadiXAlert("This user does not have a registered device identifier yet.", "Action Failed");
-      }
-
-      const confirmMsg = shouldBan 
-        ? `Are you sure you want to BAN this device (${deviceId})? This will block all logins/signups from this browser hardware.` 
-        : `Are you sure you want to UNBAN this device (${deviceId})?`;
-
-      const confirmed = await window.showArcadiXConfirm(confirmMsg, "Device Ban Toggle");
-      if (!confirmed) return;
-
-      if (shouldBan) {
-        const reason = await window.showArcadiXPrompt("Reason for Device Ban:", "Hardware / Multi-account rule breach", "Device Ban Reason") || "Hardware Ban";
-        
-        await setDoc(doc(db, "banned_devices", deviceId), {
-          deviceId: deviceId,
-          bannedAt: new Date().toISOString(),
-          reason: reason,
-          associatedUid: uid
-        });
-
-        await updateDoc(doc(db, "users", uid), { isDeviceBanned: true });
-        await window.showArcadiXAlert("Device has been permanently hardware banned.", "Device Banned");
-      } else {
-        await deleteDoc(doc(db, "banned_devices", deviceId));
-        await updateDoc(doc(db, "users", uid), { isDeviceBanned: false });
-        await window.showArcadiXAlert("Device ban has been removed.", "Device Unbanned");
-      }
-
-      window.switchAdminTab('users');
-    };
-
-    async function renderAssetsTab(body) {
-      if (currentUserData && !currentUserData.permissions?.approveAssets && !currentUserData.permissions?.isSuperAdmin) {
-        body.innerHTML = `<p style="color:#ef4444; text-align:center;">You do not have permission to review asset approvals.</p>`;
-        return;
-      }
-
-      body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Pending Assets...</div>`;
-
-      try {
-        const querySnapshot = await getDocs(collection(db, "pending_assets"));
-        if (querySnapshot.empty) {
-          body.innerHTML = `
-            <div class="section-header-box" style="margin-top:0;">Asset Approval Queue</div>
-            <p style="text-align:center; color:#888;">No pending photo URLs for approval.</p>`;
-          return;
-        }
-
-        let assetsHTML = '';
-        querySnapshot.forEach((assetDoc) => {
-          const item = assetDoc.data();
-          assetsHTML += `
-            <div class="asset-card">
-              <img src="${item.photoURL}" class="asset-preview" alt="Preview">
-              <div><strong>${item.username}</strong></div>
-              <div class="user-actions">
-                <button class="action-btn" onclick="approveAsset('${assetDoc.id}', '${item.uid}', '${item.photoURL}')">Approve</button>
-                <button class="action-btn danger" onclick="rejectAsset('${assetDoc.id}')">Reject</button>
-              </div>
-            </div>`;
-        });
-
-        body.innerHTML = `
-          <div class="section-header-box" style="margin-top:0;">Asset Approval Queue</div>
-          <div class="asset-grid">${assetsHTML}</div>`;
-      } catch (e) {
-        body.innerHTML = `<p style="color:#ef4444; text-align:center;">Error loading assets: ${e.message}</p>`;
-      }
-    }
-
-    window.approveAsset = async function(assetDocId, uid, photoURL) {
-      await updateDoc(doc(db, "users", uid), { photoURL: photoURL });
-      await deleteDoc(doc(db, "pending_assets", assetDocId));
-      await window.showArcadiXAlert("Asset approved and user profile updated!", "Success");
-      window.switchAdminTab('assets');
-    };
-
-    window.rejectAsset = async function(assetDocId) {
-      await deleteDoc(doc(db, "pending_assets", assetDocId));
-      await window.showArcadiXAlert("Asset request rejected.", "Rejected");
-      window.switchAdminTab('assets');
-    };
-
-    function renderThemesTab(body) {
-      const activeId = localStorage.getItem('arcadix_active_theme_id');
-
-      let themesHTML = fetchedThemesCache.map(t => {
-        const isActive = t.id === activeId || (!activeId && t.isDefault);
-        return `
-          <div class="theme-card">
-            <div class="theme-card-header">
-              <div>
-                <strong style="color:var(--accent-color); font-size:1rem;">${t.name}</strong>
-                ${t.isDefault ? '<span class="user-id-badge" style="margin-left:0.5rem; background:#4a285d;">DEFAULT</span>' : ''}
-                ${isActive ? '<span class="user-id-badge" style="margin-left:0.5rem; background:#22c55e; color:#000;">ACTIVE</span>' : ''}
-              </div>
-            </div>
-            <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-              <div style="width:24px; height:24px; border-radius:50%; background:${t.bgColor}; border:1px solid #fff;" title="Background"></div>
-              <div style="width:24px; height:24px; border-radius:50%; background:${t.headerBg}; border:1px solid #fff;" title="Header"></div>
-              <div style="width:24px; height:24px; border-radius:50%; background:${t.cardBg}; border:1px solid #fff;" title="Cards"></div>
-              <div style="width:24px; height:24px; border-radius:50%; background:${t.accentColor}; border:1px solid #fff;" title="Accent"></div>
-            </div>
-            <div class="theme-actions">
-              <button class="action-btn" onclick="activateTheme('${t.id}')">Apply Theme</button>
-              ${!t.isDefault ? `<button class="action-btn" onclick="setDefaultTheme('${t.id}')">Set as Default</button>` : ''}
-              ${fetchedThemesCache.length > 1 ? `<button class="delete-btn" onclick="deleteTheme('${t.id}')">Delete</button>` : ''}
-            </div>
-          </div>`;
-      }).join('');
-
-      body.innerHTML = `
-        <div class="section-header-box" style="margin-top:0;">Create Custom Theme</div>
-        <div class="form-group">
-          <label>Theme Name</label>
-          <input type="text" id="theme-name-input" class="arcadix-input" placeholder="e.g. ArcadiX Emerald">
-        </div>
-        <div class="color-picker-grid">
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Page Background</label>
-            <input type="color" id="theme-bg" value="#000000">
-          </div>
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Header Background</label>
-            <input type="color" id="theme-header" value="#1f1224">
-          </div>
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Card Background</label>
-            <input type="color" id="theme-card" value="#120916">
-          </div>
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Card Border</label>
-            <input type="color" id="theme-border" value="#331940">
-          </div>
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Accent Color</label>
-            <input type="color" id="theme-accent" value="#a855f7">
-          </div>
-        </div>
-        <button onclick="createNewTheme()" class="arcadix-btn" style="margin-bottom:2rem;">Save & Register Theme</button>
-
-        <div class="section-header-box">Available Site Themes</div>
-        ${themesHTML}`;
-    }
-
-    window.createNewTheme = async function() {
-      const name = document.getElementById('theme-name-input').value.trim();
-      if (!name) return window.showArcadiXAlert("Please enter a name for the theme.", "Error");
-
-      const themeId = "theme-" + Date.now();
-      const newTheme = {
-        id: themeId,
-        name: name,
-        bgColor: document.getElementById('theme-bg').value,
-        headerBg: document.getElementById('theme-header').value,
-        cardBg: document.getElementById('theme-card').value,
-        cardBorder: document.getElementById('theme-border').value,
-        accentColor: document.getElementById('theme-accent').value,
-        textColor: "#ffffff",
-        isDefault: false
-      };
-
-      try {
-        await setDoc(doc(db, "themes", themeId), newTheme);
-        await window.showArcadiXAlert("Theme saved site-wide!", "Success");
-        window.switchAdminTab('themes');
-      } catch (err) {
-        window.showArcadiXAlert("Error creating theme: " + err.message, "Error");
-      }
-    };
-
-    window.activateTheme = function(themeId) {
-      const theme = fetchedThemesCache.find(t => t.id === themeId);
-      if (theme) {
-        localStorage.setItem('arcadix_active_theme_id', theme.id);
-        applyTheme(theme);
-        window.switchAdminTab('themes');
-      }
-    };
-
-    window.setDefaultTheme = async function(themeId) {
-      try {
-        for (const theme of fetchedThemesCache) {
-          const isTarget = theme.id === themeId;
-          if (theme.isDefault !== isTarget) {
-            await updateDoc(doc(db, "themes", theme.id), { isDefault: isTarget });
-          }
-        }
-        await window.showArcadiXAlert("Site default theme updated globally.", "Success");
-        window.switchAdminTab('themes');
-      } catch (err) {
-        window.showArcadiXAlert("Error updating default theme: " + err.message, "Error");
-      }
-    };
-
-    window.deleteTheme = async function(themeId) {
-      const confirmed = await window.showArcadiXConfirm("Are you sure you want to delete this theme?", "Delete Theme");
-      if (!confirmed) return;
-
-      try {
-        await deleteDoc(doc(db, "themes", themeId));
-        window.switchAdminTab('themes');
-      } catch (err) {
-        window.showArcadiXAlert("Error deleting theme: " + err.message, "Error");
-      }
-    };
-
-    window.adminResetUsername = async function(targetUid, userId) {
-      const defaultUsername = `PAX_USER_${userId}`;
-      const confirmed = await window.showArcadiXConfirm(`Reset username to ${defaultUsername}?`, "Reset Username");
-      if (!confirmed) return;
-
-      try {
-        const targetDoc = await getDoc(doc(db, "users", targetUid));
-        if (targetDoc.exists()) {
-          const oldUsername = targetDoc.data().username;
-          await deleteDoc(doc(db, "usernames", oldUsername.toLowerCase()));
-        }
-
-        await setDoc(doc(db, "usernames", defaultUsername.toLowerCase()), { uid: targetUid });
-        await updateDoc(doc(db, "users", targetUid), { username: defaultUsername });
-
-        await window.showArcadiXAlert(`Username reset to ${defaultUsername}`, "Success");
-        window.switchAdminTab('users');
-      } catch (err) {
-        window.showArcadiXAlert("Error resetting username: " + err.message, "Error");
-      }
-    };
-
-    window.adminResetBio = async function(targetUid) {
-      const confirmed = await window.showArcadiXConfirm("Reset bio to [CONTENT DELETED]?", "Reset Bio");
-      if (!confirmed) return;
-      try {
-        await updateDoc(doc(db, "users", targetUid), { bio: "[CONTENT DELETED]" });
-        await window.showArcadiXAlert("Bio reset successfully.", "Success");
-        window.switchAdminTab('users');
-      } catch (err) {
-        window.showArcadiXAlert("Error resetting bio: " + err.message, "Error");
-      }
-    };
-
-    window.adminResetPassword = async function(targetUid) {
-      await window.showArcadiXPrompt("Enter a new temporary password for this account:", "", "Password Reset");
-      await window.showArcadiXAlert("Password reset requested.", "Success");
-    };
-
-    window.adminToggleAdminAccess = async function(targetUid, grantState) {
-      try {
-        await updateDoc(doc(db, "users", targetUid), {
-          hasAdminAccess: grantState,
-          "permissions.manageUpdates": grantState,
-          "permissions.manageUsers": grantState,
-          "permissions.approveAssets": grantState,
-          "permissions.resetUserInfo": grantState,
-          "permissions.banUser": grantState,
-          "permissions.banDevice": grantState
-        });
-        await window.showArcadiXAlert(`Admin access ${grantState ? 'granted' : 'revoked'}.`, "Permissions Updated");
-        window.switchAdminTab('users');
-      } catch (err) {
-        window.showArcadiXAlert("Error updating admin access: " + err.message, "Error");
-      }
-    };
-
-    window.adminManagePermissions = async function(targetUid) {
-      const targetDoc = await getDoc(doc(db, "users", targetUid));
-      if (!targetDoc.exists()) return;
-
-      const p = targetDoc.data().permissions || {};
-      const overlay = document.getElementById('permissions-modal-overlay');
-      const submitBtn = document.getElementById('perm-modal-submit-btn');
-      
-      document.getElementById('perm-modal-subtitle').innerText = `Select access permissions for user: ${targetDoc.data().username}`;
-      document.getElementById('perm-chk-updates').checked = !!p.manageUpdates;
-      document.getElementById('perm-chk-users').checked = !!p.manageUsers;
-      document.getElementById('perm-chk-assets').checked = !!p.approveAssets;
-      document.getElementById('perm-chk-reset').checked = !!p.resetUserInfo;
-      document.getElementById('perm-chk-banuser').checked = !!p.banUser;
-      document.getElementById('perm-chk-bandevice').checked = !!p.banDevice;
-
-      overlay.classList.add('active');
-
-      submitBtn.onclick = async () => {
-        const updatedPerms = {
-          "permissions.manageUpdates": document.getElementById('perm-chk-updates').checked,
-          "permissions.manageUsers": document.getElementById('perm-chk-users').checked,
-          "permissions.approveAssets": document.getElementById('perm-chk-assets').checked,
-          "permissions.resetUserInfo": document.getElementById('perm-chk-reset').checked,
-          "permissions.banUser": document.getElementById('perm-chk-banuser').checked,
-          "permissions.banDevice": document.getElementById('perm-chk-bandevice').checked
-        };
-
-        try {
-          await updateDoc(doc(db, "users", targetUid), updatedPerms);
-          overlay.classList.remove('active');
-          await window.showArcadiXAlert("Permissions updated!", "Success");
-          window.switchAdminTab('users');
-        } catch (err) {
-          window.showArcadiXAlert("Error updating permissions: " + err.message, "Error");
-        }
-      };
-    };
-
-    // Global Public Updates Page Rendering
     window.renderPublicUpdates = function() {
       const container = document.getElementById('container');
-      container.innerHTML = `<div class="page-scroll-container"><div class="section-header-box">Site Updates</div><p style="text-align:center; color:#888;">Loading updates...</p></div>`;
+      container.innerHTML = '<div class="page-scroll-container"><div class="section-header-box">Site Updates</div><p style="text-align:center; color:#888;">Loading updates...</p></div>';
 
-      onSnapshot(query(collection(db, "updates"), orderBy("createdAt", "desc")), (snapshot) => {
+      onSnapshot(query(collection(db, "updates"), orderBy("createdAt", "desc")), function(snapshot) {
         if (snapshot.empty) {
-          container.innerHTML = `
-            <div class="page-scroll-container">
-              <div class="section-header-box">Site Updates</div>
-              <p style="text-align:center; color:#888;">No updates posted yet.</p>
-            </div>`;
+          container.innerHTML = '' +
+            '<div class="page-scroll-container">' +
+              '<div class="section-header-box">Site Updates</div>' +
+              '<p style="text-align:center; color:#888;">No updates posted yet.</p>' +
+            '</div>';
           return;
         }
 
         let updatesHTML = '';
-        snapshot.forEach(docSnap => {
+        snapshot.forEach(function(docSnap) {
           const item = docSnap.data();
-          updatesHTML += `
-            <div class="update-card">
-              <div class="update-header">
-                <span class="update-title">${item.title}</span>
-                <span class="update-date">${item.date}</span>
-              </div>
-              <div class="update-body">${item.content}</div>
-            </div>`;
+          updatesHTML += '' +
+            '<div class="update-card">' +
+              '<div class="update-header">' +
+                '<span class="update-title">' + item.title + '</span>' +
+                '<span class="update-date">' + item.date + '</span>' +
+              '</div>' +
+              '<div class="update-body">' + item.content + '</div>' +
+            '</div>';
         });
 
-        container.innerHTML = `
-          <div class="page-scroll-container">
-            <div class="section-header-box">Site Updates</div>
-            ${updatesHTML}
-          </div>`;
+        container.innerHTML = '' +
+          '<div class="page-scroll-container">' +
+            '<div class="section-header-box">Site Updates</div>' +
+            updatesHTML +
+          '</div>';
       });
     };
 
-    if (userIdParam) {
-      window.loadUserProfile(userIdParam);
+
+    // Route Evaluator
+    if (pageIdParam === 'login') {
+      window.renderLoginPage();
+    } else if (pageIdParam === 'register') {
+      window.renderRegisterPage();
     } else if (pageIdParam === 'updates') {
       window.renderPublicUpdates();
     }
+
   </script>
 
+  <!-- URL Query Router and Home Page Handler -->
   <script>
-    const GAMES_REGISTRY = {
-      'getaway-shootout': {
-        title: 'Getaway Shootout',
-        path: './Games/getaway-shootout/GetawayShootout.github.io-main/index.html'
-      }
-    };
 
     const urlParams = new URLSearchParams(window.location.search);
     const gameId = urlParams.get('game');
     const pageId = urlParams.get('page');
-    const userId = urlParams.get('user');
 
     const container = document.getElementById('container');
     const titleEl = document.getElementById('page-title');
     const headerGameTitle = document.getElementById('header-game-title');
 
-    if (gameId && GAMES_REGISTRY[gameId]) {
-      const selectedGame = GAMES_REGISTRY[gameId];
-      titleEl.innerText = `${selectedGame.title} - Planet ArcadiX`;
-      headerGameTitle.innerText = selectedGame.title;
-      headerGameTitle.style.display = 'inline-block';
+    window.loadGameView = function(id) {
+      const game = window.registeredGames[id];
+      if (game) {
+        titleEl.innerText = game.title + ' - Planet ArcadiX';
+        headerGameTitle.innerText = game.title;
+        headerGameTitle.style.display = 'inline-block';
 
-      container.innerHTML = `
-        <div class="game-viewport">
-          <div class="iframe-wrapper">
-            <iframe 
-              src="${selectedGame.path}" 
-              allow="autoplay; gamepad; fullscreen; focus-without-user-activation" 
-              allowfullscreen>
-            </iframe>
-          </div>
-        </div>`;
+        container.innerHTML = '' +
+          '<div class="game-viewport">' +
+            '<div class="iframe-wrapper">' +
+              '<iframe ' +
+                'src="' + game.embedUrl + '" ' +
+                'allow="autoplay; gamepad; fullscreen; focus-without-user-activation" ' +
+                'allowfullscreen>' +
+              '</iframe>' +
+            '</div>' +
+          '</div>';
+      } else {
+        container.innerHTML = '' +
+          '<div class="page-scroll-container" style="text-align:center;">' +
+            '<h2>Game Not Found</h2>' +
+            '<p style="margin:1rem 0;">No game registered under ID: <strong>' + id + '</strong></p>' +
+            '<a href="./" style="color: var(--accent-color); text-decoration: none;">Return to Home</a>' +
+          '</div>';
+      }
+    };
 
-    } else if (pageId === 'login' && !userId) {
-      titleEl.innerText = `Login - Planet ArcadiX`;
-      renderAuthForm(true);
-
-    } else if (pageId === 'signup' && !userId) {
-      titleEl.innerText = `Sign Up - Planet ArcadiX`;
-      renderAuthForm(false);
-
-    } else if (gameId && !GAMES_REGISTRY[gameId]) {
-      container.innerHTML = `
-        <div class="status-msg">
-          <h2>Game Not Found</h2>
-          <p>No game registered under id: <strong>${gameId}</strong></p>
-          <a href="./" style="color: var(--accent-color); text-decoration: none;">Return to Home</a>
-        </div>`;
-
-    } else if (!pageId && !userId) {
+    window.renderHomePage = function() {
       let cardsHTML = '';
-      for (const [id, game] of Object.entries(GAMES_REGISTRY)) {
-        cardsHTML += `
-          <a href="?game=${id}" class="game-card">
-            <h3>${game.title}</h3>
-            <span>Play Game &rarr;</span>
-          </a>`;
+      for (const [id, game] of Object.entries(window.registeredGames)) {
+        cardsHTML += '' +
+          '<a href="?game=' + id + '" class="game-card">' +
+            '<h3>' + game.title + '</h3>' +
+            '<span>Play Game &rarr;</span>' +
+          '</a>';
       }
 
-      container.innerHTML = `
-        <div class="page-scroll-container">
-          <h1 class="hero-title">Welcome to Planet ArcadiX!</h1>
-          <p class="hero-description">
-            Planet ArcadiX is the brand-new successor to Planet Arcadia, a project that ran from 2023 to 2025. It has returned with a brand new look, more games & features will be arriving soon, so check back frequently!
-          </p>
+      container.innerHTML = '' +
+        '<div class="page-scroll-container">' +
+          '<h1 class="hero-title">Welcome to Planet ArcadiX!</h1>' +
+          '<p class="hero-description">' +
+            'Planet ArcadiX is the brand-new successor to Planet Arcadia, a project that ran from 2023 to 2025. It has returned with a brand new look, more games & features will be arriving soon, so check back frequently!' +
+          '</p>' +
 
-          <div class="section-header-box">Games</div>
+          '<div class="section-header-box">Games</div>' +
 
-          <div class="games-grid">
-            ${cardsHTML}
-          </div>
-        </div>`;
-    }
-
-    function renderAuthForm(isLoginView) {
-      container.innerHTML = `
-        <div class="page-scroll-container">
-          <div class="auth-box">
-            <div class="section-header-box" style="margin-top:0;">${isLoginView ? 'User Login' : 'Create Account'}</div>
-            ${!isLoginView ? `
-            <div class="form-group">
-              <label>Username</label>
-              <input type="text" id="auth-username" class="arcadix-input" placeholder="ArcadeMaster">
-            </div>
-            <div class="form-group">
-              <label>Email Address</label>
-              <input type="email" id="auth-email" class="arcadix-input" placeholder="player@domain.com">
-            </div>
-            ` : `
-            <div class="form-group">
-              <label>Username or Email Address</label>
-              <input type="text" id="auth-identifier" class="arcadix-input" placeholder="Username or email...">
-            </div>
-            `}
-            <div class="form-group">
-              <label>Password</label>
-              <input type="password" id="auth-password" class="arcadix-input" placeholder="••••••••">
-            </div>
-            <button onclick="${isLoginView ? 'handleSignIn()' : 'handleSignUp()'}" class="arcadix-btn">
-              ${isLoginView ? 'Login' : 'Sign Up'}
-            </button>
-            <div class="auth-toggle-text">
-              ${isLoginView 
-                ? 'Need an account? <a href="?page=signup" class="auth-toggle-link">Sign Up</a>' 
-                : 'Already have an account? <a href="?page=login" class="auth-toggle-link">Login</a>'}
-            </div>
-          </div>
-        </div>`;
-    }
-
-    window.renderTrafficChart = function(dates, trafficData) {
-      const ctx = document.getElementById('trafficChart').getContext('2d');
-      const views = dates.map(d => trafficData[d].views || 0);
-      const sessions = dates.map(d => trafficData[d].sessions || 0);
-
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: dates.length ? dates : ['Today'],
-          datasets: [
-            {
-              label: 'Page Views',
-              data: views.length ? views : [0],
-              borderColor: '#a855f7',
-              backgroundColor: 'rgba(168, 85, 247, 0.2)',
-              fill: true,
-              tension: 0.3
-            },
-            {
-              label: 'Unique Sessions',
-              data: sessions.length ? sessions : [0],
-              borderColor: '#38bdf8',
-              backgroundColor: 'rgba(56, 189, 248, 0.1)',
-              fill: true,
-              tension: 0.3
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: {
-              labels: {
-                color: '#ffffff',
-                font: { family: 'Orbitron' }
-              }
-            }
-          },
-          scales: {
-            x: {
-              ticks: { color: '#888888', font: { family: 'Orbitron' } },
-              grid: { color: '#2a1832' }
-            },
-            y: {
-              beginAtZero: true,
-              ticks: { color: '#888888', font: { family: 'Orbitron' }, stepSize: 1 },
-              grid: { color: '#2a1832' }
-            }
-          }
-        }
-      });
+          '<div class="games-grid">' +
+            cardsHTML +
+          '</div>' +
+        '</div>';
     };
+
+    if (!gameId && !pageId) {
+      window.renderHomePage();
+    }
+
   </script>
+
+  <!-- Universal Site Footer -->
+  <footer class="site-footer">
+    <p>&copy; Planet ArcadiX 2026, All rights reserved</p>
+  </footer>
 
 </body>
 </html>
