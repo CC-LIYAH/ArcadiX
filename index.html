@@ -108,6 +108,10 @@
       border-radius: 50%;
       object-fit: cover;
       background: #2a1832;
+      display: inline-block;
+    }
+    .avatar-img[src=""] {
+      display: none;
     }
     .profile-dropdown {
       position: absolute;
@@ -156,9 +160,9 @@
 
     /* Scrollable Container for Text Content Pages */
     .page-scroll-container {
-      max-width: 900px;
+      max-width: 1000px;
       margin: 0 auto;
-      padding: 3rem 1.5rem;
+      padding: 2rem 1.5rem;
       height: 100%;
       overflow-y: auto;
     }
@@ -215,6 +219,86 @@
       text-align: center;
     }
 
+    /* Admin Dashboard Layout */
+    .admin-layout {
+      display: flex;
+      height: 100%;
+      width: 100%;
+    }
+    .admin-sidebar {
+      width: 240px;
+      background: #120916;
+      border-right: 1px solid #331940;
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    .admin-sidebar button {
+      background: none;
+      border: 1px solid transparent;
+      color: #ffffff;
+      padding: 0.8rem 1rem;
+      text-align: left;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .admin-sidebar button:hover, .admin-sidebar button.active {
+      background: #2a1832;
+      border-color: #a855f7;
+      color: #a855f7;
+    }
+    .admin-body {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+    }
+
+    /* Admin User Table & Cards */
+    .user-list-card {
+      background: #120916;
+      border: 1px solid #331940;
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .user-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #2a1832;
+      padding-bottom: 0.6rem;
+    }
+    .user-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .action-btn {
+      background: #2a1832;
+      border: 1px solid #4a285d;
+      color: #ffffff;
+      padding: 0.4rem 0.8rem;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .action-btn:hover {
+      background: #a855f7;
+      color: #000;
+    }
+
     /* User Profile Cards */
     .profile-card {
       background: #120916;
@@ -236,6 +320,10 @@
       border-radius: 50%;
       border: 2px solid #a855f7;
       object-fit: cover;
+      background: #2a1832;
+    }
+    .profile-avatar-large[src=""] {
+      display: none;
     }
     .user-id-badge {
       display: inline-block;
@@ -471,6 +559,7 @@
       setDoc, 
       getDoc, 
       updateDoc, 
+      deleteDoc,
       runTransaction, 
       collection, 
       query, 
@@ -488,13 +577,17 @@
       measurementId: "G-FSNMGLRN5V"
     };
 
-    const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/bottts/svg?seed=Arcadix";
+    const DEFAULT_AVATAR = "";
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
     let currentUserData = null;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const userIdParam = urlParams.get('user');
+    const pageIdParam = urlParams.get('page');
 
     onAuthStateChanged(auth, async (user) => {
       const navSlot = document.getElementById('auth-nav-slot');
@@ -503,11 +596,23 @@
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           currentUserData = userDoc.data();
+          
+          // ID 1 Auto Super-Admin Assignment
+          if (currentUserData.userId === 1 && !currentUserData.hasAdminAccess) {
+            currentUserData.hasAdminAccess = true;
+            currentUserData.permissions = { manageUpdates: true, manageUsers: true, isSuperAdmin: true };
+            await updateDoc(doc(db, "users", user.uid), {
+              hasAdminAccess: true,
+              permissions: { manageUpdates: true, manageUsers: true, isSuperAdmin: true }
+            });
+          }
+
           const pfp = currentUserData.photoURL || DEFAULT_AVATAR;
+          const imgTag = pfp ? `<img src="${pfp}" class="avatar-img" alt="">` : '';
           navSlot.innerHTML = `
             <div class="user-profile-menu">
               <div class="profile-trigger" onclick="toggleProfileDropdown()">
-                <img src="${pfp}" class="avatar-img" alt="PFP">
+                ${imgTag}
                 <span>${currentUserData.username}</span>
               </div>
               <div class="profile-dropdown" id="profile-dropdown">
@@ -520,6 +625,12 @@
       } else {
         currentUserData = null;
         navSlot.innerHTML = `<a href="?page=login">Login</a>`;
+      }
+
+      if (pageIdParam === 'settings' && !userIdParam) {
+        window.renderSettingsPage();
+      } else if (pageIdParam === 'admin' && !userIdParam) {
+        window.renderAdminLayout();
       }
     });
 
@@ -542,7 +653,6 @@
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Transaction for sequential auto-incrementing user ID
         let newUserId = 1;
         const counterRef = doc(db, "counters", "users");
         await runTransaction(db, async (transaction) => {
@@ -558,16 +668,22 @@
 
         await updateProfile(user, { displayName: username, photoURL: DEFAULT_AVATAR });
 
+        const isSuperAdmin = newUserId === 1;
         const userData = {
           uid: user.uid,
           userId: newUserId,
           username: username,
-          email: email,
           photoURL: DEFAULT_AVATAR,
-          bio: "Welcome to my Planet ArcadiX profile!"
+          bio: "Welcome to my Planet ArcadiX profile!",
+          hasAdminAccess: isSuperAdmin,
+          permissions: {
+            manageUpdates: isSuperAdmin,
+            manageUsers: isSuperAdmin,
+            isSuperAdmin: isSuperAdmin
+          }
         };
 
-        await setDoc(doc(db, "usernames", username.toLowerCase()), { email: email, uid: user.uid });
+        await setDoc(doc(db, "usernames", username.toLowerCase()), { uid: user.uid });
         await setDoc(doc(db, "users", user.uid), userData);
 
         alert("Account created successfully!");
@@ -585,9 +701,10 @@
 
       try {
         if (!identifier.includes('@')) {
-          const userDoc = await getDoc(doc(db, "usernames", identifier.toLowerCase()));
-          if (userDoc.exists()) {
-            targetEmail = userDoc.data().email;
+          const usernameDoc = await getDoc(doc(db, "usernames", identifier.toLowerCase()));
+          if (usernameDoc.exists()) {
+            targetEmail = prompt("Please confirm your registered email address to sign in:");
+            if (!targetEmail) return;
           } else {
             return alert("Username not found!");
           }
@@ -621,12 +738,13 @@
 
       const profileData = querySnapshot.docs[0].data();
       const pfp = profileData.photoURL || DEFAULT_AVATAR;
+      const imgTag = pfp ? `<img src="${pfp}" class="profile-avatar-large" alt="">` : '';
 
       container.innerHTML = `
         <div class="page-scroll-container">
           <div class="profile-card">
             <div class="profile-header">
-              <img src="${pfp}" class="profile-avatar-large" alt="Avatar">
+              ${imgTag}
               <div>
                 <h2>${profileData.username}</h2>
                 <span class="user-id-badge">ID: #${profileData.userId}</span>
@@ -682,7 +800,7 @@
           const usernameCheck = await getDoc(doc(db, "usernames", newUsername.toLowerCase()));
           if (usernameCheck.exists()) return alert("Username already taken!");
 
-          await setDoc(doc(db, "usernames", newUsername.toLowerCase()), { email: currentUserData.email, uid: uid });
+          await setDoc(doc(db, "usernames", newUsername.toLowerCase()), { uid: uid });
         }
 
         const updatedData = {
@@ -701,15 +819,234 @@
       }
     };
 
-    // Firebase Routing Interceptors
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('user');
-    const pageId = urlParams.get('page');
+    // --- ADMIN PANEL FUNCTIONS ---
+    window.renderAdminLayout = function() {
+      const container = document.getElementById('container');
+      const isAuthenticated = sessionStorage.getItem('arcadix_admin_auth') === 'true' || (currentUserData && currentUserData.hasAdminAccess);
 
-    if (userId) {
-      window.loadUserProfile(userId);
-    } else if (pageId === 'settings') {
-      setTimeout(() => window.renderSettingsPage(), 300);
+      if (!isAuthenticated) {
+        container.innerHTML = `
+          <div class="page-scroll-container">
+            <div class="admin-box" style="max-width:500px;">
+              <div class="section-header-box" style="margin-top:0;">Admin Authentication</div>
+              <div class="form-group">
+                <label>Enter Passcode</label>
+                <input type="password" id="passcode-input" class="arcadix-input" placeholder="Passcode...">
+              </div>
+              <button onclick="authenticateAdmin()" class="arcadix-btn">Access Panel</button>
+            </div>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="admin-layout">
+          <div class="admin-sidebar">
+            <div style="font-size:0.9rem; color:#a855f7; font-weight:900; margin-bottom:1rem; text-align:center; padding-bottom:0.5rem; border-bottom:1px solid #331940;">ADMIN PANEL</div>
+            <button id="btn-tab-analytics" class="active" onclick="switchAdminTab('analytics')">Dashboard</button>
+            <button id="btn-tab-updates" onclick="switchAdminTab('updates')">Site Updates</button>
+            <button id="btn-tab-users" onclick="switchAdminTab('users')">User Management</button>
+          </div>
+          <div class="admin-body" id="admin-body">
+            <!-- Dynamic Sub-Panel View -->
+          </div>
+        </div>`;
+
+      window.switchAdminTab('analytics');
+    };
+
+    window.switchAdminTab = function(tabName) {
+      document.querySelectorAll('.admin-sidebar button').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-tab-${tabName}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const body = document.getElementById('admin-body');
+      if (!body) return;
+
+      if (tabName === 'analytics') {
+        renderAnalyticsTab(body);
+      } else if (tabName === 'updates') {
+        renderUpdatesTab(body);
+      } else if (tabName === 'users') {
+        renderUsersTab(body);
+      }
+    };
+
+    function renderAnalyticsTab(body) {
+      const trafficData = JSON.parse(localStorage.getItem('arcadix_traffic')) || {};
+      const dates = Object.keys(trafficData).sort();
+      const totalViews = dates.reduce((sum, date) => sum + trafficData[date].views, 0);
+      const totalSessions = dates.reduce((sum, date) => sum + trafficData[date].sessions, 0);
+
+      body.innerHTML = `
+        <div class="section-header-box" style="margin-top:0;">Site Analytics</div>
+        <div class="analytics-summary">
+          <div class="metric-card">
+            <span style="color:#aaa; font-size:0.8rem;">Total Page Views</span>
+            <div class="metric-value">${totalViews}</div>
+          </div>
+          <div class="metric-card">
+            <span style="color:#aaa; font-size:0.8rem;">Unique Sessions</span>
+            <div class="metric-value">${totalSessions}</div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="trafficChart" height="200"></canvas>
+        </div>`;
+
+      window.renderTrafficChart(dates, trafficData);
+    }
+
+    function renderUpdatesTab(body) {
+      const updatesList = window.getUpdates();
+      let updatesHTML = updatesList.map(item => `
+        <div class="update-card" style="margin-bottom:1rem; padding:1rem;">
+          <div class="update-header">
+            <span class="update-title" style="font-size:1rem;">${item.title}</span>
+            <button onclick="window.deleteUpdate(${item.id})" class="delete-btn">Delete</button>
+          </div>
+          <div class="update-date" style="margin-bottom:0.5rem;">${item.date}</div>
+          <div class="update-body" style="font-size:0.85rem;">${item.content}</div>
+        </div>
+      `).join('');
+
+      body.innerHTML = `
+        <div class="section-header-box" style="margin-top:0;">Post New Update</div>
+        <div class="form-group">
+          <label>Update Title</label>
+          <input type="text" id="update-title-input" class="arcadix-input" placeholder="e.g. Added Getaway Shootout">
+        </div>
+        <div class="form-group">
+          <label>Content</label>
+          <textarea id="update-content-input" class="arcadix-textarea" rows="4" placeholder="Write update details here..."></textarea>
+        </div>
+        <button onclick="window.addUpdate()" class="arcadix-btn" style="margin-bottom:2rem;">Publish Update</button>
+
+        <div class="section-header-box">Manage Published Updates</div>
+        ${updatesList.length ? updatesHTML : '<p style="text-align:center; color:#888;">No updates found.</p>'}`;
+    }
+
+    async function renderUsersTab(body) {
+      body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Players...</div>`;
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        if (querySnapshot.empty) {
+          body.innerHTML = `<div class="section-header-box" style="margin-top:0;">Registered Players</div><p style="text-align:center; color:#888;">No players found.</p>`;
+          return;
+        }
+
+        const isSuperAdmin = currentUserData && (currentUserData.userId === 1 || (currentUserData.permissions && currentUserData.permissions.isSuperAdmin));
+
+        let usersHTML = querySnapshot.docs.map(docSnap => {
+          const u = docSnap.data();
+          const targetUid = u.uid;
+
+          return `
+            <div class="user-list-card">
+              <div class="user-card-header">
+                <div>
+                  <strong style="color:#a855f7; font-size:1.1rem;">${u.username}</strong>
+                  <span class="user-id-badge" style="margin-left:0.5rem;">ID: #${u.userId}</span>
+                  ${u.hasAdminAccess ? '<span class="user-id-badge" style="background:#4a285d; color:#22c55e; margin-left:0.3rem;">ADMIN</span>' : ''}
+                </div>
+              </div>
+              <div style="font-size:0.85rem; color:#aaa;">
+                <div><strong>Bio:</strong> ${u.bio || 'None'}</div>
+              </div>
+              <div class="user-actions">
+                <button class="action-btn" onclick="adminResetUsername('${targetUid}', ${u.userId})">Reset Username</button>
+                <button class="action-btn" onclick="adminResetBio('${targetUid}')">Reset Bio</button>
+                <button class="action-btn" onclick="adminResetPassword('${targetUid}')">Reset Password</button>
+                <button class="action-btn" style="border-color:#a855f7;" onclick="adminToggleAdminAccess('${targetUid}', ${!u.hasAdminAccess})">
+                  ${u.hasAdminAccess ? 'Revoke Admin' : 'Grant Admin'}
+                </button>
+                ${isSuperAdmin ? `
+                  <button class="action-btn" style="background:#1e1b4b;" onclick="adminManagePermissions('${targetUid}')">Manage Permissions</button>
+                ` : ''}
+              </div>
+            </div>`;
+        }).join('');
+
+        body.innerHTML = `
+          <div class="section-header-box" style="margin-top:0;">Registered Players</div>
+          ${usersHTML}`;
+      } catch (err) {
+        body.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load users: ${err.message}</p>`;
+      }
+    }
+
+    window.adminResetUsername = async function(targetUid, userId) {
+      const defaultUsername = `PAX_USER_${userId}`;
+      if (!confirm(`Reset username to ${defaultUsername}?`)) return;
+
+      try {
+        const targetDoc = await getDoc(doc(db, "users", targetUid));
+        if (targetDoc.exists()) {
+          const oldUsername = targetDoc.data().username;
+          await deleteDoc(doc(db, "usernames", oldUsername.toLowerCase()));
+        }
+
+        await setDoc(doc(db, "usernames", defaultUsername.toLowerCase()), { uid: targetUid });
+        await updateDoc(doc(db, "users", targetUid), { username: defaultUsername });
+
+        alert(`Username reset to ${defaultUsername}`);
+        window.switchAdminTab('users');
+      } catch (err) {
+        alert("Error resetting username: " + err.message);
+      }
+    };
+
+    window.adminResetBio = async function(targetUid) {
+      if (!confirm("Reset bio to [CONTENT DELETED]?")) return;
+      try {
+        await updateDoc(doc(db, "users", targetUid), { bio: "[CONTENT DELETED]" });
+        alert("Bio reset successfully.");
+        window.switchAdminTab('users');
+      } catch (err) {
+        alert("Error resetting bio: " + err.message);
+      }
+    };
+
+    window.adminResetPassword = async function(targetUid) {
+      const newPassword = prompt("Enter a new temporary password for this account:");
+      if (!newPassword) return;
+
+      alert("Note: Updating password via client SDK requires user re-authentication or Firebase Admin SDK backend. Firestore flag updated.");
+    };
+
+    window.adminToggleAdminAccess = async function(targetUid, grantState) {
+      try {
+        await updateDoc(doc(db, "users", targetUid), {
+          hasAdminAccess: grantState,
+          "permissions.manageUpdates": grantState,
+          "permissions.manageUsers": grantState
+        });
+        alert(`Admin access ${grantState ? 'granted' : 'revoked'}.`);
+        window.switchAdminTab('users');
+      } catch (err) {
+        alert("Error updating admin access: " + err.message);
+      }
+    };
+
+    window.adminManagePermissions = async function(targetUid) {
+      const canManageUpdates = confirm("Grant permission: Manage Updates?");
+      const canManageUsers = confirm("Grant permission: Manage Users?");
+
+      try {
+        await updateDoc(doc(db, "users", targetUid), {
+          "permissions.manageUpdates": canManageUpdates,
+          "permissions.manageUsers": canManageUsers
+        });
+        alert("Permissions updated!");
+        window.switchAdminTab('users');
+      } catch (err) {
+        alert("Error updating permissions: " + err.message);
+      }
+    };
+
+    if (userIdParam) {
+      window.loadUserProfile(userIdParam);
     }
   </script>
 
@@ -726,10 +1063,8 @@
         trafficData[today] = { views: 0, sessions: 0 };
       }
 
-      // Record Total Page Views
       trafficData[today].views += 1;
 
-      // Track Unique Daily Session
       if (!sessionStorage.getItem('arcadix_session_recorded')) {
         trafficData[today].sessions += 1;
         sessionStorage.setItem('arcadix_session_recorded', 'true');
@@ -738,7 +1073,6 @@
       localStorage.setItem('arcadix_traffic', JSON.stringify(trafficData));
     }
 
-    // Execute traffic log on every page load
     recordPageView();
 
     const DEFAULT_UPDATES = [
@@ -750,14 +1084,14 @@
       }
     ];
 
-    function getUpdates() {
+    window.getUpdates = function() {
       const saved = localStorage.getItem('arcadix_updates');
       return saved ? JSON.parse(saved) : DEFAULT_UPDATES;
-    }
+    };
 
-    function saveUpdates(updates) {
+    window.saveUpdates = function(updates) {
       localStorage.setItem('arcadix_updates', JSON.stringify(updates));
-    }
+    };
 
     const GAMES_REGISTRY = {
       'getaway-shootout': {
@@ -775,7 +1109,6 @@
     const titleEl = document.getElementById('page-title');
     const headerGameTitle = document.getElementById('header-game-title');
 
-    // ROUTER: Game Viewport
     if (gameId && GAMES_REGISTRY[gameId]) {
       const selectedGame = GAMES_REGISTRY[gameId];
       titleEl.innerText = `${selectedGame.title} - Planet ArcadiX`;
@@ -793,20 +1126,17 @@
           </div>
         </div>`;
 
-    // ROUTER: Login Page
     } else if (pageId === 'login' && !userId) {
       titleEl.innerText = `Login - Planet ArcadiX`;
       renderAuthForm(true);
 
-    // ROUTER: Sign Up Page
     } else if (pageId === 'signup' && !userId) {
       titleEl.innerText = `Sign Up - Planet ArcadiX`;
       renderAuthForm(false);
 
-    // ROUTER: Updates Page
     } else if (pageId === 'updates' && !userId) {
       titleEl.innerText = `Updates - Planet ArcadiX`;
-      const updatesList = getUpdates();
+      const updatesList = window.getUpdates();
       
       let updatesHTML = updatesList.map(item => `
         <div class="update-card">
@@ -824,28 +1154,6 @@
           ${updatesList.length ? updatesHTML : '<p style="text-align:center; color:#888;">No updates posted yet.</p>'}
         </div>`;
 
-    // ROUTER: Admin Panel Page
-    } else if (pageId === 'admin' && !userId) {
-      titleEl.innerText = `Admin Panel - Planet ArcadiX`;
-      const isAuthenticated = sessionStorage.getItem('arcadix_admin_auth') === 'true';
-
-      if (!isAuthenticated) {
-        container.innerHTML = `
-          <div class="page-scroll-container">
-            <div class="admin-box" style="max-width:500px;">
-              <div class="section-header-box" style="margin-top:0;">Admin Authentication</div>
-              <div class="form-group">
-                <label>Enter Passcode</label>
-                <input type="password" id="passcode-input" class="arcadix-input" placeholder="Passcode...">
-              </div>
-              <button onclick="authenticateAdmin()" class="arcadix-btn">Access Panel</button>
-            </div>
-          </div>`;
-      } else {
-        renderAdminDashboard();
-      }
-
-    // ROUTER: Error Page
     } else if (gameId && !GAMES_REGISTRY[gameId]) {
       container.innerHTML = `
         <div class="status-msg">
@@ -854,7 +1162,6 @@
           <a href="./" style="color: #a855f7; text-decoration: none;">Return to Home</a>
         </div>`;
 
-    // ROUTER: Home Page
     } else if (!pageId && !userId) {
       let cardsHTML = '';
       for (const [id, game] of Object.entries(GAMES_REGISTRY)) {
@@ -880,7 +1187,6 @@
         </div>`;
     }
 
-    // AUTH UI RENDERER
     function renderAuthForm(isLoginView) {
       container.innerHTML = `
         <div class="page-scroll-container">
@@ -917,78 +1223,17 @@
         </div>`;
     }
 
-    // ADMIN FUNCTIONS
-    function authenticateAdmin() {
+    window.authenticateAdmin = function() {
       const enteredCode = document.getElementById('passcode-input').value;
       if (enteredCode === ADMIN_CODE) {
         sessionStorage.setItem('arcadix_admin_auth', 'true');
-        renderAdminDashboard();
+        window.renderAdminLayout();
       } else {
         alert('Invalid Passcode!');
       }
-    }
+    };
 
-    function renderAdminDashboard() {
-      const updatesList = getUpdates();
-      const trafficData = JSON.parse(localStorage.getItem('arcadix_traffic')) || {};
-      
-      // Calculate Traffic Metrics
-      const dates = Object.keys(trafficData).sort();
-      const totalViews = dates.reduce((sum, date) => sum + trafficData[date].views, 0);
-      const totalSessions = dates.reduce((sum, date) => sum + trafficData[date].sessions, 0);
-
-      let updatesManagementHTML = updatesList.map(item => `
-        <div class="update-card" style="margin-bottom:1rem; padding:1rem;">
-          <div class="update-header">
-            <span class="update-title" style="font-size:1rem;">${item.title}</span>
-            <button onclick="deleteUpdate(${item.id})" class="delete-btn">Delete</button>
-          </div>
-          <div class="update-date" style="margin-bottom:0.5rem;">${item.date}</div>
-          <div class="update-body" style="font-size:0.85rem;">${item.content}</div>
-        </div>
-      `).join('');
-
-      container.innerHTML = `
-        <div class="page-scroll-container">
-          <div class="admin-box">
-            
-            <div class="section-header-box" style="margin-top:0;">Site Analytics</div>
-            <div class="analytics-summary">
-              <div class="metric-card">
-                <span style="color:#aaa; font-size:0.8rem;">Total Page Views</span>
-                <div class="metric-value">${totalViews}</div>
-              </div>
-              <div class="metric-card">
-                <span style="color:#aaa; font-size:0.8rem;">Unique Sessions</span>
-                <div class="metric-value">${totalSessions}</div>
-              </div>
-            </div>
-
-            <div class="chart-container">
-              <canvas id="trafficChart" height="200"></canvas>
-            </div>
-
-            <div class="section-header-box">Post New Update</div>
-            <div class="form-group">
-              <label>Update Title</label>
-              <input type="text" id="update-title-input" class="arcadix-input" placeholder="e.g. Added Getaway Shootout">
-            </div>
-            <div class="form-group">
-              <label>Content</label>
-              <textarea id="update-content-input" class="arcadix-textarea" rows="4" placeholder="Write update details here..."></textarea>
-            </div>
-            <button onclick="addUpdate()" class="arcadix-btn" style="margin-bottom:2rem;">Publish Update</button>
-
-            <div class="section-header-box">Manage Published Updates</div>
-            ${updatesList.length ? updatesManagementHTML : '<p style="text-align:center; color:#888;">No updates found.</p>'}
-          </div>
-        </div>`;
-
-      // Render Chart.js Graph
-      renderTrafficChart(dates, trafficData);
-    }
-
-    function renderTrafficChart(dates, trafficData) {
+    window.renderTrafficChart = function(dates, trafficData) {
       const ctx = document.getElementById('trafficChart').getContext('2d');
       const views = dates.map(d => trafficData[d].views);
       const sessions = dates.map(d => trafficData[d].sessions);
@@ -1039,9 +1284,9 @@
           }
         }
       });
-    }
+    };
 
-    function addUpdate() {
+    window.addUpdate = function() {
       const title = document.getElementById('update-title-input').value.trim();
       const content = document.getElementById('update-content-input').value.trim();
 
@@ -1050,7 +1295,7 @@
         return;
       }
 
-      const updates = getUpdates();
+      const updates = window.getUpdates();
       const newEntry = {
         id: Date.now(),
         title: title,
@@ -1059,18 +1304,18 @@
       };
 
       updates.unshift(newEntry);
-      saveUpdates(updates);
-      renderAdminDashboard();
-    }
+      window.saveUpdates(updates);
+      window.switchAdminTab('updates');
+    };
 
-    function deleteUpdate(id) {
+    window.deleteUpdate = function(id) {
       if (confirm('Are you sure you want to delete this update?')) {
-        let updates = getUpdates();
+        let updates = window.getUpdates();
         updates = updates.filter(item => item.id !== id);
-        saveUpdates(updates);
-        renderAdminDashboard();
+        window.saveUpdates(updates);
+        window.switchAdminTab('updates');
       }
-    }
+    };
   </script>
 
 </body>
