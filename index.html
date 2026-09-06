@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title">Planet ArcadiX</title>
 
+  <!-- Google Font: Orbitron Bold -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
@@ -27,7 +28,7 @@
       overflow: hidden;
     }
 
-    /* Universal Navigation Header (Layered on top) */
+    /* Universal Navigation Header */
     header {
       position: relative;
       z-index: 9999;
@@ -83,6 +84,15 @@
       overflow: hidden;
     }
 
+    /* Scrollable Container for Text Content Pages */
+    .page-scroll-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+      height: 100%;
+      overflow-y: auto;
+    }
+
     /* Full-screen Responsive Game Viewport */
     .game-viewport {
       width: 100%;
@@ -91,7 +101,6 @@
       justify-content: center;
       align-items: center;
       background: #000000;
-      padding: 0;
     }
     .iframe-wrapper {
       position: relative;
@@ -108,30 +117,22 @@
       border: none;
     }
 
-    /* Home Page Layout */
-    .portal-home {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 4rem 1.5rem;
-      text-align: center;
-      height: 100%;
-      overflow-y: auto;
-    }
+    /* Section Boxes & Titles */
     .hero-title {
-      font-size: 2.5rem;
+      font-size: 2.2rem;
       font-weight: 900;
       margin-bottom: 1.2rem;
+      text-align: center;
     }
     .hero-description {
       color: #cccccc;
       font-size: 1rem;
       line-height: 1.6;
       max-width: 700px;
-      margin: 0 auto 3.5rem auto;
+      margin: 0 auto 3rem auto;
       font-weight: 700;
+      text-align: center;
     }
-
-    /* Centered Games Section Box */
     .section-header-box {
       background: linear-gradient(180deg, #2b1836 0%, #180c1f 100%);
       border: 1px solid #4a285d;
@@ -141,6 +142,107 @@
       font-weight: 900;
       margin-bottom: 2rem;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    /* Updates Timeline Styling */
+    .update-card {
+      background: #120916;
+      border: 1px solid #331940;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .update-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.8rem;
+      border-bottom: 1px solid #2a1832;
+      padding-bottom: 0.5rem;
+    }
+    .update-title {
+      font-size: 1.2rem;
+      color: #a855f7;
+    }
+    .update-date {
+      font-size: 0.85rem;
+      color: #888888;
+    }
+    .update-body {
+      color: #dddddd;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      font-weight: 700;
+      white-space: pre-line;
+    }
+
+    /* Admin Form & Controls */
+    .admin-box {
+      background: #120916;
+      border: 1px solid #4a285d;
+      border-radius: 8px;
+      padding: 2rem;
+      max-width: 600px;
+      margin: 0 auto;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    }
+    .form-group {
+      margin-bottom: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      text-align: left;
+    }
+    .form-group label {
+      font-size: 0.85rem;
+      color: #a855f7;
+    }
+    .arcadix-input, .arcadix-textarea {
+      width: 100%;
+      background: #000000;
+      border: 1px solid #331940;
+      border-radius: 6px;
+      padding: 0.8rem;
+      color: #ffffff;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .arcadix-input:focus, .arcadix-textarea:focus {
+      border-color: #a855f7;
+    }
+    .arcadix-btn {
+      width: 100%;
+      background: linear-gradient(180deg, #2b1836 0%, #180c1f 100%);
+      border: 1px solid #a855f7;
+      color: #ffffff;
+      padding: 0.8rem;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .arcadix-btn:hover {
+      background: #a855f7;
+      color: #000000;
+    }
+    .delete-btn {
+      background: #3a1515;
+      border: 1px solid #ef4444;
+      color: #ef4444;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .delete-btn:hover {
+      background: #ef4444;
+      color: #ffffff;
     }
 
     /* Games Grid */
@@ -173,7 +275,7 @@
       font-weight: 700;
     }
 
-    /* Error Message */
+    /* Status Messages */
     .status-msg {
       display: flex;
       flex-direction: column;
@@ -199,39 +301,63 @@
     <nav class="nav-links">
       <a href="./">About</a>
       <a href="./">Games</a>
+      <a href="?page=updates">Updates</a>
+      <a href="?page=admin">Admin</a>
     </nav>
   </header>
 
   <main class="main-content" id="container">
-    </main>
+    <!-- Dynamic Viewport Content -->
+  </main>
 
   <script>
+    // Access Passcode
+    const ADMIN_CODE = "LIY-LUV901";
+
+    // Default updates stored if no updates exist yet
+    const DEFAULT_UPDATES = [
+      {
+        id: 1,
+        title: "Planet ArcadiX Relaunch",
+        date: "2026-09-05",
+        content: "Welcome to the new home of Planet ArcadiX! We have refreshed our site style, updated game framing, and added active update tracking."
+      }
+    ];
+
+    // Get updates array from localStorage
+    function getUpdates() {
+      const saved = localStorage.getItem('arcadix_updates');
+      return saved ? JSON.parse(saved) : DEFAULT_UPDATES;
+    }
+
+    // Save updates array to localStorage
+    function saveUpdates(updates) {
+      localStorage.setItem('arcadix_updates', JSON.stringify(updates));
+    }
+
     // Registry mapping game query IDs to file paths relative to root
     const GAMES_REGISTRY = {
       'getaway-shootout': {
         title: 'Getaway Shootout',
         path: './Games/getaway-shootout/GetawayShootout.github.io-main/index.html'
       }
-      // Add new games here as you upload them:
-      // 'game-id': { title: 'Game Title', path: './Games/folder-name/index.html' }
     };
 
     const urlParams = new URLSearchParams(window.location.search);
     const gameId = urlParams.get('game');
+    const pageId = urlParams.get('page');
 
     const container = document.getElementById('container');
     const titleEl = document.getElementById('page-title');
     const headerGameTitle = document.getElementById('header-game-title');
 
+    // ROUTER: Game Viewport
     if (gameId && GAMES_REGISTRY[gameId]) {
       const selectedGame = GAMES_REGISTRY[gameId];
-      
-      // Update page title and header indicator
       titleEl.innerText = `${selectedGame.title} - Planet ArcadiX`;
       headerGameTitle.innerText = selectedGame.title;
       headerGameTitle.style.display = 'inline-block';
 
-      // Screen-bounded viewport layout for game
       container.innerHTML = `
         <div class="game-viewport">
           <div class="iframe-wrapper">
@@ -242,6 +368,52 @@
             </iframe>
           </div>
         </div>`;
+
+    // ROUTER: Updates Page
+    } else if (pageId === 'updates') {
+      titleEl.innerText = `Updates - Planet ArcadiX`;
+      const updatesList = getUpdates();
+      
+      let updatesHTML = updatesList.map(item => `
+        <div class="update-card">
+          <div class="update-header">
+            <span class="update-title">${item.title}</span>
+            <span class="update-date">${item.date}</span>
+          </div>
+          <div class="update-body">${item.content}</div>
+        </div>
+      `).join('');
+
+      container.innerHTML = `
+        <div class="page-scroll-container">
+          <div class="section-header-box">Site Updates</div>
+          ${updatesList.length ? updatesHTML : '<p style="text-align:center; color:#888;">No updates posted yet.</p>'}
+        </div>`;
+
+    // ROUTER: Admin Panel Page
+    } else if (pageId === 'admin') {
+      titleEl.innerText = `Admin Panel - Planet ArcadiX`;
+      const isAuthenticated = sessionStorage.getItem('arcadix_admin_auth') === 'true';
+
+      if (!isAuthenticated) {
+        // Show Login View
+        container.innerHTML = `
+          <div class="page-scroll-container">
+            <div class="admin-box">
+              <div class="section-header-box" style="margin-top:0;">Admin Authentication</div>
+              <div class="form-group">
+                <label>Enter Passcode</label>
+                <input type="password" id="passcode-input" class="arcadix-input" placeholder="Passcode...">
+              </div>
+              <button onclick="authenticateAdmin()" class="arcadix-btn">Access Panel</button>
+            </div>
+          </div>`;
+      } else {
+        // Show Admin Control Panel View
+        renderAdminDashboard();
+      }
+
+    // ROUTER: Error Page
     } else if (gameId) {
       container.innerHTML = `
         <div class="status-msg">
@@ -249,8 +421,9 @@
           <p>No game registered under id: <strong>${gameId}</strong></p>
           <a href="./" style="color: #a855f7; text-decoration: none;">Return to Home</a>
         </div>`;
+
+    // ROUTER: Home Page
     } else {
-      // Home Page Layout
       let cardsHTML = '';
       for (const [id, game] of Object.entries(GAMES_REGISTRY)) {
         cardsHTML += `
@@ -261,7 +434,7 @@
       }
 
       container.innerHTML = `
-        <div class="portal-home">
+        <div class="page-scroll-container">
           <h1 class="hero-title">Welcome to Planet ArcadiX!</h1>
           <p class="hero-description">
             Planet ArcadiX is the brand-new successor to Planet Arcadia, a project that ran from 2023 to 2025. It has returned with a brand new look, more games & features will be arriving soon, so check back frequently!
@@ -273,6 +446,81 @@
             ${cardsHTML}
           </div>
         </div>`;
+    }
+
+    // ADMIN FUNCTIONS
+    function authenticateAdmin() {
+      const enteredCode = document.getElementById('passcode-input').value;
+      if (enteredCode === ADMIN_CODE) {
+        sessionStorage.setItem('arcadix_admin_auth', 'true');
+        renderAdminDashboard();
+      } else {
+        alert('Invalid Passcode!');
+      }
+    }
+
+    function renderAdminDashboard() {
+      const updatesList = getUpdates();
+      let updatesManagementHTML = updatesList.map(item => `
+        <div class="update-card" style="margin-bottom:1rem; padding:1rem;">
+          <div class="update-header">
+            <span class="update-title" style="font-size:1rem;">${item.title}</span>
+            <button onclick="deleteUpdate(${item.id})" class="delete-btn">Delete</button>
+          </div>
+          <div class="update-date" style="margin-bottom:0.5rem;">${item.date}</div>
+          <div class="update-body" style="font-size:0.85rem;">${item.content}</div>
+        </div>
+      `).join('');
+
+      container.innerHTML = `
+        <div class="page-scroll-container">
+          <div class="admin-box" style="max-width:700px;">
+            <div class="section-header-box" style="margin-top:0;">Post New Update</div>
+            <div class="form-group">
+              <label>Update Title</label>
+              <input type="text" id="update-title-input" class="arcadix-input" placeholder="e.g. Added Getaway Shootout">
+            </div>
+            <div class="form-group">
+              <label>Content</label>
+              <textarea id="update-content-input" class="arcadix-textarea" rows="5" placeholder="Write update details here..."></textarea>
+            </div>
+            <button onclick="addUpdate()" class="arcadix-btn" style="margin-bottom:2rem;">Publish Update</button>
+
+            <div class="section-header-box">Manage Published Updates</div>
+            ${updatesList.length ? updatesManagementHTML : '<p style="text-align:center; color:#888;">No updates found.</p>'}
+          </div>
+        </div>`;
+    }
+
+    function addUpdate() {
+      const title = document.getElementById('update-title-input').value.trim();
+      const content = document.getElementById('update-content-input').value.trim();
+
+      if (!title || !content) {
+        alert('Please fill out both the title and content fields.');
+        return;
+      }
+
+      const updates = getUpdates();
+      const newEntry = {
+        id: Date.now(),
+        title: title,
+        date: new Date().toISOString().split('T')[0],
+        content: content
+      };
+
+      updates.unshift(newEntry);
+      saveUpdates(updates);
+      renderAdminDashboard();
+    }
+
+    function deleteUpdate(id) {
+      if (confirm('Are you sure you want to delete this update?')) {
+        let updates = getUpdates();
+        updates = updates.filter(item => item.id !== id);
+        saveUpdates(updates);
+        renderAdminDashboard();
+      }
     }
   </script>
 
