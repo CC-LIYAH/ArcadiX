@@ -834,67 +834,8 @@
     </div>
   </div>
 
-  <!-- Dynamic Theme System JS -->
+  <!-- UI Popups Helpers JS -->
   <script>
-    const DEFAULT_THEMES = [
-      {
-        id: "default-purple",
-        name: "ArcadiX Purple (Default)",
-        bgColor: "#000000",
-        headerBg: "linear-gradient(180deg, #1f1224 0%, #120916 100%)",
-        cardBg: "#120916",
-        cardBorder: "#331940",
-        accentColor: "#a855f7",
-        textColor: "#ffffff",
-        isDefault: true
-      },
-      {
-        id: "cyber-cyan",
-        name: "Cyber Neon Cyan",
-        bgColor: "#030712",
-        headerBg: "#0f172a",
-        cardBg: "#0f172a",
-        cardBorder: "#1e293b",
-        accentColor: "#06b6d4",
-        textColor: "#f8fafc",
-        isDefault: false
-      }
-    ];
-
-    function getThemes() {
-      const saved = localStorage.getItem('arcadix_themes');
-      return saved ? JSON.parse(saved) : DEFAULT_THEMES;
-    }
-
-    function saveThemes(themes) {
-      localStorage.setItem('arcadix_themes', JSON.stringify(themes));
-    }
-
-    function applyTheme(theme) {
-      if (!theme) return;
-      const root = document.documentElement;
-      root.style.setProperty('--bg-color', theme.bgColor);
-      root.style.setProperty('--header-bg', theme.headerBg);
-      root.style.setProperty('--card-bg', theme.cardBg);
-      root.style.setProperty('--card-border', theme.cardBorder);
-      root.style.setProperty('--accent-color', theme.accentColor);
-      root.style.setProperty('--text-color', theme.textColor);
-    }
-
-    function initActiveTheme() {
-      const themes = getThemes();
-      const activeId = localStorage.getItem('arcadix_active_theme_id');
-      let activeTheme = themes.find(t => t.id === activeId);
-
-      if (!activeTheme) {
-        activeTheme = themes.find(t => t.isDefault) || themes[0];
-      }
-
-      applyTheme(activeTheme);
-    }
-
-    initActiveTheme();
-
     /* Device Fingerprinting Identification Helper */
     window.getDeviceFingerprint = function() {
       let deviceId = localStorage.getItem('arcadix_device_id');
@@ -1022,7 +963,10 @@
       query, 
       where, 
       getDocs,
-      addDoc 
+      addDoc,
+      onSnapshot,
+      orderBy,
+      increment
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -1036,6 +980,17 @@
     };
 
     const DEFAULT_AVATAR = "";
+    const DEFAULT_THEME = {
+      id: "default-purple",
+      name: "ArcadiX Purple (Default)",
+      bgColor: "#000000",
+      headerBg: "linear-gradient(180deg, #1f1224 0%, #120916 100%)",
+      cardBg: "#120916",
+      cardBorder: "#331940",
+      accentColor: "#a855f7",
+      textColor: "#ffffff",
+      isDefault: true
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -1043,10 +998,69 @@
 
     let currentUserData = null;
     let loadedUsersCache = [];
+    let fetchedThemesCache = [];
 
     const urlParams = new URLSearchParams(window.location.search);
     const userIdParam = urlParams.get('user');
     const pageIdParam = urlParams.get('page');
+
+    function applyTheme(theme) {
+      if (!theme) return;
+      const root = document.documentElement;
+      root.style.setProperty('--bg-color', theme.bgColor);
+      root.style.setProperty('--header-bg', theme.headerBg);
+      root.style.setProperty('--card-bg', theme.cardBg);
+      root.style.setProperty('--card-border', theme.cardBorder);
+      root.style.setProperty('--accent-color', theme.accentColor);
+      root.style.setProperty('--text-color', theme.textColor);
+    }
+
+    // --- Dynamic Real-Time Theme Sync Across Site ---
+    onSnapshot(collection(db, "themes"), (snapshot) => {
+      fetchedThemesCache = [];
+      snapshot.forEach(doc => fetchedThemesCache.push({ id: doc.id, ...doc.data() }));
+
+      if (fetchedThemesCache.length === 0) {
+        // Seed default theme into Firestore if none exist
+        setDoc(doc(db, "themes", DEFAULT_THEME.id), DEFAULT_THEME);
+        fetchedThemesCache = [DEFAULT_THEME];
+      }
+
+      const activeId = localStorage.getItem('arcadix_active_theme_id');
+      let activeTheme = fetchedThemesCache.find(t => t.id === activeId);
+
+      if (!activeTheme) {
+        activeTheme = fetchedThemesCache.find(t => t.isDefault) || fetchedThemesCache[0];
+      }
+
+      applyTheme(activeTheme);
+
+      // Re-render theme panel if currently open
+      const themeSelect = document.getElementById('settings-theme-select');
+      if (themeSelect) window.renderSettingsPage();
+    });
+
+    // --- Global Analytics Firestore Counter ---
+    async function recordPageView() {
+      const today = new Date().toISOString().split('T')[0];
+      const statsRef = doc(db, "analytics", today);
+      
+      let sessionCountIncrement = 0;
+      if (!sessionStorage.getItem('arcadix_session_recorded')) {
+        sessionCountIncrement = 1;
+        sessionStorage.setItem('arcadix_session_recorded', 'true');
+      }
+
+      try {
+        await setDoc(statsRef, {
+          views: increment(1),
+          sessions: increment(sessionCountIncrement)
+        }, { merge: true });
+      } catch (e) {
+        console.warn("Analytics write failure: ", e);
+      }
+    }
+    recordPageView();
 
     onAuthStateChanged(auth, async (user) => {
       const navSlot = document.getElementById('auth-nav-slot');
@@ -1077,7 +1091,6 @@
           if (currentUserData.isBanned) {
             const now = Date.now();
             if (currentUserData.banUntil && currentUserData.banUntil !== "PERMANENT" && currentUserData.banUntil < now) {
-              // Ban has expired automatically
               await updateDoc(doc(db, "users", user.uid), {
                 isBanned: false,
                 banReason: "",
@@ -1150,7 +1163,6 @@
       const password = document.getElementById('auth-password').value;
       const deviceId = window.getDeviceFingerprint();
 
-      // Check if current device is hardware-banned
       const deviceBanDoc = await getDoc(doc(db, "banned_devices", deviceId));
       if (deviceBanDoc.exists()) {
         return window.showArcadiXAlert(`Account creation restricted. This device has been banned from Planet ArcadiX.`, "Device Banned");
@@ -1219,7 +1231,6 @@
       const password = document.getElementById('auth-password').value;
       const deviceId = window.getDeviceFingerprint();
 
-      // Check for device ban prior to logging in
       const deviceBanDoc = await getDoc(doc(db, "banned_devices", deviceId));
       if (deviceBanDoc.exists()) {
         return window.showArcadiXAlert(`Login blocked. This device is permanently banned from Planet ArcadiX.`, "Device Banned");
@@ -1293,9 +1304,8 @@
         return;
       }
 
-      const themes = getThemes();
-      const activeId = localStorage.getItem('arcadix_active_theme_id') || themes[0].id;
-      const themeOptions = themes.map(t => `<option value="${t.id}" ${t.id === activeId ? 'selected' : ''}>${t.name}</option>`).join('');
+      const activeId = localStorage.getItem('arcadix_active_theme_id') || fetchedThemesCache[0]?.id;
+      const themeOptions = fetchedThemesCache.map(t => `<option value="${t.id}" ${t.id === activeId ? 'selected' : ''}>${t.name}</option>`).join('');
 
       container.innerHTML = `
         <div class="page-scroll-container">
@@ -1328,8 +1338,7 @@
     };
 
     window.changeSiteTheme = function(themeId) {
-      const themes = getThemes();
-      const targetTheme = themes.find(t => t.id === themeId);
+      const targetTheme = fetchedThemesCache.find(t => t.id === themeId);
       if (targetTheme) {
         localStorage.setItem('arcadix_active_theme_id', themeId);
         applyTheme(targetTheme);
@@ -1434,59 +1443,117 @@
       }
     };
 
-    function renderAnalyticsTab(body) {
-      const trafficData = JSON.parse(localStorage.getItem('arcadix_traffic')) || {};
-      const dates = Object.keys(trafficData).sort();
-      const totalViews = dates.reduce((sum, date) => sum + trafficData[date].views, 0);
-      const totalSessions = dates.reduce((sum, date) => sum + trafficData[date].sessions, 0);
+    async function renderAnalyticsTab(body) {
+      body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Site Analytics...</div>`;
+      try {
+        const querySnapshot = await getDocs(collection(db, "analytics"));
+        const trafficData = {};
+        querySnapshot.forEach(docSnap => {
+          trafficData[docSnap.id] = docSnap.data();
+        });
 
-      body.innerHTML = `
-        <div class="section-header-box" style="margin-top:0;">Site Analytics</div>
-        <div class="analytics-summary">
-          <div class="metric-card">
-            <span style="color:#aaa; font-size:0.8rem;">Total Page Views</span>
-            <div class="metric-value">${totalViews}</div>
-          </div>
-          <div class="metric-card">
-            <span style="color:#aaa; font-size:0.8rem;">Unique Sessions</span>
-            <div class="metric-value">${totalSessions}</div>
-          </div>
-        </div>
-        <div class="chart-container">
-          <canvas id="trafficChart" height="200"></canvas>
-        </div>`;
+        const dates = Object.keys(trafficData).sort();
+        const totalViews = dates.reduce((sum, date) => sum + (trafficData[date].views || 0), 0);
+        const totalSessions = dates.reduce((sum, date) => sum + (trafficData[date].sessions || 0), 0);
 
-      window.renderTrafficChart(dates, trafficData);
+        body.innerHTML = `
+          <div class="section-header-box" style="margin-top:0;">Site Analytics</div>
+          <div class="analytics-summary">
+            <div class="metric-card">
+              <span style="color:#aaa; font-size:0.8rem;">Total Page Views</span>
+              <div class="metric-value">${totalViews}</div>
+            </div>
+            <div class="metric-card">
+              <span style="color:#aaa; font-size:0.8rem;">Unique Sessions</span>
+              <div class="metric-value">${totalSessions}</div>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="trafficChart" height="200"></canvas>
+          </div>`;
+
+        window.renderTrafficChart(dates, trafficData);
+      } catch (err) {
+        body.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load analytics data: ${err.message}</p>`;
+      }
     }
 
-    function renderUpdatesTab(body) {
-      const updatesList = window.getUpdates();
-      let updatesHTML = updatesList.map(item => `
-        <div class="update-card" style="margin-bottom:1rem; padding:1rem;">
-          <div class="update-header">
-            <span class="update-title" style="font-size:1rem;">${item.title}</span>
-            <button onclick="window.deleteUpdate(${item.id})" class="delete-btn">Delete</button>
+    async function renderUpdatesTab(body) {
+      body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Updates...</div>`;
+      
+      try {
+        const q = query(collection(db, "updates"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        
+        let updatesHTML = '';
+        querySnapshot.forEach(docSnap => {
+          const item = docSnap.data();
+          updatesHTML += `
+            <div class="update-card" style="margin-bottom:1rem; padding:1rem;">
+              <div class="update-header">
+                <span class="update-title" style="font-size:1rem;">${item.title}</span>
+                <button onclick="window.deleteUpdate('${docSnap.id}')" class="delete-btn">Delete</button>
+              </div>
+              <div class="update-date" style="margin-bottom:0.5rem;">${item.date}</div>
+              <div class="update-body" style="font-size:0.85rem;">${item.content}</div>
+            </div>`;
+        });
+
+        body.innerHTML = `
+          <div class="section-header-box" style="margin-top:0;">Post New Update</div>
+          <div class="form-group">
+            <label>Update Title</label>
+            <input type="text" id="update-title-input" class="arcadix-input" placeholder="e.g. Added Getaway Shootout">
           </div>
-          <div class="update-date" style="margin-bottom:0.5rem;">${item.date}</div>
-          <div class="update-body" style="font-size:0.85rem;">${item.content}</div>
-        </div>
-      `).join('');
+          <div class="form-group">
+            <label>Content</label>
+            <textarea id="update-content-input" class="arcadix-textarea" rows="4" placeholder="Write update details here..."></textarea>
+          </div>
+          <button onclick="window.addUpdate()" class="arcadix-btn" style="margin-bottom:2rem;">Publish Update</button>
 
-      body.innerHTML = `
-        <div class="section-header-box" style="margin-top:0;">Post New Update</div>
-        <div class="form-group">
-          <label>Update Title</label>
-          <input type="text" id="update-title-input" class="arcadix-input" placeholder="e.g. Added Getaway Shootout">
-        </div>
-        <div class="form-group">
-          <label>Content</label>
-          <textarea id="update-content-input" class="arcadix-textarea" rows="4" placeholder="Write update details here..."></textarea>
-        </div>
-        <button onclick="window.addUpdate()" class="arcadix-btn" style="margin-bottom:2rem;">Publish Update</button>
+          <div class="section-header-box">Manage Published Updates</div>
+          ${querySnapshot.empty ? '<p style="text-align:center; color:#888;">No updates found.</p>' : updatesHTML}`;
 
-        <div class="section-header-box">Manage Published Updates</div>
-        ${updatesList.length ? updatesHTML : '<p style="text-align:center; color:#888;">No updates found.</p>'}`;
+      } catch (err) {
+        body.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load updates: ${err.message}</p>`;
+      }
     }
+
+    window.addUpdate = async function() {
+      const title = document.getElementById('update-title-input').value.trim();
+      const content = document.getElementById('update-content-input').value.trim();
+
+      if (!title || !content) {
+        await window.showArcadiXAlert('Please fill out both the title and content fields.', 'Error');
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, "updates"), {
+          title: title,
+          date: new Date().toISOString().split('T')[0],
+          createdAt: Date.now(),
+          content: content
+        });
+
+        await window.showArcadiXAlert('Update published site-wide!', 'Success');
+        window.switchAdminTab('updates');
+      } catch (err) {
+        window.showArcadiXAlert('Error publishing update: ' + err.message, 'Error');
+      }
+    };
+
+    window.deleteUpdate = async function(docId) {
+      const confirmed = await window.showArcadiXConfirm('Are you sure you want to delete this update?', 'Delete Update');
+      if (confirmed) {
+        try {
+          await deleteDoc(doc(db, "updates", docId));
+          window.switchAdminTab('updates');
+        } catch (err) {
+          window.showArcadiXAlert('Error deleting update: ' + err.message, 'Error');
+        }
+      }
+    };
 
     async function renderUsersTab(body) {
       body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Players...</div>`;
@@ -1597,7 +1664,6 @@
 
     window.openBanModal = async function(uid, shouldBan) {
       if (!shouldBan) {
-        // Direct unban
         const confirmed = await window.showArcadiXConfirm("Are you sure you want to unban this user?", "Unban Player");
         if (!confirmed) return;
 
@@ -1735,10 +1801,9 @@
     };
 
     function renderThemesTab(body) {
-      const themes = getThemes();
       const activeId = localStorage.getItem('arcadix_active_theme_id');
 
-      let themesHTML = themes.map(t => {
+      let themesHTML = fetchedThemesCache.map(t => {
         const isActive = t.id === activeId || (!activeId && t.isDefault);
         return `
           <div class="theme-card">
@@ -1758,7 +1823,7 @@
             <div class="theme-actions">
               <button class="action-btn" onclick="activateTheme('${t.id}')">Apply Theme</button>
               ${!t.isDefault ? `<button class="action-btn" onclick="setDefaultTheme('${t.id}')">Set as Default</button>` : ''}
-              ${themes.length > 1 ? `<button class="delete-btn" onclick="deleteTheme('${t.id}')">Delete</button>` : ''}
+              ${fetchedThemesCache.length > 1 ? `<button class="delete-btn" onclick="deleteTheme('${t.id}')">Delete</button>` : ''}
             </div>
           </div>`;
       }).join('');
@@ -1801,8 +1866,9 @@
       const name = document.getElementById('theme-name-input').value.trim();
       if (!name) return window.showArcadiXAlert("Please enter a name for the theme.", "Error");
 
+      const themeId = "theme-" + Date.now();
       const newTheme = {
-        id: "theme-" + Date.now(),
+        id: themeId,
         name: name,
         bgColor: document.getElementById('theme-bg').value,
         headerBg: document.getElementById('theme-header').value,
@@ -1813,17 +1879,17 @@
         isDefault: false
       };
 
-      const themes = getThemes();
-      themes.push(newTheme);
-      saveThemes(themes);
-
-      await window.showArcadiXAlert("Theme saved successfully!", "Success");
-      window.switchAdminTab('themes');
+      try {
+        await setDoc(doc(db, "themes", themeId), newTheme);
+        await window.showArcadiXAlert("Theme saved site-wide!", "Success");
+        window.switchAdminTab('themes');
+      } catch (err) {
+        window.showArcadiXAlert("Error creating theme: " + err.message, "Error");
+      }
     };
 
     window.activateTheme = function(themeId) {
-      const themes = getThemes();
-      const theme = themes.find(t => t.id === themeId);
+      const theme = fetchedThemesCache.find(t => t.id === themeId);
       if (theme) {
         localStorage.setItem('arcadix_active_theme_id', theme.id);
         applyTheme(theme);
@@ -1832,21 +1898,30 @@
     };
 
     window.setDefaultTheme = async function(themeId) {
-      let themes = getThemes();
-      themes = themes.map(t => ({ ...t, isDefault: t.id === themeId }));
-      saveThemes(themes);
-      await window.showArcadiXAlert("Site default theme updated.", "Success");
-      window.switchAdminTab('themes');
+      try {
+        for (const theme of fetchedThemesCache) {
+          const isTarget = theme.id === themeId;
+          if (theme.isDefault !== isTarget) {
+            await updateDoc(doc(db, "themes", theme.id), { isDefault: isTarget });
+          }
+        }
+        await window.showArcadiXAlert("Site default theme updated globally.", "Success");
+        window.switchAdminTab('themes');
+      } catch (err) {
+        window.showArcadiXAlert("Error updating default theme: " + err.message, "Error");
+      }
     };
 
     window.deleteTheme = async function(themeId) {
       const confirmed = await window.showArcadiXConfirm("Are you sure you want to delete this theme?", "Delete Theme");
       if (!confirmed) return;
 
-      let themes = getThemes();
-      themes = themes.filter(t => t.id !== themeId);
-      saveThemes(themes);
-      window.switchAdminTab('themes');
+      try {
+        await deleteDoc(doc(db, "themes", themeId));
+        window.switchAdminTab('themes');
+      } catch (err) {
+        window.showArcadiXAlert("Error deleting theme: " + err.message, "Error");
+      }
     };
 
     window.adminResetUsername = async function(targetUid, userId) {
@@ -1884,9 +1959,7 @@
     };
 
     window.adminResetPassword = async function(targetUid) {
-      const newPassword = await window.showArcadiXPrompt("Enter a new temporary password for this account:", "", "Password Reset");
-      if (!newPassword) return;
-
+      await window.showArcadiXPrompt("Enter a new temporary password for this account:", "", "Password Reset");
       await window.showArcadiXAlert("Password reset requested.", "Success");
     };
 
@@ -1947,50 +2020,50 @@
       };
     };
 
+    // Global Public Updates Page Rendering
+    window.renderPublicUpdates = function() {
+      const container = document.getElementById('container');
+      container.innerHTML = `<div class="page-scroll-container"><div class="section-header-box">Site Updates</div><p style="text-align:center; color:#888;">Loading updates...</p></div>`;
+
+      onSnapshot(query(collection(db, "updates"), orderBy("createdAt", "desc")), (snapshot) => {
+        if (snapshot.empty) {
+          container.innerHTML = `
+            <div class="page-scroll-container">
+              <div class="section-header-box">Site Updates</div>
+              <p style="text-align:center; color:#888;">No updates posted yet.</p>
+            </div>`;
+          return;
+        }
+
+        let updatesHTML = '';
+        snapshot.forEach(docSnap => {
+          const item = docSnap.data();
+          updatesHTML += `
+            <div class="update-card">
+              <div class="update-header">
+                <span class="update-title">${item.title}</span>
+                <span class="update-date">${item.date}</span>
+              </div>
+              <div class="update-body">${item.content}</div>
+            </div>`;
+        });
+
+        container.innerHTML = `
+          <div class="page-scroll-container">
+            <div class="section-header-box">Site Updates</div>
+            ${updatesHTML}
+          </div>`;
+      });
+    };
+
     if (userIdParam) {
       window.loadUserProfile(userIdParam);
+    } else if (pageIdParam === 'updates') {
+      window.renderPublicUpdates();
     }
   </script>
 
   <script>
-    function recordPageView() {
-      const today = new Date().toISOString().split('T')[0];
-      let trafficData = JSON.parse(localStorage.getItem('arcadix_traffic')) || {};
-
-      if (!trafficData[today]) {
-        trafficData[today] = { views: 0, sessions: 0 };
-      }
-
-      trafficData[today].views += 1;
-
-      if (!sessionStorage.getItem('arcadix_session_recorded')) {
-        trafficData[today].sessions += 1;
-        sessionStorage.setItem('arcadix_session_recorded', 'true');
-      }
-
-      localStorage.setItem('arcadix_traffic', JSON.stringify(trafficData));
-    }
-
-    recordPageView();
-
-    const DEFAULT_UPDATES = [
-      {
-        id: 1,
-        title: "Planet ArcadiX Relaunch",
-        date: "2026-09-05",
-        content: "Welcome to the new home of Planet ArcadiX! We have refreshed our site style, updated game framing, and added active update tracking."
-      }
-    ];
-
-    window.getUpdates = function() {
-      const saved = localStorage.getItem('arcadix_updates');
-      return saved ? JSON.parse(saved) : DEFAULT_UPDATES;
-    };
-
-    window.saveUpdates = function(updates) {
-      localStorage.setItem('arcadix_updates', JSON.stringify(updates));
-    };
-
     const GAMES_REGISTRY = {
       'getaway-shootout': {
         title: 'Getaway Shootout',
@@ -2031,26 +2104,6 @@
     } else if (pageId === 'signup' && !userId) {
       titleEl.innerText = `Sign Up - Planet ArcadiX`;
       renderAuthForm(false);
-
-    } else if (pageId === 'updates' && !userId) {
-      titleEl.innerText = `Updates - Planet ArcadiX`;
-      const updatesList = window.getUpdates();
-      
-      let updatesHTML = updatesList.map(item => `
-        <div class="update-card">
-          <div class="update-header">
-            <span class="update-title">${item.title}</span>
-            <span class="update-date">${item.date}</span>
-          </div>
-          <div class="update-body">${item.content}</div>
-        </div>
-      `).join('');
-
-      container.innerHTML = `
-        <div class="page-scroll-container">
-          <div class="section-header-box">Site Updates</div>
-          ${updatesList.length ? updatesHTML : '<p style="text-align:center; color:#888;">No updates posted yet.</p>'}
-        </div>`;
 
     } else if (gameId && !GAMES_REGISTRY[gameId]) {
       container.innerHTML = `
@@ -2123,8 +2176,8 @@
 
     window.renderTrafficChart = function(dates, trafficData) {
       const ctx = document.getElementById('trafficChart').getContext('2d');
-      const views = dates.map(d => trafficData[d].views);
-      const sessions = dates.map(d => trafficData[d].sessions);
+      const views = dates.map(d => trafficData[d].views || 0);
+      const sessions = dates.map(d => trafficData[d].sessions || 0);
 
       new Chart(ctx, {
         type: 'line',
@@ -2172,38 +2225,6 @@
           }
         }
       });
-    };
-
-    window.addUpdate = async function() {
-      const title = document.getElementById('update-title-input').value.trim();
-      const content = document.getElementById('update-content-input').value.trim();
-
-      if (!title || !content) {
-        await window.showArcadiXAlert('Please fill out both the title and content fields.', 'Error');
-        return;
-      }
-
-      const updates = window.getUpdates();
-      const newEntry = {
-        id: Date.now(),
-        title: title,
-        date: new Date().toISOString().split('T')[0],
-        content: content
-      };
-
-      updates.unshift(newEntry);
-      window.saveUpdates(updates);
-      window.switchAdminTab('updates');
-    };
-
-    window.deleteUpdate = async function(id) {
-      const confirmed = await window.showArcadiXConfirm('Are you sure you want to delete this update?', 'Delete Update');
-      if (confirmed) {
-        let updates = window.getUpdates();
-        updates = updates.filter(item => item.id !== id);
-        window.saveUpdates(updates);
-        window.switchAdminTab('updates');
-      }
     };
   </script>
 
