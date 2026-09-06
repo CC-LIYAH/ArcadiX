@@ -83,6 +83,68 @@
       color: #a855f7;
     }
 
+    /* Profile Dropdown Component UI */
+    .user-profile-menu {
+      position: relative;
+    }
+    .profile-trigger {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: #120916;
+      border: 1px solid #4a285d;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.2s;
+    }
+    .profile-trigger:hover {
+      border-color: #a855f7;
+    }
+    .avatar-img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #2a1832;
+    }
+    .profile-dropdown {
+      position: absolute;
+      top: 120%;
+      right: 0;
+      background: #120916;
+      border: 1px solid #4a285d;
+      border-radius: 8px;
+      width: 180px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.8);
+      display: none;
+      flex-direction: column;
+      z-index: 10000;
+      overflow: hidden;
+    }
+    .profile-dropdown.active {
+      display: flex;
+    }
+    .profile-dropdown a, .profile-dropdown button {
+      padding: 0.8rem 1rem;
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 0.85rem;
+      text-align: left;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
+      border-bottom: 1px solid #2a1832;
+      transition: background 0.2s, color 0.2s;
+    }
+    .profile-dropdown a:hover, .profile-dropdown button:hover {
+      background: #2a1832;
+      color: #a855f7;
+    }
+
     /* Main Area Container */
     .main-content {
       flex: 1;
@@ -151,6 +213,38 @@
       margin-bottom: 2rem;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
       text-align: center;
+    }
+
+    /* User Profile Cards */
+    .profile-card {
+      background: #120916;
+      border: 1px solid #331940;
+      border-radius: 8px;
+      padding: 1.8rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .profile-avatar-large {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 2px solid #a855f7;
+      object-fit: cover;
+    }
+    .user-id-badge {
+      display: inline-block;
+      background: #2a1832;
+      color: #a855f7;
+      font-size: 0.8rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      margin-top: 0.4rem;
     }
 
     /* Updates Timeline Styling */
@@ -368,54 +462,138 @@
       createUserWithEmailAndPassword, 
       signInWithEmailAndPassword, 
       signOut, 
+      updateProfile,
       onAuthStateChanged 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { 
+      getFirestore, 
+      doc, 
+      setDoc, 
+      getDoc, 
+      updateDoc, 
+      runTransaction, 
+      collection, 
+      query, 
+      where, 
+      getDocs 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "SENDER_ID",
-      appId: "APP_ID"
+      apiKey: "AIzaSyBIvUkO_paPfmMlbo5jNaXoteZL0fkZYa4",
+      authDomain: "arcadix-7fc11.firebaseapp.com",
+      projectId: "arcadix-7fc11",
+      storageBucket: "arcadix-7fc11.firebasestorage.app",
+      messagingSenderId: "1024578621730",
+      appId: "1:1024578621730:web:27adc1e3b5cdb802f1557b",
+      measurementId: "G-FSNMGLRN5V"
     };
+
+    const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/bottts/svg?seed=Arcadix";
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    let currentUser = null;
+    let currentUserData = null;
 
-    onAuthStateChanged(auth, (user) => {
-      currentUser = user;
+    onAuthStateChanged(auth, async (user) => {
       const navSlot = document.getElementById('auth-nav-slot');
       
       if (user) {
-        navSlot.innerHTML = `
-          <button onclick="handleAccountSignOut()" class="user-nav-btn" style="color: #a855f7;">
-            Logout (${user.email.split('@')[0]})
-          </button>`;
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          currentUserData = userDoc.data();
+          const pfp = currentUserData.photoURL || DEFAULT_AVATAR;
+          navSlot.innerHTML = `
+            <div class="user-profile-menu">
+              <div class="profile-trigger" onclick="toggleProfileDropdown()">
+                <img src="${pfp}" class="avatar-img" alt="PFP">
+                <span>${currentUserData.username}</span>
+              </div>
+              <div class="profile-dropdown" id="profile-dropdown">
+                <a href="?user=${currentUserData.userId}">Profile</a>
+                <a href="?page=settings">Settings</a>
+                <button onclick="handleAccountSignOut()">Logout</button>
+              </div>
+            </div>`;
+        }
       } else {
+        currentUserData = null;
         navSlot.innerHTML = `<a href="?page=login">Login</a>`;
       }
     });
 
+    window.toggleProfileDropdown = function() {
+      const dropdown = document.getElementById('profile-dropdown');
+      if (dropdown) dropdown.classList.toggle('active');
+    };
+
     window.handleSignUp = async function() {
+      const username = document.getElementById('auth-username').value.trim();
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value;
+
+      if (!username) return alert("Please enter a username.");
+
       try {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const usernameCheck = await getDoc(doc(db, "usernames", username.toLowerCase()));
+        if (usernameCheck.exists()) return alert("Username is already taken!");
+
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Transaction for sequential auto-incrementing user ID
+        let newUserId = 1;
+        const counterRef = doc(db, "counters", "users");
+        await runTransaction(db, async (transaction) => {
+          const counterDoc = await transaction.get(counterRef);
+          if (!counterDoc.exists()) {
+            transaction.set(counterRef, { currentId: 1 });
+            newUserId = 1;
+          } else {
+            newUserId = counterDoc.data().currentId + 1;
+            transaction.update(counterRef, { currentId: newUserId });
+          }
+        });
+
+        await updateProfile(user, { displayName: username, photoURL: DEFAULT_AVATAR });
+
+        const userData = {
+          uid: user.uid,
+          userId: newUserId,
+          username: username,
+          email: email,
+          photoURL: DEFAULT_AVATAR,
+          bio: "Welcome to my Planet ArcadiX profile!"
+        };
+
+        await setDoc(doc(db, "usernames", username.toLowerCase()), { email: email, uid: user.uid });
+        await setDoc(doc(db, "users", user.uid), userData);
+
         alert("Account created successfully!");
-        window.location.href = "./";
+        window.location.href = `./?user=${newUserId}`;
       } catch (error) {
         alert("Sign Up Error: " + error.message);
       }
     };
 
     window.handleSignIn = async function() {
-      const email = document.getElementById('auth-email').value.trim();
+      const identifier = document.getElementById('auth-identifier').value.trim();
       const password = document.getElementById('auth-password').value;
+
+      let targetEmail = identifier;
+
       try {
-        await signInWithEmailAndPassword(auth, email, password);
+        if (!identifier.includes('@')) {
+          const userDoc = await getDoc(doc(db, "usernames", identifier.toLowerCase()));
+          if (userDoc.exists()) {
+            targetEmail = userDoc.data().email;
+          } else {
+            return alert("Username not found!");
+          }
+        }
+
+        await signInWithEmailAndPassword(auth, targetEmail, password);
         window.location.href = "./";
       } catch (error) {
         alert("Login Error: " + error.message);
@@ -430,6 +608,109 @@
         alert("Logout Error: " + error.message);
       }
     };
+
+    window.loadUserProfile = async function(userId) {
+      const container = document.getElementById('container');
+      const q = query(collection(db, "users"), where("userId", "==", parseInt(userId)));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">User not found.</p></div>`;
+        return;
+      }
+
+      const profileData = querySnapshot.docs[0].data();
+      const pfp = profileData.photoURL || DEFAULT_AVATAR;
+
+      container.innerHTML = `
+        <div class="page-scroll-container">
+          <div class="profile-card">
+            <div class="profile-header">
+              <img src="${pfp}" class="profile-avatar-large" alt="Avatar">
+              <div>
+                <h2>${profileData.username}</h2>
+                <span class="user-id-badge">ID: #${profileData.userId}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Bio</label>
+              <p style="line-height:1.6; color:#ddd;">${profileData.bio || 'No bio available.'}</p>
+            </div>
+          </div>
+        </div>`;
+    };
+
+    window.renderSettingsPage = function() {
+      const container = document.getElementById('container');
+      if (!auth.currentUser || !currentUserData) {
+        container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">Please login to access settings.</p></div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="page-scroll-container">
+          <div class="auth-box">
+            <div class="section-header-box" style="margin-top:0;">Profile Settings</div>
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="settings-username" class="arcadix-input" value="${currentUserData.username}">
+            </div>
+            <div class="form-group">
+              <label>Profile Picture URL</label>
+              <input type="text" id="settings-pfp" class="arcadix-input" value="${currentUserData.photoURL || ''}">
+            </div>
+            <div class="form-group">
+              <label>Bio</label>
+              <textarea id="settings-bio" class="arcadix-textarea" rows="3">${currentUserData.bio || ''}</textarea>
+            </div>
+            <button onclick="saveProfileSettings()" class="arcadix-btn">Save Changes</button>
+          </div>
+        </div>`;
+    };
+
+    window.saveProfileSettings = async function() {
+      const newUsername = document.getElementById('settings-username').value.trim();
+      const newPfp = document.getElementById('settings-pfp').value.trim();
+      const newBio = document.getElementById('settings-bio').value.trim();
+
+      if (!newUsername) return alert("Username cannot be empty.");
+
+      try {
+        const uid = auth.currentUser.uid;
+
+        if (newUsername.toLowerCase() !== currentUserData.username.toLowerCase()) {
+          const usernameCheck = await getDoc(doc(db, "usernames", newUsername.toLowerCase()));
+          if (usernameCheck.exists()) return alert("Username already taken!");
+
+          await setDoc(doc(db, "usernames", newUsername.toLowerCase()), { email: currentUserData.email, uid: uid });
+        }
+
+        const updatedData = {
+          username: newUsername,
+          photoURL: newPfp || DEFAULT_AVATAR,
+          bio: newBio
+        };
+
+        await updateDoc(doc(db, "users", uid), updatedData);
+        await updateProfile(auth.currentUser, { displayName: newUsername, photoURL: updatedData.photoURL });
+
+        alert("Profile updated successfully!");
+        window.location.reload();
+      } catch (error) {
+        alert("Error updating profile: " + error.message);
+      }
+    };
+
+    // Firebase Routing Interceptors
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('user');
+    const pageId = urlParams.get('page');
+
+    if (userId) {
+      window.loadUserProfile(userId);
+    } else if (pageId === 'settings') {
+      setTimeout(() => window.renderSettingsPage(), 300);
+    }
   </script>
 
   <script>
@@ -488,6 +769,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     const gameId = urlParams.get('game');
     const pageId = urlParams.get('page');
+    const userId = urlParams.get('user');
 
     const container = document.getElementById('container');
     const titleEl = document.getElementById('page-title');
@@ -512,17 +794,17 @@
         </div>`;
 
     // ROUTER: Login Page
-    } else if (pageId === 'login') {
+    } else if (pageId === 'login' && !userId) {
       titleEl.innerText = `Login - Planet ArcadiX`;
       renderAuthForm(true);
 
     // ROUTER: Sign Up Page
-    } else if (pageId === 'signup') {
+    } else if (pageId === 'signup' && !userId) {
       titleEl.innerText = `Sign Up - Planet ArcadiX`;
       renderAuthForm(false);
 
     // ROUTER: Updates Page
-    } else if (pageId === 'updates') {
+    } else if (pageId === 'updates' && !userId) {
       titleEl.innerText = `Updates - Planet ArcadiX`;
       const updatesList = getUpdates();
       
@@ -543,7 +825,7 @@
         </div>`;
 
     // ROUTER: Admin Panel Page
-    } else if (pageId === 'admin') {
+    } else if (pageId === 'admin' && !userId) {
       titleEl.innerText = `Admin Panel - Planet ArcadiX`;
       const isAuthenticated = sessionStorage.getItem('arcadix_admin_auth') === 'true';
 
@@ -564,7 +846,7 @@
       }
 
     // ROUTER: Error Page
-    } else if (gameId) {
+    } else if (gameId && !GAMES_REGISTRY[gameId]) {
       container.innerHTML = `
         <div class="status-msg">
           <h2>Game Not Found</h2>
@@ -573,7 +855,7 @@
         </div>`;
 
     // ROUTER: Home Page
-    } else {
+    } else if (!pageId && !userId) {
       let cardsHTML = '';
       for (const [id, game] of Object.entries(GAMES_REGISTRY)) {
         cardsHTML += `
@@ -604,10 +886,21 @@
         <div class="page-scroll-container">
           <div class="auth-box">
             <div class="section-header-box" style="margin-top:0;">${isLoginView ? 'User Login' : 'Create Account'}</div>
+            ${!isLoginView ? `
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="auth-username" class="arcadix-input" placeholder="ArcadeMaster">
+            </div>
             <div class="form-group">
               <label>Email Address</label>
               <input type="email" id="auth-email" class="arcadix-input" placeholder="player@domain.com">
             </div>
+            ` : `
+            <div class="form-group">
+              <label>Username or Email Address</label>
+              <input type="text" id="auth-identifier" class="arcadix-input" placeholder="Username or email...">
+            </div>
+            `}
             <div class="form-group">
               <label>Password</label>
               <input type="password" id="auth-password" class="arcadix-input" placeholder="••••••••">
