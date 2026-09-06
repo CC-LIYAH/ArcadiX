@@ -451,7 +451,7 @@
       font-size: 0.85rem;
       color: var(--accent-color);
     }
-    .arcadix-input, .arcadix-textarea {
+    .arcadix-input, .arcadix-textarea, .arcadix-select {
       width: 100%;
       background: var(--bg-color);
       border: 1px solid var(--card-border);
@@ -463,7 +463,7 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    .arcadix-input:focus, .arcadix-textarea:focus {
+    .arcadix-input:focus, .arcadix-textarea:focus, .arcadix-select:focus {
       border-color: var(--accent-color);
     }
     .arcadix-btn {
@@ -538,6 +538,84 @@
       font-weight: 700;
     }
 
+    /* Asset Grid */
+    .asset-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+    .asset-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .asset-preview {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--accent-color);
+    }
+
+    /* User List Dropdown Accordion */
+    .user-list-container {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    .user-list-item {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .user-item-header {
+      padding: 1rem 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.02);
+      transition: background 0.2s;
+    }
+    .user-item-header:hover {
+      background: var(--header-border);
+    }
+    .user-item-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .user-badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: var(--header-border);
+      color: var(--accent-color);
+    }
+    .user-badge.admin {
+      background: #166534;
+      color: #4ade80;
+    }
+    .user-badge.banned {
+      background: #991b1b;
+      color: #fca5a5;
+    }
+    .user-item-details {
+      display: none;
+      padding: 1.2rem;
+      border-top: 1px solid var(--card-border);
+      background: var(--bg-color);
+    }
+    .user-item-details.active {
+      display: block;
+    }
+
     /* Status Messages */
     .status-msg {
       display: flex;
@@ -583,7 +661,7 @@
         id: "default-purple",
         name: "ArcadiX Purple (Default)",
         bgColor: "#000000",
-        headerBg: "#1f1224",
+        headerBg: "linear-gradient(180deg, #1f1224 0%, #120916 100%)",
         cardBg: "#120916",
         cardBorder: "#331940",
         accentColor: "#a855f7",
@@ -660,7 +738,8 @@
       collection, 
       query, 
       where, 
-      getDocs 
+      getDocs,
+      addDoc 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -692,13 +771,20 @@
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           currentUserData = userDoc.data();
+
+          if (currentUserData.isBanned) {
+            alert(`Your account is banned: ${currentUserData.banReason || 'No reason provided'}`);
+            await signOut(auth);
+            window.location.reload();
+            return;
+          }
           
           if (currentUserData.userId === 1 && !currentUserData.hasAdminAccess) {
             currentUserData.hasAdminAccess = true;
-            currentUserData.permissions = { manageUpdates: true, manageUsers: true, isSuperAdmin: true };
+            currentUserData.permissions = { manageUpdates: true, manageUsers: true, approveAssets: true, isSuperAdmin: true };
             await updateDoc(doc(db, "users", user.uid), {
               hasAdminAccess: true,
-              permissions: { manageUpdates: true, manageUsers: true, isSuperAdmin: true }
+              permissions: { manageUpdates: true, manageUsers: true, approveAssets: true, isSuperAdmin: true }
             });
           }
 
@@ -771,9 +857,12 @@
           photoURL: DEFAULT_AVATAR,
           bio: "Welcome to my Planet ArcadiX profile!",
           hasAdminAccess: isSuperAdmin,
+          isBanned: false,
+          banReason: "",
           permissions: {
             manageUpdates: isSuperAdmin,
             manageUsers: isSuperAdmin,
+            approveAssets: isSuperAdmin,
             isSuperAdmin: isSuperAdmin
           }
         };
@@ -860,17 +949,30 @@
         return;
       }
 
+      const themes = getThemes();
+      const activeId = localStorage.getItem('arcadix_active_theme_id') || themes[0].id;
+      const themeOptions = themes.map(t => `<option value="${t.id}" ${t.id === activeId ? 'selected' : ''}>${t.name}</option>`).join('');
+
       container.innerHTML = `
         <div class="page-scroll-container">
           <div class="auth-box">
-            <div class="section-header-box" style="margin-top:0;">Profile Settings</div>
+            <div class="section-header-box" style="margin-top:0;">Profile & Site Settings</div>
+
+            <div class="form-group">
+              <label>Site Theme</label>
+              <select id="settings-theme-select" class="arcadix-select" onchange="window.changeSiteTheme(this.value)">
+                ${themeOptions}
+              </select>
+            </div>
+
             <div class="form-group">
               <label>Username</label>
               <input type="text" id="settings-username" class="arcadix-input" value="${currentUserData.username}">
             </div>
             <div class="form-group">
-              <label>Profile Picture URL</label>
-              <input type="text" id="settings-pfp" class="arcadix-input" value="${currentUserData.photoURL || ''}">
+              <label>Submit Photo URL for Approval</label>
+              <input type="text" id="settings-pfp" class="arcadix-input" placeholder="https://..." value="${currentUserData.photoURL || ''}">
+              <small style="color:#aaa; font-size:0.75rem;">Note: Submitted URLs require moderator approval before taking effect.</small>
             </div>
             <div class="form-group">
               <label>Bio</label>
@@ -879,6 +981,15 @@
             <button onclick="saveProfileSettings()" class="arcadix-btn">Save Changes</button>
           </div>
         </div>`;
+    };
+
+    window.changeSiteTheme = function(themeId) {
+      const themes = getThemes();
+      const targetTheme = themes.find(t => t.id === themeId);
+      if (targetTheme) {
+        localStorage.setItem('arcadix_active_theme_id', themeId);
+        applyTheme(targetTheme);
+      }
     };
 
     window.saveProfileSettings = async function() {
@@ -898,14 +1009,23 @@
           await setDoc(doc(db, "usernames", newUsername.toLowerCase()), { uid: uid });
         }
 
+        if (newPfp && newPfp !== currentUserData.photoURL) {
+          await addDoc(collection(db, "pending_assets"), {
+            uid: uid,
+            username: newUsername,
+            photoURL: newPfp,
+            createdAt: new Date().toISOString()
+          });
+          alert("Your new photo URL has been submitted for admin approval.");
+        }
+
         const updatedData = {
           username: newUsername,
-          photoURL: newPfp || DEFAULT_AVATAR,
           bio: newBio
         };
 
         await updateDoc(doc(db, "users", uid), updatedData);
-        await updateProfile(auth.currentUser, { displayName: newUsername, photoURL: updatedData.photoURL });
+        await updateProfile(auth.currentUser, { displayName: newUsername });
 
         alert("Profile updated successfully!");
         window.location.reload();
@@ -941,6 +1061,7 @@
             <button id="btn-tab-analytics" class="active" onclick="switchAdminTab('analytics')">Dashboard</button>
             <button id="btn-tab-updates" onclick="switchAdminTab('updates')">Site Updates</button>
             <button id="btn-tab-users" onclick="switchAdminTab('users')">User Management</button>
+            <button id="btn-tab-assets" onclick="switchAdminTab('assets')">Asset Approval</button>
             <button id="btn-tab-themes" onclick="switchAdminTab('themes')">Site Themes</button>
           </div>
           <div class="admin-body" id="admin-body">
@@ -965,6 +1086,8 @@
         renderUpdatesTab(body);
       } else if (tabName === 'users') {
         renderUsersTab(body);
+      } else if (tabName === 'assets') {
+        renderAssetsTab(body);
       } else if (tabName === 'themes') {
         renderThemesTab(body);
       }
@@ -1034,45 +1157,113 @@
           return;
         }
 
-        const isSuperAdmin = currentUserData && (currentUserData.userId === 1 || (currentUserData.permissions && currentUserData.permissions.isSuperAdmin));
-
-        let usersHTML = querySnapshot.docs.map(docSnap => {
-          const u = docSnap.data();
-          const targetUid = u.uid;
-
-          return `
-            <div class="user-list-card">
-              <div class="user-card-header">
-                <div>
-                  <strong style="color:var(--accent-color); font-size:1.1rem;">${u.username}</strong>
-                  <span class="user-id-badge" style="margin-left:0.5rem;">ID: #${u.userId}</span>
-                  ${u.hasAdminAccess ? '<span class="user-id-badge" style="background:#4a285d; color:#22c55e; margin-left:0.3rem;">ADMIN</span>' : ''}
+        let usersHTML = '';
+        querySnapshot.forEach((userDoc) => {
+          const user = userDoc.data();
+          const uniqueId = `user-row-${user.uid}`;
+          
+          usersHTML += `
+            <div class="user-list-item">
+              <div class="user-item-header" onclick="toggleUserCard('${uniqueId}')">
+                <div class="user-item-info">
+                  <strong>${user.username}</strong>
+                  <span class="user-badge">ID: #${user.userId}</span>
+                  ${user.hasAdminAccess ? '<span class="user-badge admin">ADMIN</span>' : ''}
+                  ${user.isBanned ? '<span class="user-badge banned">BANNED</span>' : ''}
+                </div>
+                <span style="color:var(--accent-color);">&#9660;</span>
+              </div>
+              <div class="user-item-details" id="${uniqueId}">
+                <p style="margin-bottom:0.5rem;"><strong>Bio:</strong> ${user.bio || 'User bio text not provided.'}</p>
+                <div class="user-actions">
+                  <button class="action-btn" onclick="adminResetUsername('${user.uid}', ${user.userId})">Reset Username</button>
+                  <button class="action-btn" onclick="adminResetBio('${user.uid}')">Reset Bio</button>
+                  <button class="action-btn" onclick="adminResetPassword('${user.uid}')">Reset Password</button>
+                  <button class="action-btn" onclick="adminToggleAdminAccess('${user.uid}', ${!user.hasAdminAccess})">${user.hasAdminAccess ? 'Revoke Admin' : 'Grant Admin'}</button>
+                  <button class="action-btn" onclick="adminManagePermissions('${user.uid}')">Manage Permissions</button>
+                  <button class="action-btn danger" onclick="toggleUserBan('${user.uid}', ${!user.isBanned})">${user.isBanned ? 'Unban User' : 'Ban User'}</button>
                 </div>
               </div>
-              <div style="font-size:0.85rem; color:#aaa;">
-                <div><strong>Bio:</strong> ${u.bio || 'None'}</div>
-              </div>
-              <div class="user-actions">
-                <button class="action-btn" onclick="adminResetUsername('${targetUid}', ${u.userId})">Reset Username</button>
-                <button class="action-btn" onclick="adminResetBio('${targetUid}')">Reset Bio</button>
-                <button class="action-btn" onclick="adminResetPassword('${targetUid}')">Reset Password</button>
-                <button class="action-btn" style="border-color:var(--accent-color);" onclick="adminToggleAdminAccess('${targetUid}', ${!u.hasAdminAccess})">
-                  ${u.hasAdminAccess ? 'Revoke Admin' : 'Grant Admin'}
-                </button>
-                ${isSuperAdmin ? `
-                  <button class="action-btn" style="background:#1e1b4b;" onclick="adminManagePermissions('${targetUid}')">Manage Permissions</button>
-                ` : ''}
-              </div>
             </div>`;
-        }).join('');
+        });
 
         body.innerHTML = `
           <div class="section-header-box" style="margin-top:0;">Registered Players</div>
-          ${usersHTML}`;
+          <div class="user-list-container">${usersHTML}</div>`;
       } catch (err) {
         body.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load users: ${err.message}</p>`;
       }
     }
+
+    window.toggleUserCard = function(elementId) {
+      const card = document.getElementById(elementId);
+      if (card) card.classList.toggle('active');
+    };
+
+    window.toggleUserBan = async function(uid, shouldBan) {
+      let banReason = "";
+      if (shouldBan) {
+        banReason = prompt("Enter ban reason:", "Violation of site rules") || "Banned by administrator";
+      }
+      await updateDoc(doc(db, "users", uid), {
+        isBanned: shouldBan,
+        banReason: shouldBan ? banReason : ""
+      });
+      alert(shouldBan ? "User has been banned." : "User has been unbanned.");
+      window.switchAdminTab('users');
+    };
+
+    async function renderAssetsTab(body) {
+      if (currentUserData && !currentUserData.permissions?.approveAssets && !currentUserData.permissions?.isSuperAdmin) {
+        body.innerHTML = `<p style="color:#ef4444; text-align:center;">You do not have permission to review asset approvals.</p>`;
+        return;
+      }
+
+      body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Pending Assets...</div>`;
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "pending_assets"));
+        if (querySnapshot.empty) {
+          body.innerHTML = `
+            <div class="section-header-box" style="margin-top:0;">Asset Approval Queue</div>
+            <p style="text-align:center; color:#888;">No pending photo URLs for approval.</p>`;
+          return;
+        }
+
+        let assetsHTML = '';
+        querySnapshot.forEach((assetDoc) => {
+          const item = assetDoc.data();
+          assetsHTML += `
+            <div class="asset-card">
+              <img src="${item.photoURL}" class="asset-preview" alt="Preview">
+              <div><strong>${item.username}</strong></div>
+              <div class="user-actions">
+                <button class="action-btn" onclick="approveAsset('${assetDoc.id}', '${item.uid}', '${item.photoURL}')">Approve</button>
+                <button class="action-btn danger" onclick="rejectAsset('${assetDoc.id}')">Reject</button>
+              </div>
+            </div>`;
+        });
+
+        body.innerHTML = `
+          <div class="section-header-box" style="margin-top:0;">Asset Approval Queue</div>
+          <div class="asset-grid">${assetsHTML}</div>`;
+      } catch (e) {
+        body.innerHTML = `<p style="color:#ef4444; text-align:center;">Error loading assets: ${e.message}</p>`;
+      }
+    }
+
+    window.approveAsset = async function(assetDocId, uid, photoURL) {
+      await updateDoc(doc(db, "users", uid), { photoURL: photoURL });
+      await deleteDoc(doc(db, "pending_assets", assetDocId));
+      alert("Asset approved and user profile updated!");
+      window.switchAdminTab('assets');
+    };
+
+    window.rejectAsset = async function(assetDocId) {
+      await deleteDoc(doc(db, "pending_assets", assetDocId));
+      alert("Asset request rejected.");
+      window.switchAdminTab('assets');
+    };
 
     function renderThemesTab(body) {
       const themes = getThemes();
@@ -1231,7 +1422,8 @@
         await updateDoc(doc(db, "users", targetUid), {
           hasAdminAccess: grantState,
           "permissions.manageUpdates": grantState,
-          "permissions.manageUsers": grantState
+          "permissions.manageUsers": grantState,
+          "permissions.approveAssets": grantState
         });
         alert(`Admin access ${grantState ? 'granted' : 'revoked'}.`);
         window.switchAdminTab('users');
@@ -1243,11 +1435,13 @@
     window.adminManagePermissions = async function(targetUid) {
       const canManageUpdates = confirm("Grant permission: Manage Updates?");
       const canManageUsers = confirm("Grant permission: Manage Users?");
+      const canApproveAssets = confirm("Grant permission: Approve Assets?");
 
       try {
         await updateDoc(doc(db, "users", targetUid), {
           "permissions.manageUpdates": canManageUpdates,
-          "permissions.manageUsers": canManageUsers
+          "permissions.manageUsers": canManageUsers,
+          "permissions.approveAssets": canApproveAssets
         });
         alert("Permissions updated!");
         window.switchAdminTab('users');
