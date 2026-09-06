@@ -735,6 +735,20 @@
       gap: 1rem;
     }
 
+    <!-- Dedicated Signed-Out Landing Page -->
+<div id="logged-out-landing" class="auth-landing-screen">
+    <img src="Logo.png" alt="Planet ArcadiX Logo" class="landing-logo">
+    <div class="landing-actions">
+        <button onclick="showSignupModal()" class="btn-primary">Sign Up</button>
+        <button onclick="showLoginModal()" class="btn-secondary">Log In</button>
+    </div>
+</div>
+
+<!-- Wrap your existing pages/dashboard here -->
+<div id="main-app-content" style="display: none;">
+    <!-- All your existing app HTML goes here -->
+</div>
+
     /* Restricted Access UI Page */
     .restricted-access-container {
       display: flex;
