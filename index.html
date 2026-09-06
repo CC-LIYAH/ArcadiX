@@ -1327,6 +1327,7 @@
           uid: user.uid,
           userId: newUserId,
           username: username,
+          email: email,
           photoURL: DEFAULT_AVATAR,
           bio: "Welcome to my Planet ArcadiX profile!",
           hasAdminAccess: isSuperAdmin,
@@ -1938,7 +1939,7 @@
 
         usersHTML += `
           <div class="user-list-item">
-            <div class="user-item-header" onclick="toggleUserCard('${uniqueId}')">
+            <div class="user-item-header" onclick="window.toggleUserCard('${uniqueId}')">
               <div class="user-item-info">
                 <strong>${user.username}</strong>
                 <span class="user-badge">ID: #${user.userId}</span>
@@ -1952,13 +1953,13 @@
               <p style="margin-bottom:0.5rem;"><strong>Bio:</strong> ${user.bio || 'User bio text not provided.'}</p>
               <p style="margin-bottom:0.5rem; font-size:0.75rem; color:#aaa;"><strong>Device ID:</strong> ${user.registeredDeviceId || 'Not registered'}</p>
               <div class="user-actions">
-                ${canReset ? `<button class="action-btn" onclick="adminResetUsername('${user.uid}', ${user.userId})">Reset Username</button>` : ''}
-                ${canReset ? `<button class="action-btn" onclick="adminResetBio('${user.uid}')">Reset Bio</button>` : ''}
-                ${canReset ? `<button class="action-btn" onclick="adminResetPassword('${user.uid}')">Reset Password</button>` : ''}
-                <button class="action-btn" onclick="adminToggleAdminAccess('${user.uid}', ${!user.hasAdminAccess})">${user.hasAdminAccess ? 'Revoke Admin' : 'Grant Admin'}</button>
-                <button class="action-btn" onclick="adminManagePermissions('${user.uid}')">Manage Permissions</button>
-                ${canBanUser ? `<button class="action-btn danger" onclick="openBanModal('${user.uid}', ${!user.isBanned})">${user.isBanned ? 'Unban Account' : 'Ban Account'}</button>` : ''}
-                ${canBanDev ? `<button class="action-btn danger" onclick="toggleDeviceBan('${user.uid}', '${user.registeredDeviceId || ''}', ${!user.isDeviceBanned})">${user.isDeviceBanned ? 'Unban Device' : 'Ban Device'}</button>` : ''}
+                ${canReset ? `<button class="action-btn" onclick="window.adminResetUsername('${user.uid}', ${user.userId})">Reset Username</button>` : ''}
+                ${canReset ? `<button class="action-btn" onclick="window.adminResetBio('${user.uid}')">Reset Bio</button>` : ''}
+                ${canReset ? `<button class="action-btn" onclick="window.adminResetPassword('${user.uid}')">Reset Password</button>` : ''}
+                <button class="action-btn" onclick="window.adminToggleAdminAccess('${user.uid}', ${!user.hasAdminAccess})">${user.hasAdminAccess ? 'Revoke Admin' : 'Grant Admin'}</button>
+                <button class="action-btn" onclick="window.adminManagePermissions('${user.uid}')">Manage Permissions</button>
+                ${canBanUser ? `<button class="action-btn danger" onclick="window.openBanModal('${user.uid}', ${!user.isBanned})">${user.isBanned ? 'Unban Account' : 'Ban Account'}</button>` : ''}
+                ${canBanDev ? `<button class="action-btn danger" onclick="window.toggleDeviceBan('${user.uid}', '${user.registeredDeviceId || ''}', ${!user.isDeviceBanned})">${user.isDeviceBanned ? 'Unban Device' : 'Ban Device'}</button>` : ''}
               </div>
             </div>
           </div>`;
@@ -2083,8 +2084,8 @@
               <img src="${item.photoURL}" class="asset-preview" alt="Preview">
               <div><strong>${item.username}</strong></div>
               <div class="user-actions">
-                <button class="action-btn" onclick="approveAsset('${assetDoc.id}', '${item.uid}', '${item.photoURL}')">Approve</button>
-                <button class="action-btn danger" onclick="rejectAsset('${assetDoc.id}')">Reject</button>
+                <button class="action-btn" onclick="window.approveAsset('${assetDoc.id}', '${item.uid}', '${item.photoURL}')">Approve</button>
+                <button class="action-btn danger" onclick="window.rejectAsset('${assetDoc.id}')">Reject</button>
               </div>
             </div>`;
         });
@@ -2131,9 +2132,9 @@
               <div style="width:24px; height:24px; border-radius:50%; background:${t.accentColor}; border:1px solid #fff;" title="Accent"></div>
             </div>
             <div class="theme-actions">
-              <button class="action-btn" onclick="activateTheme('${t.id}')">Apply Theme</button>
-              ${!t.isDefault ? `<button class="action-btn" onclick="setDefaultTheme('${t.id}')">Set as Default</button>` : ''}
-              ${fetchedThemesCache.length > 1 ? `<button class="delete-btn" onclick="deleteTheme('${t.id}')">Delete</button>` : ''}
+              <button class="action-btn" onclick="window.activateTheme('${t.id}')">Apply Theme</button>
+              ${!t.isDefault ? `<button class="action-btn" onclick="window.setDefaultTheme('${t.id}')">Set as Default</button>` : ''}
+              ${fetchedThemesCache.length > 1 ? `<button class="delete-btn" onclick="window.deleteTheme('${t.id}')">Delete</button>` : ''}
             </div>
           </div>`;
       }).join('');
@@ -2166,7 +2167,7 @@
             <input type="color" id="theme-accent" value="#a855f7">
           </div>
         </div>
-        <button onclick="createNewTheme()" class="arcadix-btn" style="margin-bottom:2rem;">Save & Register Theme</button>
+        <button onclick="window.createNewTheme()" class="arcadix-btn" style="margin-bottom:2rem;">Save & Register Theme</button>
 
         <div class="section-header-box">Available Site Themes</div>
         ${themesHTML}`;
