@@ -570,10 +570,22 @@
       text-decoration: none;
       color: var(--text-color);
       transition: transform 0.2s, border-color 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
     }
     .game-card:hover {
       transform: translateY(-3px);
       border-color: var(--accent-color);
+    }
+    .game-icon-img {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 0.8rem;
+      border: 1px solid var(--card-border);
     }
     .game-card h3 {
       font-size: 1.1rem;
@@ -862,6 +874,15 @@
           <input type="checkbox" id="perm-chk-assets"> Approve Assets
         </label>
         <label class="perm-checkbox-label">
+          <input type="checkbox" id="perm-chk-addgames"> Add Games
+        </label>
+        <label class="perm-checkbox-label">
+          <input type="checkbox" id="perm-chk-hidegames"> Hide Games
+        </label>
+        <label class="perm-checkbox-label">
+          <input type="checkbox" id="perm-chk-deletegames"> Delete Games
+        </label>
+        <label class="perm-checkbox-label">
           <input type="checkbox" id="perm-chk-reset"> Reset User Info
         </label>
         <label class="perm-checkbox-label">
@@ -1039,6 +1060,7 @@
     const GAMES_REGISTRY = {
       'getaway-shootout': {
         title: 'Getaway Shootout',
+        icon: '',
         path: './Games/getaway-shootout/GetawayShootout.github.io-main/index.html'
       }
     };
@@ -1169,6 +1191,9 @@
               manageUpdates: true, 
               manageUsers: true, 
               approveAssets: true, 
+              addGames: true,
+              hideGames: true,
+              deleteGames: true,
               resetUserInfo: true, 
               banUser: true, 
               banDevice: true, 
@@ -1305,6 +1330,9 @@
             manageUpdates: isSuperAdmin,
             manageUsers: isSuperAdmin,
             approveAssets: isSuperAdmin,
+            addGames: isSuperAdmin,
+            hideGames: isSuperAdmin,
+            deleteGames: isSuperAdmin,
             resetUserInfo: isSuperAdmin,
             banUser: isSuperAdmin,
             banDevice: isSuperAdmin,
@@ -1572,6 +1600,16 @@
     }
 
     async function renderAdminGamesTab(body) {
+      const isSuperAdmin = currentUserData?.permissions?.isSuperAdmin;
+      const canAdd = isSuperAdmin || currentUserData?.permissions?.addGames;
+      const canHide = isSuperAdmin || currentUserData?.permissions?.hideGames;
+      const canDelete = isSuperAdmin || currentUserData?.permissions?.deleteGames;
+
+      if (!isSuperAdmin && !canAdd && !canHide && !canDelete) {
+        body.innerHTML = `<p style="color:#ef4444; text-align:center;">You do not have permission to manage games.</p>`;
+        return;
+      }
+
       body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Games Catalog...</div>`;
       
       try {
@@ -1581,14 +1619,18 @@
         querySnapshot.forEach(docSnap => {
           const game = docSnap.data();
           const generatedLink = `https://cc-liyah.github.io/?game=${docSnap.id}`;
-          
+          const iconTag = game.iconUrl ? `<img src="${game.iconUrl}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;" alt="icon">` : '';
+
           customGamesHTML += `
             <div class="update-card" style="margin-bottom:1rem; padding:1.2rem;">
               <div class="update-header">
-                <span class="update-title" style="font-size:1.1rem;">${game.title} ${game.hidden ? '<span style="color:#ef4444; font-size:0.8rem;">[HIDDEN]</span>' : ''}</span>
+                <div style="display:flex; align-items:center; gap:0.8rem;">
+                  ${iconTag}
+                  <span class="update-title" style="font-size:1.1rem;">${game.title} ${game.hidden ? '<span style="color:#ef4444; font-size:0.8rem;">[HIDDEN]</span>' : ''}</span>
+                </div>
                 <div style="display:flex; gap:0.5rem;">
-                  <button onclick="window.toggleHideGame('${docSnap.id}', ${!game.hidden})" class="action-btn">${game.hidden ? 'Show Game' : 'Hide Game'}</button>
-                  <button onclick="window.deleteGame('${docSnap.id}')" class="delete-btn">Delete</button>
+                  ${canHide ? `<button onclick="window.toggleHideGame('${docSnap.id}', ${!game.hidden})" class="action-btn">${game.hidden ? 'Show Game' : 'Hide Game'}</button>` : ''}
+                  ${canDelete ? `<button onclick="window.deleteGame('${docSnap.id}')" class="delete-btn">Delete</button>` : ''}
                 </div>
               </div>
               <p style="font-size:0.8rem; color:#aaa; margin-bottom:0.5rem;"><strong>Embed Source URL:</strong> ${game.embedUrl}</p>
@@ -1597,10 +1639,15 @@
         });
 
         body.innerHTML = `
+          ${canAdd ? `
           <div class="section-header-box" style="margin-top:0;">Add New Embedded Game</div>
           <div class="form-group">
             <label>Game Title</label>
             <input type="text" id="admin-game-title" class="arcadix-input" placeholder="e.g. Retro Space Shooter">
+          </div>
+          <div class="form-group">
+            <label>Game Icon URL</label>
+            <input type="text" id="admin-game-icon" class="arcadix-input" placeholder="https://example.com/icon.png">
           </div>
           <div class="form-group">
             <label>Embeddable Link / Source URL</label>
@@ -1608,8 +1655,9 @@
             <small style="color:#aaa; font-size:0.75rem;">Enter either an iframe src link or full iframe snippet. It will generate a new page under cc-liyah.github.io/?game=...</small>
           </div>
           <button onclick="window.addNewGame()" class="arcadix-btn" style="margin-bottom:2rem;">Generate & Publish Game Page</button>
+          ` : ''}
 
-          <div class="section-header-box">Manage Active Games</div>
+          <div class="section-header-box" ${!canAdd ? 'style="margin-top:0;"' : ''}>Manage Active Games</div>
           ${querySnapshot.empty ? '<p style="text-align:center; color:#888;">No dynamically added games yet.</p>' : customGamesHTML}`;
 
       } catch (err) {
@@ -1619,6 +1667,7 @@
 
     window.addNewGame = async function() {
       const title = document.getElementById('admin-game-title').value.trim();
+      const iconUrl = document.getElementById('admin-game-icon').value.trim();
       let rawUrl = document.getElementById('admin-game-url').value.trim();
 
       if (!title || !rawUrl) {
@@ -1635,6 +1684,7 @@
       try {
         await setDoc(doc(db, "custom_games", gameId), {
           title: title,
+          iconUrl: iconUrl,
           embedUrl: rawUrl,
           createdAt: Date.now(),
           hidden: false
@@ -2161,6 +2211,9 @@
           "permissions.manageUpdates": grantState,
           "permissions.manageUsers": grantState,
           "permissions.approveAssets": grantState,
+          "permissions.addGames": grantState,
+          "permissions.hideGames": grantState,
+          "permissions.deleteGames": grantState,
           "permissions.resetUserInfo": grantState,
           "permissions.banUser": grantState,
           "permissions.banDevice": grantState
@@ -2184,6 +2237,9 @@
       document.getElementById('perm-chk-updates').checked = !!p.manageUpdates;
       document.getElementById('perm-chk-users').checked = !!p.manageUsers;
       document.getElementById('perm-chk-assets').checked = !!p.approveAssets;
+      document.getElementById('perm-chk-addgames').checked = !!p.addGames;
+      document.getElementById('perm-chk-hidegames').checked = !!p.hideGames;
+      document.getElementById('perm-chk-deletegames').checked = !!p.deleteGames;
       document.getElementById('perm-chk-reset').checked = !!p.resetUserInfo;
       document.getElementById('perm-chk-banuser').checked = !!p.banUser;
       document.getElementById('perm-chk-bandevice').checked = !!p.banDevice;
@@ -2195,6 +2251,9 @@
           "permissions.manageUpdates": document.getElementById('perm-chk-updates').checked,
           "permissions.manageUsers": document.getElementById('perm-chk-users').checked,
           "permissions.approveAssets": document.getElementById('perm-chk-assets').checked,
+          "permissions.addGames": document.getElementById('perm-chk-addgames').checked,
+          "permissions.hideGames": document.getElementById('perm-chk-hidegames').checked,
+          "permissions.deleteGames": document.getElementById('perm-chk-deletegames').checked,
           "permissions.resetUserInfo": document.getElementById('perm-chk-reset').checked,
           "permissions.banUser": document.getElementById('perm-chk-banuser').checked,
           "permissions.banDevice": document.getElementById('perm-chk-bandevice').checked
@@ -2289,8 +2348,10 @@
     async function renderHomePageGames() {
       let cardsHTML = '';
       for (const [id, game] of Object.entries(GAMES_REGISTRY)) {
+        const iconTag = game.icon ? `<img src="${game.icon}" class="game-icon-img" alt="${game.title}">` : '';
         cardsHTML += `
           <a href="?game=${id}" class="game-card">
+            ${iconTag}
             <h3>${game.title}</h3>
             <span>Play Game &rarr;</span>
           </a>`;
@@ -2301,8 +2362,10 @@
         querySnapshot.forEach((docSnap) => {
           const game = docSnap.data();
           if (!game.hidden) {
+            const iconTag = game.iconUrl ? `<img src="${game.iconUrl}" class="game-icon-img" alt="${game.title}">` : '';
             cardsHTML += `
               <a href="?game=${docSnap.id}" class="game-card">
+                ${iconTag}
                 <h3>${game.title}</h3>
                 <span>Play Game &rarr;</span>
               </a>`;
