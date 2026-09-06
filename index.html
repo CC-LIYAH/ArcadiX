@@ -1,24 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script type="module">
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-auth.js";
-
-  // Hide the body immediately so unauthenticated users don't see content flash
-  document.body.style.display = "none";
-
-  const auth = getAuth();
-
-  onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      // User is not logged in, redirect to your login/auth page
-      window.location.href = "login.html"; // Update with your actual login page filename
-    } else {
-      // User is logged in, make the page visible
-      document.body.style.display = "block";
-    }
-  });
-</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title">Planet ArcadiX</title>
@@ -734,20 +716,6 @@
       justify-content: center;
       gap: 1rem;
     }
-
-    <!-- Dedicated Signed-Out Landing Page -->
-<div id="logged-out-landing" class="auth-landing-screen">
-    <img src="Logo.png" alt="Planet ArcadiX Logo" class="landing-logo">
-    <div class="landing-actions">
-        <button onclick="showSignupModal()" class="btn-primary">Sign Up</button>
-        <button onclick="showLoginModal()" class="btn-secondary">Log In</button>
-    </div>
-</div>
-
-<!-- Wrap your existing pages/dashboard here -->
-<div id="main-app-content" style="display: none;">
-    <!-- All your existing app HTML goes here -->
-</div>
 
     /* Restricted Access UI Page */
     .restricted-access-container {
