@@ -531,6 +531,31 @@
       color: #ffffff;
     }
 
+    /* Landing Gateway Lock Screen */
+    .gateway-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      padding: 2rem;
+      gap: 2rem;
+    }
+    .gateway-logo {
+      max-width: 320px;
+      width: 80%;
+      height: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.4));
+    }
+    .gateway-actions {
+      display: flex;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 320px;
+    }
+
     /* Games Grid */
     .games-grid {
       display: grid;
@@ -757,13 +782,12 @@
 </head>
 <body>
 
-  <header>
+  <header id="site-header" style="display: none;">
     <a href="./" class="header-brand">
       <img src="./LogoV2.png" alt="Planet ArcadiX" class="logo-img">
       <span id="header-game-title" class="game-title-display" style="display: none;"></span>
     </a>
     <nav class="nav-links">
-      <a href="./">About</a>
       <a href="./">Games</a>
       <a href="?page=updates">Updates</a>
       <a href="?page=admin" id="admin-nav-link" style="display: none;">Admin</a>
@@ -777,7 +801,7 @@
     <!-- Dynamic Viewport Content -->
   </main>
 
-  <footer>
+  <footer id="site-footer" style="display: none;">
     © Planet ArcadiX 2026, All rights reserved
   </footer>
 
@@ -960,7 +984,7 @@
     };
   </script>
 
-  <!-- Firebase Modular SDK -->
+  <!-- Consolidated Firebase Modular SDK & Single App Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
@@ -1012,6 +1036,13 @@
       isDefault: true
     };
 
+    const GAMES_REGISTRY = {
+      'getaway-shootout': {
+        title: 'Getaway Shootout',
+        path: './Games/getaway-shootout/GetawayShootout.github.io-main/index.html'
+      }
+    };
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -1023,6 +1054,13 @@
     const urlParams = new URLSearchParams(window.location.search);
     const userIdParam = urlParams.get('user');
     const pageIdParam = urlParams.get('page');
+    const gameIdParam = urlParams.get('game');
+
+    const container = document.getElementById('container');
+    const titleEl = document.getElementById('page-title');
+    const headerGameTitle = document.getElementById('header-game-title');
+    const siteHeader = document.getElementById('site-header');
+    const siteFooter = document.getElementById('site-footer');
 
     function applyTheme(theme) {
       if (!theme) return;
@@ -1035,13 +1073,12 @@
       root.style.setProperty('--text-color', theme.textColor);
     }
 
-    // --- Dynamic Real-Time Theme Sync Across Site ---
+    // Dynamic Real-Time Theme Sync Across Site
     onSnapshot(collection(db, "themes"), (snapshot) => {
       fetchedThemesCache = [];
       snapshot.forEach(doc => fetchedThemesCache.push({ id: doc.id, ...doc.data() }));
 
       if (fetchedThemesCache.length === 0) {
-        // Seed default theme into Firestore if none exist
         setDoc(doc(db, "themes", DEFAULT_THEME.id), DEFAULT_THEME);
         fetchedThemesCache = [DEFAULT_THEME];
       }
@@ -1055,12 +1092,11 @@
 
       applyTheme(activeTheme);
 
-      // Re-render theme panel if currently open
       const themeSelect = document.getElementById('settings-theme-select');
       if (themeSelect) window.renderSettingsPage();
     });
 
-    // --- Global Analytics Firestore Counter ---
+    // Global Analytics Firestore Counter
     async function recordPageView() {
       const today = new Date().toISOString().split('T')[0];
       const statsRef = doc(db, "analytics", today);
@@ -1080,8 +1116,8 @@
         console.warn("Analytics write failure: ", e);
       }
     }
-    recordPageView();
 
+    // MAIN ROUTER & AUTH GUARD
     onAuthStateChanged(auth, async (user) => {
       const navSlot = document.getElementById('auth-nav-slot');
       const adminNavLink = document.getElementById('admin-nav-link');
@@ -1092,7 +1128,6 @@
           currentUserData = userDoc.data();
           const deviceId = window.getDeviceFingerprint();
 
-          // Register current device if missing
           if (!currentUserData.registeredDeviceId) {
             await updateDoc(doc(db, "users", user.uid), { registeredDeviceId: deviceId });
             currentUserData.registeredDeviceId = deviceId;
@@ -1107,7 +1142,7 @@
             return;
           }
 
-          // Check Timed Account Ban Expiry
+          // Timed Account Ban Check
           if (currentUserData.isBanned) {
             const now = Date.now();
             if (currentUserData.banUntil && currentUserData.banUntil !== "PERMANENT" && currentUserData.banUntil < now) {
@@ -1147,11 +1182,7 @@
             });
           }
 
-          if (currentUserData.hasAdminAccess) {
-            adminNavLink.style.display = 'inline-block';
-          } else {
-            adminNavLink.style.display = 'none';
-          }
+          adminNavLink.style.display = currentUserData.hasAdminAccess ? 'inline-block' : 'none';
 
           const pfp = currentUserData.photoURL || DEFAULT_AVATAR;
           const imgTag = pfp ? `<img src="${pfp}" class="avatar-img" alt="">` : '';
@@ -1167,19 +1198,55 @@
                 <button onclick="handleAccountSignOut()">Logout</button>
               </div>
             </div>`;
+
+          siteHeader.style.display = 'flex';
+          siteFooter.style.display = 'flex';
+          recordPageView();
+
+          // Render Logged-In Application Views
+          if (userIdParam) {
+            window.loadUserProfile(userIdParam);
+          } else if (pageIdParam === 'updates') {
+            window.renderPublicUpdates();
+          } else if (pageIdParam === 'settings') {
+            window.renderSettingsPage();
+          } else if (pageIdParam === 'admin') {
+            window.renderAdminLayout();
+          } else if (gameIdParam) {
+            handleGamePageRouting();
+          } else {
+            renderHomePageGames();
+          }
         }
       } else {
+        // NON-LOGGED IN USER LOGIC: Lock out all inner views
         currentUserData = null;
-        adminNavLink.style.display = 'none';
-        navSlot.innerHTML = `<a href="?page=login">Login</a>`;
-      }
+        siteHeader.style.display = 'none';
+        siteFooter.style.display = 'none';
 
-      if (pageIdParam === 'settings' && !userIdParam) {
-        window.renderSettingsPage();
-      } else if (pageIdParam === 'admin' && !userIdParam) {
-        window.renderAdminLayout();
+        if (pageIdParam === 'login') {
+          titleEl.innerText = `Login - Planet ArcadiX`;
+          renderAuthForm(true);
+        } else if (pageIdParam === 'signup') {
+          titleEl.innerText = `Sign Up - Planet ArcadiX`;
+          renderAuthForm(false);
+        } else {
+          titleEl.innerText = `Planet ArcadiX`;
+          renderLandingGateway();
+        }
       }
     });
+
+    function renderLandingGateway() {
+      container.innerHTML = `
+        <div class="gateway-container">
+          <img src="./LogoV2.png" alt="Planet ArcadiX" class="gateway-logo">
+          <div class="gateway-actions">
+            <a href="?page=login" class="arcadix-btn" style="text-decoration:none; text-align:center;">Login</a>
+            <a href="?page=signup" class="arcadix-btn" style="text-decoration:none; text-align:center; background:var(--card-bg); border-color:var(--card-border);">Sign Up</a>
+          </div>
+        </div>`;
+    }
 
     window.toggleProfileDropdown = function() {
       const dropdown = document.getElementById('profile-dropdown');
@@ -1249,7 +1316,7 @@
         await setDoc(doc(db, "users", user.uid), userData);
 
         await window.showArcadiXAlert("Account created successfully!", "Success");
-        window.location.href = `./?user=${newUserId}`;
+        window.location.href = `./`;
       } catch (error) {
         window.showArcadiXAlert("Sign Up Error: " + error.message, "Error");
       }
@@ -1295,7 +1362,6 @@
     };
 
     window.loadUserProfile = async function(userId) {
-      const container = document.getElementById('container');
       const q = query(collection(db, "users"), where("userId", "==", parseInt(userId)));
       const querySnapshot = await getDocs(q);
 
@@ -1327,11 +1393,7 @@
     };
 
     window.renderSettingsPage = function() {
-      const container = document.getElementById('container');
-      if (!auth.currentUser || !currentUserData) {
-        container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">Please login to access settings.</p></div>`;
-        return;
-      }
+      if (!auth.currentUser || !currentUserData) return;
 
       const activeId = localStorage.getItem('arcadix_active_theme_id') || fetchedThemesCache[0]?.id;
       const themeOptions = fetchedThemesCache.map(t => `<option value="${t.id}" ${t.id === activeId ? 'selected' : ''}>${t.name}</option>`).join('');
@@ -1416,9 +1478,8 @@
       }
     };
 
-    // --- ADMIN PANEL FUNCTIONS ---
+    // ADMIN PANEL FUNCTIONS
     window.renderAdminLayout = function() {
-      const container = document.getElementById('container');
       const isAuthorizedAdmin = currentUserData && currentUserData.hasAdminAccess;
 
       if (!isAuthorizedAdmin) {
@@ -1564,7 +1625,6 @@
         return window.showArcadiXAlert("Please fill in both the Title and Link fields.", "Error");
       }
 
-      // Extract URL from iframe string if user pasted <iframe src="...">
       if (rawUrl.includes('<iframe') && rawUrl.includes('src=')) {
         const srcMatch = rawUrl.match(/src=["']([^"']+)["']/);
         if (srcMatch && srcMatch[1]) rawUrl = srcMatch[1];
@@ -2151,9 +2211,7 @@
       };
     };
 
-    // Global Public Updates Page Rendering
     window.renderPublicUpdates = function() {
-      const container = document.getElementById('container');
       container.innerHTML = `<div class="page-scroll-container"><div class="section-header-box">Site Updates</div><p style="text-align:center; color:#888;">Loading updates...</p></div>`;
 
       onSnapshot(query(collection(db, "updates"), orderBy("createdAt", "desc")), (snapshot) => {
@@ -2187,54 +2245,14 @@
       });
     };
 
-    if (userIdParam) {
-      window.loadUserProfile(userIdParam);
-    } else if (pageIdParam === 'updates') {
-      window.renderPublicUpdates();
-    }
-  </script>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBIvUkO_paPfmMlbo5jNaXoteZL0fkZYa4",
-      authDomain: "arcadix-7fc11.firebaseapp.com",
-      projectId: "arcadix-7fc11",
-      storageBucket: "arcadix-7fc11.firebasestorage.app",
-      messagingSenderId: "1024578621730",
-      appId: "1:1024578621730:web:27adc1e3b5cdb802f1557b",
-      measurementId: "G-FSNMGLRN5V"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    const GAMES_REGISTRY = {
-      'getaway-shootout': {
-        title: 'Getaway Shootout',
-        path: './Games/getaway-shootout/GetawayShootout.github.io-main/index.html'
-      }
-    };
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const gameId = urlParams.get('game');
-    const pageId = urlParams.get('page');
-    const userId = urlParams.get('user');
-
-    const container = document.getElementById('container');
-    const titleEl = document.getElementById('page-title');
-    const headerGameTitle = document.getElementById('header-game-title');
-
     async function handleGamePageRouting() {
-      if (gameId) {
-        let selectedGame = GAMES_REGISTRY[gameId];
+      if (gameIdParam) {
+        let selectedGame = GAMES_REGISTRY[gameIdParam];
         let embedPath = selectedGame ? selectedGame.path : null;
         let gameTitle = selectedGame ? selectedGame.title : null;
 
         if (!selectedGame) {
-          const docSnap = await getDoc(doc(db, "custom_games", gameId));
+          const docSnap = await getDoc(doc(db, "custom_games", gameIdParam));
           if (docSnap.exists() && !docSnap.data().hidden) {
             const data = docSnap.data();
             gameTitle = data.title;
@@ -2261,21 +2279,10 @@
           container.innerHTML = `
             <div class="status-msg" style="text-align:center; padding:3rem;">
               <h2>Game Not Found</h2>
-              <p style="margin:1rem 0; color:#aaa;">No game registered under id: <strong>${gameId}</strong></p>
+              <p style="margin:1rem 0; color:#aaa;">No game registered under id: <strong>${gameIdParam}</strong></p>
               <a href="./" class="arcadix-btn" style="text-decoration: none; width: auto; padding: 0.8rem 2rem; display: inline-block;">Return to Home</a>
             </div>`;
         }
-
-      } else if (pageId === 'login' && !userId) {
-        titleEl.innerText = `Login - Planet ArcadiX`;
-        renderAuthForm(true);
-
-      } else if (pageId === 'signup' && !userId) {
-        titleEl.innerText = `Sign Up - Planet ArcadiX`;
-        renderAuthForm(false);
-
-      } else if (!pageId && !userId) {
-        renderHomePageGames();
       }
     }
 
@@ -2319,8 +2326,6 @@
           </div>
         </div>`;
     }
-
-    handleGamePageRouting();
 
     function renderAuthForm(isLoginView) {
       container.innerHTML = `
