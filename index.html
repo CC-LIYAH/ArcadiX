@@ -307,6 +307,14 @@
       background: var(--accent-color);
       color: #000;
     }
+    .action-btn.danger {
+      border-color: #ef4444;
+      color: #ef4444;
+    }
+    .action-btn.danger:hover {
+      background: #ef4444;
+      color: #ffffff;
+    }
 
     /* Color Input Swatches */
     .color-picker-grid {
@@ -589,6 +597,7 @@
       display: flex;
       align-items: center;
       gap: 1rem;
+      flex-wrap: wrap;
     }
     .user-badge {
       font-size: 0.75rem;
@@ -604,6 +613,11 @@
     .user-badge.banned {
       background: #991b1b;
       color: #fca5a5;
+    }
+    .user-badge.device-banned {
+      background: #7f1d1d;
+      color: #fca5a5;
+      border: 1px solid #ef4444;
     }
     .user-item-details {
       display: none;
@@ -642,7 +656,7 @@
       border-radius: 12px;
       padding: 1.8rem;
       width: 90%;
-      max-width: 450px;
+      max-width: 480px;
       box-shadow: 0 8px 32px rgba(168, 85, 247, 0.25);
       transform: scale(0.9);
       transition: transform 0.2s ease-in-out;
@@ -727,6 +741,35 @@
     </div>
   </div>
 
+  <!-- Dedicated Ban Config Modal -->
+  <div class="custom-modal-overlay" id="ban-modal-overlay">
+    <div class="custom-modal-box">
+      <div class="custom-modal-title" id="ban-modal-title">Ban Player</div>
+      <div class="form-group" style="margin-top: 1rem;">
+        <label>Ban Reason</label>
+        <input type="text" id="ban-modal-reason" class="arcadix-input" placeholder="Violation of terms">
+      </div>
+      <div class="form-group">
+        <label>Ban Duration</label>
+        <select id="ban-modal-duration" class="arcadix-select" onchange="window.handleBanPresetChange(this.value)">
+          <option value="1">1 Day</option>
+          <option value="7">7 Days</option>
+          <option value="30">30 Days</option>
+          <option value="perm">Permanent</option>
+          <option value="custom">Custom (Hours)</option>
+        </select>
+      </div>
+      <div class="form-group" id="ban-custom-hours-group" style="display:none;">
+        <label>Duration in Hours</label>
+        <input type="number" id="ban-modal-custom-hours" class="arcadix-input" placeholder="e.g. 12" min="1">
+      </div>
+      <div class="custom-modal-actions" style="margin-top:1.5rem;">
+        <button class="action-btn" style="padding: 0.6rem 1.2rem;" onclick="closeBanModal()">Cancel</button>
+        <button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="ban-modal-submit-btn">Apply Ban</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Dynamic Theme System JS -->
   <script>
     const DEFAULT_THEMES = [
@@ -787,6 +830,16 @@
     }
 
     initActiveTheme();
+
+    /* Device Fingerprinting Identification Helper */
+    window.getDeviceFingerprint = function() {
+      let deviceId = localStorage.getItem('arcadix_device_id');
+      if (!deviceId) {
+        deviceId = 'DEV-' + Math.random().toString(36).substring(2, 11) + '-' + Date.now().toString(36);
+        localStorage.setItem('arcadix_device_id', deviceId);
+      }
+      return deviceId;
+    };
 
     /* Global Custom UI Popups to Replace Chrome Native Dialogs */
     window.showArcadiXAlert = function(msg, title = "System Notification") {
@@ -865,6 +918,16 @@
         };
       });
     };
+
+    window.handleBanPresetChange = function(val) {
+      const group = document.getElementById('ban-custom-hours-group');
+      if (group) group.style.display = (val === 'custom') ? 'flex' : 'none';
+    };
+
+    window.closeBanModal = function() {
+      const overlay = document.getElementById('ban-modal-overlay');
+      if (overlay) overlay.classList.remove('active');
+    };
   </script>
 
   <!-- Firebase Modular SDK -->
@@ -923,12 +986,44 @@
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           currentUserData = userDoc.data();
+          const deviceId = window.getDeviceFingerprint();
 
-          if (currentUserData.isBanned) {
-            await window.showArcadiXAlert(`Your account is banned: ${currentUserData.banReason || 'No reason provided'}`, "Access Denied");
+          // Register current device if missing
+          if (!currentUserData.registeredDeviceId) {
+            await updateDoc(doc(db, "users", user.uid), { registeredDeviceId: deviceId });
+            currentUserData.registeredDeviceId = deviceId;
+          }
+
+          // Device Ban Check
+          const deviceBanDoc = await getDoc(doc(db, "banned_devices", deviceId));
+          if (deviceBanDoc.exists()) {
+            await window.showArcadiXAlert(`Your device has been banned from accessing Planet ArcadiX.\nReason: ${deviceBanDoc.data().reason || 'Hardware / Device Restriction'}`, "Device Banned");
             await signOut(auth);
             window.location.reload();
             return;
+          }
+
+          // Check Timed Account Ban Expiry
+          if (currentUserData.isBanned) {
+            const now = Date.now();
+            if (currentUserData.banUntil && currentUserData.banUntil !== "PERMANENT" && currentUserData.banUntil < now) {
+              // Ban has expired automatically
+              await updateDoc(doc(db, "users", user.uid), {
+                isBanned: false,
+                banReason: "",
+                banUntil: null
+              });
+              currentUserData.isBanned = false;
+            } else {
+              const expireText = currentUserData.banUntil === "PERMANENT" || !currentUserData.banUntil
+                ? "Permanent" 
+                : new Date(currentUserData.banUntil).toLocaleString();
+
+              await window.showArcadiXAlert(`Your account is banned.\nReason: ${currentUserData.banReason || 'No reason provided'}\nExpires: ${expireText}`, "Access Denied");
+              await signOut(auth);
+              window.location.reload();
+              return;
+            }
           }
           
           if (currentUserData.userId === 1 && !currentUserData.hasAdminAccess) {
@@ -940,7 +1035,6 @@
             });
           }
 
-          // Show Admin nav link ONLY if user has admin privileges
           if (currentUserData.hasAdminAccess) {
             adminNavLink.style.display = 'inline-block';
           } else {
@@ -984,6 +1078,13 @@
       const username = document.getElementById('auth-username').value.trim();
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value;
+      const deviceId = window.getDeviceFingerprint();
+
+      // Check if current device is hardware-banned
+      const deviceBanDoc = await getDoc(doc(db, "banned_devices", deviceId));
+      if (deviceBanDoc.exists()) {
+        return window.showArcadiXAlert(`Account creation restricted. This device has been banned from Planet ArcadiX.`, "Device Banned");
+      }
 
       if (!username) return window.showArcadiXAlert("Please enter a username.", "Error");
 
@@ -1019,6 +1120,9 @@
           hasAdminAccess: isSuperAdmin,
           isBanned: false,
           banReason: "",
+          banUntil: null,
+          registeredDeviceId: deviceId,
+          isDeviceBanned: false,
           permissions: {
             manageUpdates: isSuperAdmin,
             manageUsers: isSuperAdmin,
@@ -1040,6 +1144,13 @@
     window.handleSignIn = async function() {
       const identifier = document.getElementById('auth-identifier').value.trim();
       const password = document.getElementById('auth-password').value;
+      const deviceId = window.getDeviceFingerprint();
+
+      // Check for device ban prior to logging in
+      const deviceBanDoc = await getDoc(doc(db, "banned_devices", deviceId));
+      if (deviceBanDoc.exists()) {
+        return window.showArcadiXAlert(`Login blocked. This device is permanently banned from Planet ArcadiX.`, "Device Banned");
+      }
 
       let targetEmail = identifier;
 
@@ -1199,7 +1310,6 @@
       const container = document.getElementById('container');
       const isAuthorizedAdmin = currentUserData && currentUserData.hasAdminAccess;
 
-      // Access Restriction Display if visited on a non-admin account or logged out
       if (!isAuthorizedAdmin) {
         container.innerHTML = `
           <div class="page-scroll-container">
@@ -1320,6 +1430,15 @@
           const user = userDoc.data();
           const uniqueId = `user-row-${user.uid}`;
           
+          let banExpiryBadgeText = '';
+          if (user.isBanned) {
+            if (user.banUntil === "PERMANENT" || !user.banUntil) {
+              banExpiryBadgeText = '(PERMANENT)';
+            } else {
+              banExpiryBadgeText = `(Until: ${new Date(user.banUntil).toLocaleDateString()})`;
+            }
+          }
+
           usersHTML += `
             <div class="user-list-item">
               <div class="user-item-header" onclick="toggleUserCard('${uniqueId}')">
@@ -1327,19 +1446,22 @@
                   <strong>${user.username}</strong>
                   <span class="user-badge">ID: #${user.userId}</span>
                   ${user.hasAdminAccess ? '<span class="user-badge admin">ADMIN</span>' : ''}
-                  ${user.isBanned ? '<span class="user-badge banned">BANNED</span>' : ''}
+                  ${user.isBanned ? `<span class="user-badge banned">BANNED ${banExpiryBadgeText}</span>` : ''}
+                  ${user.isDeviceBanned ? '<span class="user-badge device-banned">DEVICE BANNED</span>' : ''}
                 </div>
                 <span style="color:var(--accent-color);">&#9660;</span>
               </div>
               <div class="user-item-details" id="${uniqueId}">
                 <p style="margin-bottom:0.5rem;"><strong>Bio:</strong> ${user.bio || 'User bio text not provided.'}</p>
+                <p style="margin-bottom:0.5rem; font-size:0.75rem; color:#aaa;"><strong>Device ID:</strong> ${user.registeredDeviceId || 'Not registered'}</p>
                 <div class="user-actions">
                   <button class="action-btn" onclick="adminResetUsername('${user.uid}', ${user.userId})">Reset Username</button>
                   <button class="action-btn" onclick="adminResetBio('${user.uid}')">Reset Bio</button>
                   <button class="action-btn" onclick="adminResetPassword('${user.uid}')">Reset Password</button>
                   <button class="action-btn" onclick="adminToggleAdminAccess('${user.uid}', ${!user.hasAdminAccess})">${user.hasAdminAccess ? 'Revoke Admin' : 'Grant Admin'}</button>
                   <button class="action-btn" onclick="adminManagePermissions('${user.uid}')">Manage Permissions</button>
-                  <button class="action-btn danger" onclick="toggleUserBan('${user.uid}', ${!user.isBanned})">${user.isBanned ? 'Unban User' : 'Ban User'}</button>
+                  <button class="action-btn danger" onclick="openBanModal('${user.uid}', ${!user.isBanned})">${user.isBanned ? 'Unban Account' : 'Ban Account'}</button>
+                  <button class="action-btn danger" onclick="toggleDeviceBan('${user.uid}', '${user.registeredDeviceId || ''}', ${!user.isDeviceBanned})">${user.isDeviceBanned ? 'Unban Device' : 'Ban Device'}</button>
                 </div>
               </div>
             </div>`;
@@ -1358,16 +1480,90 @@
       if (card) card.classList.toggle('active');
     };
 
-    window.toggleUserBan = async function(uid, shouldBan) {
-      let banReason = "";
-      if (shouldBan) {
-        banReason = await window.showArcadiXPrompt("Enter ban reason:", "Violation of site rules", "Ban Player") || "Banned by administrator";
+    window.openBanModal = async function(uid, shouldBan) {
+      if (!shouldBan) {
+        // Direct unban
+        const confirmed = await window.showArcadiXConfirm("Are you sure you want to unban this user?", "Unban Player");
+        if (!confirmed) return;
+
+        await updateDoc(doc(db, "users", uid), {
+          isBanned: false,
+          banReason: "",
+          banUntil: null
+        });
+        await window.showArcadiXAlert("User has been unbanned.", "Account Status");
+        window.switchAdminTab('users');
+        return;
       }
-      await updateDoc(doc(db, "users", uid), {
-        isBanned: shouldBan,
-        banReason: shouldBan ? banReason : ""
-      });
-      await window.showArcadiXAlert(shouldBan ? "User has been banned." : "User has been unbanned.", "Account Status");
+
+      const overlay = document.getElementById('ban-modal-overlay');
+      const submitBtn = document.getElementById('ban-modal-submit-btn');
+      document.getElementById('ban-modal-reason').value = "Violation of terms";
+      document.getElementById('ban-modal-duration').value = "1";
+      document.getElementById('ban-custom-hours-group').style.display = "none";
+
+      overlay.classList.add('active');
+
+      submitBtn.onclick = async () => {
+        const reason = document.getElementById('ban-modal-reason').value.trim() || "Violation of rules";
+        const durationType = document.getElementById('ban-modal-duration').value;
+        let banUntil = null;
+
+        if (durationType === "perm") {
+          banUntil = "PERMANENT";
+        } else if (durationType === "custom") {
+          const customHours = parseFloat(document.getElementById('ban-modal-custom-hours').value);
+          if (isNaN(customHours) || customHours <= 0) {
+            return window.showArcadiXAlert("Please specify a valid amount of hours.", "Invalid Input");
+          }
+          banUntil = Date.now() + (customHours * 60 * 60 * 1000);
+        } else {
+          const days = parseInt(durationType);
+          banUntil = Date.now() + (days * 24 * 60 * 60 * 1000);
+        }
+
+        await updateDoc(doc(db, "users", uid), {
+          isBanned: true,
+          banReason: reason,
+          banUntil: banUntil
+        });
+
+        overlay.classList.remove('active');
+        await window.showArcadiXAlert("Account has been banned.", "Account Status");
+        window.switchAdminTab('users');
+      };
+    };
+
+    window.toggleDeviceBan = async function(uid, deviceId, shouldBan) {
+      if (!deviceId) {
+        return window.showArcadiXAlert("This user does not have a registered device identifier yet.", "Action Failed");
+      }
+
+      const confirmMsg = shouldBan 
+        ? `Are you sure you want to BAN this device (${deviceId})? This will block all logins/signups from this browser hardware.` 
+        : `Are you sure you want to UNBAN this device (${deviceId})?`;
+
+      const confirmed = await window.showArcadiXConfirm(confirmMsg, "Device Ban Toggle");
+      if (!confirmed) return;
+
+      if (shouldBan) {
+        const reason = await window.showArcadiXPrompt("Reason for Device Ban:", "Hardware / Multi-account rule breach", "Device Ban Reason") || "Hardware Ban";
+        
+        await setDoc(doc(db, "banned_devices", deviceId), {
+          deviceId: deviceId,
+          bannedAt: new Date().toISOString(),
+          reason: reason,
+          associatedUid: uid
+        });
+
+        await updateDoc(doc(db, "users", uid), { isDeviceBanned: true });
+        await window.showArcadiXAlert("Device has been permanently hardware banned.", "Device Banned");
+      } else {
+        await deleteDoc(doc(db, "banned_devices", deviceId));
+        await updateDoc(doc(db, "users", uid), { isDeviceBanned: false });
+        await window.showArcadiXAlert("Device ban has been removed.", "Device Unbanned");
+      }
+
       window.switchAdminTab('users');
     };
 
