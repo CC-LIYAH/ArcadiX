@@ -10,6 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
   
+  <!-- Chart.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <link rel="stylesheet" href="style.css">
   <style>
     * {
@@ -62,16 +65,21 @@
     }
     .nav-links {
       display: flex;
+      align-items: center;
       gap: 1.5rem;
     }
-    .nav-links a {
+    .nav-links a, .user-nav-btn {
       color: #ffffff;
       text-decoration: none;
       font-weight: 700;
       font-size: 0.95rem;
       transition: color 0.2s;
+      background: none;
+      border: none;
+      font-family: 'Orbitron', sans-serif;
+      cursor: pointer;
     }
-    .nav-links a:hover {
+    .nav-links a:hover, .user-nav-btn:hover {
       color: #a855f7;
     }
 
@@ -178,13 +186,41 @@
       white-space: pre-line;
     }
 
-    /* Admin Form & Controls */
-    .admin-box {
+    /* Analytics Dashboard Cards */
+    .analytics-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .metric-card {
+      background: #120916;
+      border: 1px solid #331940;
+      border-radius: 8px;
+      padding: 1.2rem;
+      text-align: center;
+    }
+    .metric-value {
+      font-size: 1.8rem;
+      color: #a855f7;
+      font-weight: 900;
+      margin-top: 0.4rem;
+    }
+    .chart-container {
+      background: #120916;
+      border: 1px solid #331940;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    /* Auth & Form Controls */
+    .auth-box, .admin-box {
       background: #120916;
       border: 1px solid #4a285d;
       border-radius: 8px;
       padding: 2rem;
-      max-width: 600px;
+      max-width: 750px;
       margin: 0 auto;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
     }
@@ -229,6 +265,17 @@
     .arcadix-btn:hover {
       background: #a855f7;
       color: #000000;
+    }
+    .auth-toggle-text {
+      font-size: 0.85rem;
+      color: #888888;
+      margin-top: 1rem;
+      text-align: center;
+    }
+    .auth-toggle-link {
+      color: #a855f7;
+      cursor: pointer;
+      text-decoration: underline;
     }
     .delete-btn {
       background: #3a1515;
@@ -303,6 +350,9 @@
       <a href="./">Games</a>
       <a href="?page=updates">Updates</a>
       <a href="?page=admin">Admin</a>
+      <span id="auth-nav-slot">
+        <a href="?page=login">Login</a>
+      </span>
     </nav>
   </header>
 
@@ -310,11 +360,106 @@
     <!-- Dynamic Viewport Content -->
   </main>
 
+  <!-- Firebase Modular SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getAuth, 
+      createUserWithEmailAndPassword, 
+      signInWithEmailAndPassword, 
+      signOut, 
+      onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      const navSlot = document.getElementById('auth-nav-slot');
+      
+      if (user) {
+        navSlot.innerHTML = `
+          <button onclick="handleAccountSignOut()" class="user-nav-btn" style="color: #a855f7;">
+            Logout (${user.email.split('@')[0]})
+          </button>`;
+      } else {
+        navSlot.innerHTML = `<a href="?page=login">Login</a>`;
+      }
+    });
+
+    window.handleSignUp = async function() {
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-password').value;
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        alert("Account created successfully!");
+        window.location.href = "./";
+      } catch (error) {
+        alert("Sign Up Error: " + error.message);
+      }
+    };
+
+    window.handleSignIn = async function() {
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-password').value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        window.location.href = "./";
+      } catch (error) {
+        alert("Login Error: " + error.message);
+      }
+    };
+
+    window.handleAccountSignOut = async function() {
+      try {
+        await signOut(auth);
+        window.location.href = "./";
+      } catch (error) {
+        alert("Logout Error: " + error.message);
+      }
+    };
+  </script>
+
   <script>
-    // Access Passcode
+    // Access Passcode for Admin Panel
     const ADMIN_CODE = "LIY-LUV901";
 
-    // Default updates stored if no updates exist yet
+    // --- SITE TRAFFIC TRACKING SYSTEM ---
+    function recordPageView() {
+      const today = new Date().toISOString().split('T')[0];
+      let trafficData = JSON.parse(localStorage.getItem('arcadix_traffic')) || {};
+
+      if (!trafficData[today]) {
+        trafficData[today] = { views: 0, sessions: 0 };
+      }
+
+      // Record Total Page Views
+      trafficData[today].views += 1;
+
+      // Track Unique Daily Session
+      if (!sessionStorage.getItem('arcadix_session_recorded')) {
+        trafficData[today].sessions += 1;
+        sessionStorage.setItem('arcadix_session_recorded', 'true');
+      }
+
+      localStorage.setItem('arcadix_traffic', JSON.stringify(trafficData));
+    }
+
+    // Execute traffic log on every page load
+    recordPageView();
+
     const DEFAULT_UPDATES = [
       {
         id: 1,
@@ -324,18 +469,15 @@
       }
     ];
 
-    // Get updates array from localStorage
     function getUpdates() {
       const saved = localStorage.getItem('arcadix_updates');
       return saved ? JSON.parse(saved) : DEFAULT_UPDATES;
     }
 
-    // Save updates array to localStorage
     function saveUpdates(updates) {
       localStorage.setItem('arcadix_updates', JSON.stringify(updates));
     }
 
-    // Registry mapping game query IDs to file paths relative to root
     const GAMES_REGISTRY = {
       'getaway-shootout': {
         title: 'Getaway Shootout',
@@ -369,6 +511,16 @@
           </div>
         </div>`;
 
+    // ROUTER: Login Page
+    } else if (pageId === 'login') {
+      titleEl.innerText = `Login - Planet ArcadiX`;
+      renderAuthForm(true);
+
+    // ROUTER: Sign Up Page
+    } else if (pageId === 'signup') {
+      titleEl.innerText = `Sign Up - Planet ArcadiX`;
+      renderAuthForm(false);
+
     // ROUTER: Updates Page
     } else if (pageId === 'updates') {
       titleEl.innerText = `Updates - Planet ArcadiX`;
@@ -396,10 +548,9 @@
       const isAuthenticated = sessionStorage.getItem('arcadix_admin_auth') === 'true';
 
       if (!isAuthenticated) {
-        // Show Login View
         container.innerHTML = `
           <div class="page-scroll-container">
-            <div class="admin-box">
+            <div class="admin-box" style="max-width:500px;">
               <div class="section-header-box" style="margin-top:0;">Admin Authentication</div>
               <div class="form-group">
                 <label>Enter Passcode</label>
@@ -409,7 +560,6 @@
             </div>
           </div>`;
       } else {
-        // Show Admin Control Panel View
         renderAdminDashboard();
       }
 
@@ -448,6 +598,32 @@
         </div>`;
     }
 
+    // AUTH UI RENDERER
+    function renderAuthForm(isLoginView) {
+      container.innerHTML = `
+        <div class="page-scroll-container">
+          <div class="auth-box">
+            <div class="section-header-box" style="margin-top:0;">${isLoginView ? 'User Login' : 'Create Account'}</div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" id="auth-email" class="arcadix-input" placeholder="player@domain.com">
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="auth-password" class="arcadix-input" placeholder="••••••••">
+            </div>
+            <button onclick="${isLoginView ? 'handleSignIn()' : 'handleSignUp()'}" class="arcadix-btn">
+              ${isLoginView ? 'Login' : 'Sign Up'}
+            </button>
+            <div class="auth-toggle-text">
+              ${isLoginView 
+                ? 'Need an account? <a href="?page=signup" class="auth-toggle-link">Sign Up</a>' 
+                : 'Already have an account? <a href="?page=login" class="auth-toggle-link">Login</a>'}
+            </div>
+          </div>
+        </div>`;
+    }
+
     // ADMIN FUNCTIONS
     function authenticateAdmin() {
       const enteredCode = document.getElementById('passcode-input').value;
@@ -461,6 +637,13 @@
 
     function renderAdminDashboard() {
       const updatesList = getUpdates();
+      const trafficData = JSON.parse(localStorage.getItem('arcadix_traffic')) || {};
+      
+      // Calculate Traffic Metrics
+      const dates = Object.keys(trafficData).sort();
+      const totalViews = dates.reduce((sum, date) => sum + trafficData[date].views, 0);
+      const totalSessions = dates.reduce((sum, date) => sum + trafficData[date].sessions, 0);
+
       let updatesManagementHTML = updatesList.map(item => `
         <div class="update-card" style="margin-bottom:1rem; padding:1rem;">
           <div class="update-header">
@@ -474,15 +657,32 @@
 
       container.innerHTML = `
         <div class="page-scroll-container">
-          <div class="admin-box" style="max-width:700px;">
-            <div class="section-header-box" style="margin-top:0;">Post New Update</div>
+          <div class="admin-box">
+            
+            <div class="section-header-box" style="margin-top:0;">Site Analytics</div>
+            <div class="analytics-summary">
+              <div class="metric-card">
+                <span style="color:#aaa; font-size:0.8rem;">Total Page Views</span>
+                <div class="metric-value">${totalViews}</div>
+              </div>
+              <div class="metric-card">
+                <span style="color:#aaa; font-size:0.8rem;">Unique Sessions</span>
+                <div class="metric-value">${totalSessions}</div>
+              </div>
+            </div>
+
+            <div class="chart-container">
+              <canvas id="trafficChart" height="200"></canvas>
+            </div>
+
+            <div class="section-header-box">Post New Update</div>
             <div class="form-group">
               <label>Update Title</label>
               <input type="text" id="update-title-input" class="arcadix-input" placeholder="e.g. Added Getaway Shootout">
             </div>
             <div class="form-group">
               <label>Content</label>
-              <textarea id="update-content-input" class="arcadix-textarea" rows="5" placeholder="Write update details here..."></textarea>
+              <textarea id="update-content-input" class="arcadix-textarea" rows="4" placeholder="Write update details here..."></textarea>
             </div>
             <button onclick="addUpdate()" class="arcadix-btn" style="margin-bottom:2rem;">Publish Update</button>
 
@@ -490,6 +690,62 @@
             ${updatesList.length ? updatesManagementHTML : '<p style="text-align:center; color:#888;">No updates found.</p>'}
           </div>
         </div>`;
+
+      // Render Chart.js Graph
+      renderTrafficChart(dates, trafficData);
+    }
+
+    function renderTrafficChart(dates, trafficData) {
+      const ctx = document.getElementById('trafficChart').getContext('2d');
+      const views = dates.map(d => trafficData[d].views);
+      const sessions = dates.map(d => trafficData[d].sessions);
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: dates.length ? dates : ['Today'],
+          datasets: [
+            {
+              label: 'Page Views',
+              data: views.length ? views : [0],
+              borderColor: '#a855f7',
+              backgroundColor: 'rgba(168, 85, 247, 0.2)',
+              fill: true,
+              tension: 0.3
+            },
+            {
+              label: 'Unique Sessions',
+              data: sessions.length ? sessions : [0],
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              fill: true,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              labels: {
+                color: '#ffffff',
+                font: { family: 'Orbitron' }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#888888', font: { family: 'Orbitron' } },
+              grid: { color: '#2a1832' }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#888888', font: { family: 'Orbitron' }, stepSize: 1 },
+              grid: { color: '#2a1832' }
+            }
+          }
+        }
+      });
     }
 
     function addUpdate() {
