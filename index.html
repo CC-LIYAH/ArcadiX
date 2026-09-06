@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script type="module">
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.x.x/firebase-auth.js";
+
+  // Hide the body immediately so unauthenticated users don't see content flash
+  document.body.style.display = "none";
+
+  const auth = getAuth();
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      // User is not logged in, redirect to your login/auth page
+      window.location.href = "login.html"; // Update with your actual login page filename
+    } else {
+      // User is logged in, make the page visible
+      document.body.style.display = "block";
+    }
+  });
+</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title">Planet ArcadiX</title>
