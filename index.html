@@ -1327,6 +1327,7 @@
           uid: user.uid,
           userId: newUserId,
           username: username,
+          email: email,
           photoURL: DEFAULT_AVATAR,
           bio: "Welcome to my Planet ArcadiX profile!",
           hasAdminAccess: isSuperAdmin,
@@ -1359,6 +1360,7 @@
         window.showArcadiXAlert("Sign Up Error: " + error.message, "Error");
       }
     };
+
     window.handleSignIn = async function() {
       const identifier = document.getElementById('auth-identifier').value.trim();
       const password = document.getElementById('auth-password').value;
@@ -1734,7 +1736,6 @@
       }
     }
 
-    // UPDATED FUNCTION: Extracts src attribute properly from iframe snippet input
     window.addNewGame = async function() {
       const title = document.getElementById('admin-game-title').value.trim();
       const iconUrl = document.getElementById('admin-game-icon').value.trim();
@@ -1744,12 +1745,9 @@
         return window.showArcadiXAlert("Please fill in both the Title and Link fields.", "Error");
       }
 
-      // Extracts exact URL if input was an full <iframe> element string
-      if (rawUrl.includes('<iframe') || rawUrl.includes('src=')) {
-        const srcMatch = rawUrl.match(/src=["']([^"']+)["']/i);
-        if (srcMatch && srcMatch[1]) {
-          rawUrl = srcMatch[1];
-        }
+      if (rawUrl.includes('<iframe') && rawUrl.includes('src=')) {
+        const srcMatch = rawUrl.match(/src=["']([^"']+)["']/);
+        if (srcMatch && srcMatch[1]) rawUrl = srcMatch[1];
       }
 
       const gameId = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || ('game-' + Date.now());
@@ -1791,6 +1789,7 @@
         }
       }
     };
+
     async function renderUpdatesTab(body) {
       body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Updates...</div>`;
       
@@ -1867,7 +1866,6 @@
         }
       }
     };
-
     async function renderUsersTab(body) {
       body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Players...</div>`;
 
