@@ -1375,8 +1375,13 @@
         if (!identifier.includes('@')) {
           const usernameDoc = await getDoc(doc(db, "usernames", identifier.toLowerCase()));
           if (usernameDoc.exists()) {
-            targetEmail = await window.showArcadiXPrompt("Please confirm your registered email address to sign in:", "", "Account Verification");
-            if (!targetEmail) return;
+            const userDoc = await getDoc(doc(db, "users", usernameDoc.data().uid));
+            if (userDoc.exists() && userDoc.data().email) {
+              targetEmail = userDoc.data().email;
+            } else {
+              targetEmail = await window.showArcadiXPrompt("Please confirm your registered email address to sign in:", "", "Account Verification");
+              if (!targetEmail) return;
+            }
           } else {
             return window.showArcadiXAlert("Username not found!", "Error");
           }
@@ -1682,7 +1687,7 @@
         
         querySnapshot.forEach(docSnap => {
           const game = docSnap.data();
-          const generatedLink = `https://cc-liyah.github.io/?game=${docSnap.id}`;
+          const generatedLink = `${window.location.origin}${window.location.pathname}?game=${docSnap.id}`;
           const iconTag = game.iconUrl ? `<img src="${game.iconUrl}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;" alt="icon">` : '';
 
           customGamesHTML += `
@@ -1716,7 +1721,7 @@
           <div class="form-group">
             <label>Embeddable Link / Source URL</label>
             <input type="text" id="admin-game-url" class="arcadix-input" placeholder="https://example.com/embed/game or iframe src...">
-            <small style="color:#aaa; font-size:0.75rem;">Enter either an iframe src link or full iframe snippet. It will generate a new page under cc-liyah.github.io/?game=...</small>
+            <small style="color:#aaa; font-size:0.75rem;">Enter either an iframe src link or full iframe snippet. It will generate a new page under ?game=...</small>
           </div>
           <button onclick="window.addNewGame()" class="arcadix-btn" style="margin-bottom:2rem;">Generate & Publish Game Page</button>
           ` : ''}
@@ -1754,7 +1759,7 @@
           hidden: false
         });
 
-        await window.showArcadiXAlert(`Game created successfully! Generated Link:\nhttps://cc-liyah.github.io/?game=${gameId}`, "Game Added");
+        await window.showArcadiXAlert(`Game created successfully! Generated Link:\n${window.location.origin}${window.location.pathname}?game=${gameId}`, "Game Added");
         window.switchAdminTab('games');
       } catch (err) {
         window.showArcadiXAlert("Error saving game: " + err.message, "Error");
