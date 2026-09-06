@@ -3,39 +3,84 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="page-title">Game Portal</title>
+  <title id="page-title">Planet ArcadiX</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #121212; color: #fff; display: flex; flex-direction: column; height: 100vh; }
-    header { padding: 1rem; background: #1f1f1f; display: flex; justify-content: space-between; align-items: center; }
-    h1 { font-size: 1.2rem; text-transform: capitalize; }
-    .game-container { flex: 1; width: 100%; height: 100%; }
-    iframe { width: 100%; height: 100%; border: none; }
-    .error { display: flex; align-items: center; justify-content: center; height: 100%; color: #ff5555; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #121212;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      padding: 1rem 1.5rem;
+      background: #1f1f1f;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #333;
+    }
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .game-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+    .status-msg {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #aaa;
+      gap: 1rem;
+    }
+    .status-msg h2 {
+      color: #ff5555;
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <h1 id="game-name">Select a Game</h1>
+    <h1 id="game-name">Planet ArcadiX</h1>
   </header>
 
-  <div class="game-container" id="container">
-    <!-- Game IFrame gets generated here -->
-  </div>
+  <main class="game-container" id="container">
+    <!-- Dynamic Iframe Insertion -->
+  </main>
 
   <script>
-    // Map URL parameters to game folder names
+    // Registry mapping game query IDs to file paths relative to root
     const GAMES_REGISTRY = {
       'getaway-shootout': {
         title: 'Getaway Shootout',
-        path: './getaway-shootout/GetawayShootout.github.io-main/index.html'
+        path: './Games/getaway-shootout/GetawayShootout.github.io-main/index.html'
       }
-      // Add future games here:
-      // 'drive-mad': { title: 'Drive Mad', path: './drive-mad/index.html' }
+      // Add new games here as you upload them:
+      // 'game-id': { title: 'Game Title', path: './Games/folder-name/index.html' }
     };
 
-    // 1. Parse URL Query Parameters
+    // 1. Read the ?game= query parameter from the URL
     const urlParams = new URLSearchParams(window.location.search);
     const gameId = urlParams.get('game');
 
@@ -43,17 +88,31 @@
     const titleEl = document.getElementById('page-title');
     const headerEl = document.getElementById('game-name');
 
-    // 2. Resolve Game & Embed Iframe
+    // 2. Validate parameter and inject iframe
     if (gameId && GAMES_REGISTRY[gameId]) {
       const selectedGame = GAMES_REGISTRY[gameId];
 
-      titleEl.innerText = selectedGame.title;
+      titleEl.innerText = `${selectedGame.title} - Planet ArcadiX`;
       headerEl.innerText = selectedGame.title;
 
-      // Inject iframe dynamically
-      container.innerHTML = `<iframe src="${selectedGame.path}" allowfullscreen></iframe>`;
+      container.innerHTML = `
+        <iframe 
+          src="${selectedGame.path}" 
+          allow="autoplay; gamepad; fullscreen; focus-without-user-activation" 
+          allowfullscreen>
+        </iframe>`;
+    } else if (gameId) {
+      container.innerHTML = `
+        <div class="status-msg">
+          <h2>Game Not Found</h2>
+          <p>No game registered under id: <strong>${gameId}</strong></p>
+        </div>`;
     } else {
-      container.innerHTML = `<div class="error"><h2>Game not found or parameter missing.</h2></div>`;
+      container.innerHTML = `
+        <div class="status-msg">
+          <h2>Welcome to Planet ArcadiX</h2>
+          <p>Select a game or provide a <code>?game=id</code> parameter to start playing.</p>
+        </div>`;
     }
   </script>
 
