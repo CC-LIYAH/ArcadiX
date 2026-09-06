@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title">Planet ArcadiX</title>
+  <!-- Google Font: Source Sans Pro -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="style.css">
   <style>
     * {
@@ -12,133 +17,156 @@
       padding: 0;
     }
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: #121212;
+      font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #000000;
       color: #ffffff;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
     }
+
+    /* Top Navigation Bar */
     header {
-      padding: 1rem 1.5rem;
-      background: #1f1f1f;
+      background: linear-gradient(180deg, #1f1224 0%, #120916 100%);
+      padding: 0.8rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #333;
+      border-bottom: 1px solid #2a1832;
     }
-    header h1 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      letter-spacing: 0.5px;
+    .logo-btn {
+      display: inline-block;
+      padding: 0.4rem 1.2rem;
+      border: 1px solid #4a3058;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      text-decoration: none;
+      text-transform: uppercase;
     }
-    header a {
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+    .nav-links a {
       color: #ffffff;
       text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: color 0.2s;
     }
-    header a:hover {
-      color: #ff5555;
+    .nav-links a:hover {
+      color: #a855f7;
     }
+
+    /* Main Area Container */
     .main-content {
       flex: 1;
       width: 100%;
-      height: calc(100vh - 60px);
-      background: #121212;
+      background: #000000;
     }
+
+    /* Iframe Styling */
     iframe {
       width: 100%;
-      height: 100%;
+      height: calc(100vh - 65px);
       border: none;
       display: block;
     }
-    /* Home Page Section Layout */
+
+    /* Home Page Layout */
     .portal-home {
-      max-width: 1100px;
+      max-width: 900px;
       margin: 0 auto;
-      padding: 2.5rem 1.5rem;
-    }
-    .hero-section {
+      padding: 4rem 1.5rem;
       text-align: center;
-      margin-bottom: 3rem;
     }
-    .hero-section h2 {
-      font-size: 2.2rem;
-      color: #ff5555;
-      margin-bottom: 0.5rem;
+    .hero-title {
+      font-size: 2.7rem;
+      font-weight: 700;
+      margin-bottom: 1.2rem;
     }
-    .hero-section p {
-      color: #aaa;
-      font-size: 1.05rem;
+    .hero-description {
+      color: #cccccc;
+      font-size: 1.15rem;
+      line-height: 1.6;
+      max-width: 700px;
+      margin: 0 auto 3.5rem auto;
+      font-weight: 400;
     }
-    .section-box {
-      background: #1a1a1a;
-      border: 1px solid #333;
+
+    /* Centered Purple Games Section Box */
+    .section-header-box {
+      background: linear-gradient(180deg, #2b1836 0%, #180c1f 100%);
+      border: 1px solid #4a285d;
       border-radius: 8px;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-    }
-    .section-title {
+      padding: 0.8rem 1rem;
       font-size: 1.3rem;
-      font-weight: 600;
-      color: #ffffff;
-      margin-bottom: 1.25rem;
-      border-bottom: 2px solid #ff5555;
-      padding-bottom: 0.4rem;
-      display: inline-block;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     }
+
+    /* Games Grid */
     .games-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 1.25rem;
     }
     .game-card {
-      background: #252525;
-      border: 1px solid #383838;
-      border-radius: 6px;
-      padding: 1.25rem;
+      background: #120916;
+      border: 1px solid #331940;
+      border-radius: 8px;
+      padding: 1.5rem;
       text-decoration: none;
       color: #ffffff;
       transition: transform 0.2s, border-color 0.2s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
     }
     .game-card:hover {
-      transform: translateY(-4px);
-      border-color: #ff5555;
+      transform: translateY(-3px);
+      border-color: #8b5cf6;
     }
     .game-card h3 {
-      font-size: 1.1rem;
+      font-size: 1.2rem;
+      font-weight: 600;
       margin-bottom: 0.5rem;
     }
     .game-card span {
-      font-size: 0.85rem;
-      color: #ff5555;
+      font-size: 0.95rem;
+      color: #a855f7;
+      font-weight: 600;
     }
+
+    /* Error Message */
     .status-msg {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100%;
+      height: calc(100vh - 65px);
       color: #aaa;
       gap: 1rem;
     }
     .status-msg h2 {
-      color: #ff5555;
+      color: #ef4444;
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1><a href="./" id="header-link">Planet ArcadiX</a></h1>
+    <a href="./" class="logo-btn">Planet ArcadiX</a>
+    <nav class="nav-links">
+      <a href="./">About</a>
+      <a href="./">Games</a>
+    </nav>
   </header>
 
   <main class="main-content" id="container">
-    <!-- Dynamic Content or Home Grid -->
+    <!-- Dynamic Iframe or Home Content -->
   </main>
 
   <script>
@@ -157,13 +185,10 @@
 
     const container = document.getElementById('container');
     const titleEl = document.getElementById('page-title');
-    const headerLink = document.getElementById('header-link');
 
     if (gameId && GAMES_REGISTRY[gameId]) {
       const selectedGame = GAMES_REGISTRY[gameId];
-
       titleEl.innerText = `${selectedGame.title} - Planet ArcadiX`;
-      headerLink.innerText = `Planet ArcadiX - ${selectedGame.title}`;
 
       container.innerHTML = `
         <iframe 
@@ -176,31 +201,30 @@
         <div class="status-msg">
           <h2>Game Not Found</h2>
           <p>No game registered under id: <strong>${gameId}</strong></p>
-          <a href="./" style="color: #ff5555; text-decoration: none;">Return to Home</a>
+          <a href="./" style="color: #a855f7; text-decoration: none;">Return to Home</a>
         </div>`;
     } else {
-      // Home Page Layout with Section Boxes & Cards
+      // Home Page Layout matching screenshot
       let cardsHTML = '';
       for (const [id, game] of Object.entries(GAMES_REGISTRY)) {
         cardsHTML += `
           <a href="?game=${id}" class="game-card">
             <h3>${game.title}</h3>
-            <span>Play Now &rarr;</span>
+            <span>Play Game &rarr;</span>
           </a>`;
       }
 
       container.innerHTML = `
         <div class="portal-home">
-          <div class="hero-section">
-            <h2>Welcome to Planet ArcadiX</h2>
-            <p>Select a game below to launch it directly in your browser.</p>
-          </div>
+          <h1 class="hero-title">Welcome to Planet ArcadiX!</h1>
+          <p class="hero-description">
+            Planet ArcadiX is the brand-new successor to Planet Arcadia, a project that ran from 2023 to 2025. It has returned with a brand new look, more games & features will be arriving soon, so check back frequently!
+          </p>
 
-          <div class="section-box">
-            <div class="section-title">Featured Games</div>
-            <div class="games-grid">
-              ${cardsHTML}
-            </div>
+          <div class="section-header-box">Games</div>
+
+          <div class="games-grid">
+            ${cardsHTML}
           </div>
         </div>`;
     }
