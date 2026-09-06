@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title">Planet ArcadiX</title>
-  <!-- Google Font: Source Sans Pro -->
+
+  <!-- Google Font: Orbitron Bold -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="style.css">
   <style>
@@ -17,7 +18,8 @@
       padding: 0;
     }
     body {
-      font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 700;
       background: #000000;
       color: #ffffff;
       display: flex;
@@ -25,7 +27,7 @@
       min-height: 100vh;
     }
 
-    /* Top Navigation Bar */
+    /* Universal Navigation Header */
     header {
       background: linear-gradient(180deg, #1f1224 0%, #120916 100%);
       padding: 0.8rem 2rem;
@@ -33,19 +35,26 @@
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid #2a1832;
+      height: 65px;
     }
-    .logo-btn {
-      display: inline-block;
-      padding: 0.4rem 1.2rem;
-      border: 1px solid #4a3058;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.05);
-      color: #ffffff;
-      font-weight: 700;
-      font-size: 0.9rem;
-      letter-spacing: 1px;
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
       text-decoration: none;
-      text-transform: uppercase;
+    }
+    .logo-img {
+      height: 40px;
+      width: auto;
+      display: block;
+      object-fit: contain;
+    }
+    .game-title-display {
+      color: #a855f7;
+      font-size: 1.1rem;
+      font-weight: 900;
+      border-left: 2px solid #4a285d;
+      padding-left: 1rem;
     }
     .nav-links {
       display: flex;
@@ -54,8 +63,8 @@
     .nav-links a {
       color: #ffffff;
       text-decoration: none;
-      font-weight: 600;
-      font-size: 1rem;
+      font-weight: 700;
+      font-size: 0.95rem;
       transition: color 0.2s;
     }
     .nav-links a:hover {
@@ -69,12 +78,35 @@
       background: #000000;
     }
 
-    /* Iframe Styling */
-    iframe {
+    /* Fixed Aspect Ratio Game Container */
+    .game-viewport {
       width: 100%;
       height: calc(100vh - 65px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #000000;
+      padding: 1rem;
+    }
+    .iframe-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 1280px;
+      height: 0;
+      padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+      max-height: calc(100vh - 95px);
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #120916;
+    }
+    .iframe-wrapper iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       border: none;
-      display: block;
     }
 
     /* Home Page Layout */
@@ -85,27 +117,27 @@
       text-align: center;
     }
     .hero-title {
-      font-size: 2.7rem;
-      font-weight: 700;
+      font-size: 2.5rem;
+      font-weight: 900;
       margin-bottom: 1.2rem;
     }
     .hero-description {
       color: #cccccc;
-      font-size: 1.15rem;
+      font-size: 1rem;
       line-height: 1.6;
       max-width: 700px;
       margin: 0 auto 3.5rem auto;
-      font-weight: 400;
+      font-weight: 700;
     }
 
-    /* Centered Purple Games Section Box */
+    /* Centered Games Section Box */
     .section-header-box {
       background: linear-gradient(180deg, #2b1836 0%, #180c1f 100%);
       border: 1px solid #4a285d;
       border-radius: 8px;
       padding: 0.8rem 1rem;
-      font-size: 1.3rem;
-      font-weight: 700;
+      font-size: 1.25rem;
+      font-weight: 900;
       margin-bottom: 2rem;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     }
@@ -130,14 +162,14 @@
       border-color: #8b5cf6;
     }
     .game-card h3 {
-      font-size: 1.2rem;
-      font-weight: 600;
+      font-size: 1.1rem;
       margin-bottom: 0.5rem;
+      font-weight: 700;
     }
     .game-card span {
-      font-size: 0.95rem;
+      font-size: 0.85rem;
       color: #a855f7;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     /* Error Message */
@@ -152,13 +184,17 @@
     }
     .status-msg h2 {
       color: #ef4444;
+      font-weight: 900;
     }
   </style>
 </head>
 <body>
 
   <header>
-    <a href="./" class="logo-btn">Planet ArcadiX</a>
+    <a href="./" class="header-brand">
+      <img src="./LogoV2.png" alt="Planet ArcadiX" class="logo-img">
+      <span id="header-game-title" class="game-title-display" style="display: none;"></span>
+    </a>
     <nav class="nav-links">
       <a href="./">About</a>
       <a href="./">Games</a>
@@ -185,17 +221,27 @@
 
     const container = document.getElementById('container');
     const titleEl = document.getElementById('page-title');
+    const headerGameTitle = document.getElementById('header-game-title');
 
     if (gameId && GAMES_REGISTRY[gameId]) {
       const selectedGame = GAMES_REGISTRY[gameId];
+      
+      // Update page title and header indicator
       titleEl.innerText = `${selectedGame.title} - Planet ArcadiX`;
+      headerGameTitle.innerText = selectedGame.title;
+      headerGameTitle.style.display = 'inline-block';
 
+      // Fixed 16:9 aspect ratio wrapper for iframe
       container.innerHTML = `
-        <iframe 
-          src="${selectedGame.path}" 
-          allow="autoplay; gamepad; fullscreen; focus-without-user-activation" 
-          allowfullscreen>
-        </iframe>`;
+        <div class="game-viewport">
+          <div class="iframe-wrapper">
+            <iframe 
+              src="${selectedGame.path}" 
+              allow="autoplay; gamepad; fullscreen; focus-without-user-activation" 
+              allowfullscreen>
+            </iframe>
+          </div>
+        </div>`;
     } else if (gameId) {
       container.innerHTML = `
         <div class="status-msg">
@@ -204,7 +250,7 @@
           <a href="./" style="color: #a855f7; text-decoration: none;">Return to Home</a>
         </div>`;
     } else {
-      // Home Page Layout matching screenshot
+      // Home Page Layout
       let cardsHTML = '';
       for (const [id, game] of Object.entries(GAMES_REGISTRY)) {
         cardsHTML += `
