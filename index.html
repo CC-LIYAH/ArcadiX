@@ -396,6 +396,7 @@
     }
 
     /* Dynamic Badges Container & Tooltip CSS */
+   /* Dynamic Badges Container & Tooltip CSS */
     .user-badges-container {
       display: inline-flex;
       align-items: center;
@@ -420,7 +421,6 @@
     }
     .badge-icon-item:hover {
       transform: scale(1.15);
-      /* border-color: var(--accent-color); */
       z-index: 10;
     }
     .badge-icon-item img, .badge-icon-item svg {
@@ -428,7 +428,21 @@
       height: 100%;
       object-fit: contain;
     }
-    .badge-icon-item.recolorable img, .badge-icon-item.recolorable svg {
+    /* Recolorable Icon Mask Fix */
+    .badge-icon-item.recolorable img {
+      background-color: var(--accent-color);
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
+      /* Masks image using src attribute */
+      -webkit-mask-image: var(--badge-mask-url);
+      mask-image: var(--badge-mask-url);
+      object-position: -9999px -9999px; /* Hides original image color */
+    }
+    .badge-icon-item.recolorable svg {
       fill: var(--accent-color);
       color: var(--accent-color);
     }
@@ -445,12 +459,16 @@
       padding: 0.5rem 0.8rem;
       border-radius: 6px;
       font-size: 0.75rem;
-      white-space: nowrap;
       pointer-events: none;
       box-shadow: 0 4px 12px rgba(0,0,0,0.8);
       z-index: 99;
       transition: opacity 0.2s ease, visibility 0.2s ease;
       text-align: center;
+      /* Tooltip Line Wrapping & Max-Width */
+      white-space: normal;
+      width: max-content;
+      max-width: 220px;
+      word-wrap: break-word;
     }
     .badge-tooltip strong {
       display: block;
@@ -1257,9 +1275,13 @@
         if (!badge) return;
         const isRecolor = badge.recolorable !== false;
         
-        let iconContent = badge.icon.startsWith('<svg') || badge.icon.startsWith('http') 
-          ? (badge.icon.startsWith('http') ? `<img src="${badge.icon}" alt="${badge.name}">` : badge.icon)
-          : `<img src="${badge.icon}" alt="${badge.name}">`;
+        let iconContent = '';
+        if (badge.icon.startsWith('<svg')) {
+          iconContent = badge.icon;
+        } else {
+          const styleAttr = isRecolor ? `style="--badge-mask-url: url('${badge.icon}');"` : '';
+          iconContent = `<img src="${badge.icon}" alt="${badge.name}" ${styleAttr}>`;
+        }
 
         html += `
           <div class="badge-icon-item ${isRecolor ? 'recolorable' : ''}">
@@ -1273,7 +1295,6 @@
       html += '</div>';
       return html;
     };
-
     function applyTheme(theme) {
       if (!theme) return;
       const root = document.documentElement;
@@ -2969,7 +2990,7 @@ window.filterGamesCatalog = function() {
             ${!isLoginView ? `
             <div class="form-group">
               <label>Username</label>
-              <input type="text" id="auth-username" class="arcadix-input" placeholder="ArcadeMaster">
+              <input type="text" id="auth-username" class="arcadix-input" placeholder="PlanetArcadiXPlayer">
             </div>
             <div class="form-group">
               <label>Email Address</label>
