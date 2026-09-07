@@ -2649,14 +2649,21 @@ window.loadUserProfile = async function(userId) {
           <input type="text" id="theme-name-input" class="arcadiX-input" placeholder="e.g. ArcadiX Emerald" style="width: 100%;">
         </div>
         
-       <div class="color-picker-grid">
+    <div class="color-picker-grid">
           <div class="color-field">
-            <label>Background</label>
+            <label>Page Background</label>
             <input type="color" id="theme-bg" value="#000000">
+            <input type="text" id="theme-bg-gradient" class="arcadix-input" placeholder="Or CSS gradient..." style="margin-top:0.5rem;">
+          </div>
+          <div class="color-field">
+            <label>Header Background</label>
+            <input type="color" id="theme-header-bg" value="#120916">
+            <input type="text" id="theme-header-gradient" class="arcadix-input" placeholder="Or gradient..." style="margin-top:0.5rem;">
           </div>
           <div class="color-field">
             <label>Card Background</label>
             <input type="color" id="theme-card" value="#120916">
+            <input type="text" id="theme-card-gradient" class="arcadix-input" placeholder="Or gradient..." style="margin-top:0.5rem;">
           </div>
           <div class="color-field">
             <label>Card Border</label>
@@ -2665,13 +2672,30 @@ window.loadUserProfile = async function(userId) {
           <div class="color-field">
             <label>Accent Color</label>
             <input type="color" id="theme-accent" value="#a855f7">
+            <input type="text" id="theme-accent-gradient" class="arcadix-input" placeholder="Or gradient..." style="margin-top:0.5rem;">
+          </div>
+          <div class="color-field">
+            <label>Accent Glow Color</label>
+            <input type="color" id="theme-glow" value="#a855f7">
           </div>
           <div class="color-field">
             <label>Text Color</label>
             <input type="color" id="theme-text" value="#ffffff">
           </div>
+          <div class="color-field">
+            <label>Text Outline Color</label>
+            <input type="color" id="theme-text-outline" value="#000000">
+          </div>
+          <div class="color-field">
+            <label>Outline Width (px)</label>
+            <input type="number" id="theme-outline-width" class="arcadix-input" value="0" min="0" max="10" style="margin-top:0.5rem;">
+          </div>
+          <div class="color-field">
+            <label>Moving Speed (s)</label>
+            <input type="number" id="theme-speed" class="arcadix-input" value="12" min="1" max="60" style="margin-top:0.5rem;">
+          </div>
         </div>
-        <button onclick="createNewTheme()" class="arcadix-btn" style="margin-bottom:2rem;">Save New Theme</button>
+        <button onclick="createNewTheme()" class="arcadix-btn" style="margin-bottom:2rem; width:100%;">Save & Register Theme</button>
 
         <div class="section-header-box">Existing Site Themes</div>
         ${themesHTML}`;
@@ -2683,20 +2707,33 @@ window.loadUserProfile = async function(userId) {
 
       const themeId = 'theme-' + Date.now();
       const bgColor = document.getElementById('theme-bg').value;
+      const bgGradient = document.getElementById('theme-bg-gradient').value.trim();
+      const headerColor = document.getElementById('theme-header-bg').value;
+      const headerGradient = document.getElementById('theme-header-gradient').value.trim();
       const cardBg = document.getElementById('theme-card').value;
+      const cardGradient = document.getElementById('theme-card-gradient').value.trim();
       const cardBorder = document.getElementById('theme-border').value;
       const accentColor = document.getElementById('theme-accent').value;
+      const accentGradient = document.getElementById('theme-accent-gradient').value.trim();
+      const glowColor = document.getElementById('theme-glow').value;
       const textColor = document.getElementById('theme-text').value;
+      const textOutline = document.getElementById('theme-text-outline').value;
+      const outlineWidth = document.getElementById('theme-outline-width').value || '0';
+      const movingSpeed = document.getElementById('theme-speed').value || '12';
 
       const newTheme = {
         id: themeId,
         name: name,
-        bgColor: bgColor,
-        headerBg: `linear-gradient(180deg, ${cardBg} 0%, #000000 100%)`,
-        cardBg: cardBg,
+        bgColor: bgGradient || bgColor,
+        headerBg: headerGradient || headerColor || `linear-gradient(180deg, ${cardBg} 0%, #000000 100%)`,
+        cardBg: cardGradient || cardBg,
         cardBorder: cardBorder,
-        accentColor: accentColor,
+        accentColor: accentGradient || accentColor,
+        glowColor: glowColor,
         textColor: textColor,
+        textOutline: textOutline,
+        outlineWidth: outlineWidth,
+        movingSpeed: movingSpeed,
         isDefault: false
       };
 
