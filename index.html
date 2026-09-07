@@ -2613,98 +2613,95 @@ window.loadUserProfile = async function(userId) {
       window.switchAdminTab('assets');
     };
 
-    function renderThemesTab(body) {
-      const activeId = localStorage.getItem('arcadix_active_theme_id');
+ function renderThemesTab(body) {
+    const activeId = localStorage.getItem('arcadix_active_theme_id');
 
-      let themesHTML = fetchedThemesCache.map(t => {
+    let themesHTML = fetchedThemesCache.map(t => {
         const isActive = t.id === activeId || (!activeId && t.isDefault);
         return `
-          <div class="theme-card">
-            <div class="theme-card-header">
-              <div>
-                <strong style="color:var(--accent-color); font-size:1rem;">${t.name}</strong>
-                ${t.isDefault ? '<span class="user-id-badge" style="margin-left:0.5rem; background:#4a285d;">DEFAULT</span>' : ''}
-                ${isActive ? '<span class="user-id-badge" style="margin-left:0.5rem; background:#22c55e; color:#000;">ACTIVE</span>' : ''}
-              </div>
+            <div class="theme-card">
+                <div class="theme-card-header">
+                    <div>
+                        <strong style="color:var(--accent-color); font-size:1rem;">${t.name}</strong>${t.isDefault ? '<span class="user-id-badge" style="margin-left:0.5rem; background:#4a285d;">DEFAULT</span>' : ''}
+                        ${isActive ? '<span class="user-id-badge" style="margin-left:0.5rem; background:#22c55e; color:#000;">ACTIVE</span>' : ''}
+                    </div>
+                </div>
+                <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                    <div style="width:24px; height:24px; border-radius:50%; background:${t.bgColor}; border:1px solid #fff;" title="Background"></div>
+                    <div style="width:24px; height:24px; border-radius:50%; background:${t.headerBg}; border:1px solid #fff;" title="Header"></div>
+                    <div style="width:24px; height:24px; border-radius:50%; background:${t.cardBg}; border:1px solid #fff;" title="Cards"></div>
+                    <div style="width:24px; height:24px; border-radius:50%; background:${t.accentColor}; border:1px solid #fff;" title="Accent"></div>
+                </div>
+                <div class="theme-actions">
+                    <button class="action-btn" onclick="activateTheme('${t.id}')">Apply Theme</button>
+                    ${!t.isDefault ? `<button class="action-btn" onclick="setDefaultTheme('${t.id}')">Set as Default</button>` : ''}
+                    ${fetchedThemesCache.length > 1 ? `<button class="delete-btn" onclick="deleteTheme('${t.id}')">Delete</button>` : ''}
+                </div>
             </div>
-            <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-              <div style="width:24px; height:24px; border-radius:50%; background:${t.bgColor}; border:1px solid #fff;" title="Background"></div>
-              <div style="width:24px; height:24px; border-radius:50%; background:${t.headerBg}; border:1px solid #fff;" title="Header"></div>
-              <div style="width:24px; height:24px; border-radius:50%; background:${t.cardBg}; border:1px solid #fff;" title="Cards"></div>
-              <div style="width:24px; height:24px; border-radius:50%; background:${t.accentColor}; border:1px solid #fff;" title="Accent"></div>
-            </div>
-            <div class="theme-actions">
-              <button class="action-btn" onclick="activateTheme('${t.id}')">Apply Theme</button>
-              ${!t.isDefault ? `<button class="action-btn" onclick="setDefaultTheme('${t.id}')">Set as Default</button>` : ''}
-              ${fetchedThemesCache.length > 1 ? `<button class="delete-btn" onclick="deleteTheme('${t.id}')">Delete</button>` : ''}
-            </div>
-          </div>`;
-      }).join('');
+        `;
+    }).join('');
 
-      body.innerHTML = themesHTML;
-}
+    body.innerHTML = `
+        <div class="section-header-box" style="margin-top:0;">Create Custom Theme</div>
+        
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label style="color: var(--accent-color); font-weight: bold; display: block; margin-bottom: 0.5rem;">Theme Name</label>
+          <input type="text" id="theme-name-input" class="arcadiX-input" placeholder="e.g. ArcadiX Emerald" style="width: 100%;">
+        </div>
+        
+        <div class="color-picker-grid">
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Page Background</label>
+            <input type="color" id="theme-bg" value="#000000">
+          </div>
 
-  body.innerHTML = `
-    <div class="section-header-box" style="margin-top:0;">Create Custom Theme</div>
-    
-    <div class="form-group" style="margin-bottom: 1.5rem;">
-      <label style="color: var(--accent-color); font-weight: bold; display: block; margin-bottom: 0.5rem;">Theme Name</label>
-      <input type="text" id="theme-name-input" class="arcadiX-input" placeholder="e.g. ArcadiX Emerald" style="width: 100%;">
-    </div>
-    
-    <div class="color-picker-grid">
-      <div class="color-field">
-        <label style="font-size:0.8rem;">Page Background</label>
-        <input type="color" id="theme-bg" value="#000000">
-      </div>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Header Background</label>
+            <input type="color" id="theme-header" value="#1f1224">
+          </div>
 
-      <div class="color-field">
-        <label style="font-size:0.8rem;">Header Background</label>
-        <input type="color" id="theme-header" value="#1f1224">
-      </div>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Card Background</label>
+            <input type="color" id="theme-card" value="#120916">
+          </div>
 
-      <div class="color-field">
-        <label style="font-size:0.8rem;">Card Background</label>
-        <input type="color" id="theme-card" value="#120916">
-      </div>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Card Border</label>
+            <input type="color" id="theme-border" value="#331940">
+          </div>
 
-      <div class="color-field">
-        <label style="font-size:0.8rem;">Card Border</label>
-        <input type="color" id="theme-border" value="#331940">
-      </div>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Accent Color</label>
+            <input type="color" id="theme-accent" value="#a855f7">
+          </div>
 
-      <div class="color-field">
-        <label style="font-size:0.8rem;">Accent Color</label>
-        <input type="color" id="theme-accent" value="#a855f7">
-      </div>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Accent Glow Color</label>
+            <input type="color" id="theme-glow" value="#a855f7">
+          </div>
 
-      <div class="color-field">
-        <label style="font-size:0.8rem;">Accent Glow Color</label>
-        <input type="color" id="theme-glow" value="#a855f7">
-      </div>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Text Color</label>
+            <input type="color" id="theme-text-color" value="#ffffff">
+          </div>
 
-      <div class="color-field">
-        <label style="font-size:0.8rem;">Text Color</label>
-        <input type="color" id="theme-text-color" value="#ffffff">
-      </div>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Text Outline Color</label>
+            <input type="color" id="theme-outline-color" value="#000000">
+          </div>
 
-      <div class="color-field">
-        <label style="font-size:0.8rem;">Text Outline Color</label>
-        <input type="color" id="theme-outline-color" value="#000000">
-      </div>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Outline Width (px)</label>
+            <input type="number" id="theme-outline-width" class="arcadiX-input" value="0" min="0" max="5" style="width: 100%;">
+          </div>
 
-      <div class="color-field">
-        <label style="font-size:0.8rem;">Outline Width (px)</label>
-        <input type="number" id="theme-outline-width" class="arcadiX-input" value="0" min="0" max="5" style="width: 100%;">
-      </div>
-
-      <div class="color-field">
-        <label style="font-size:0.8rem;">Moving Speed (s)</label>
-        <input type="number" id="theme-gradient-speed" class="arcadiX-input" value="12" min="1" style="width: 100%;">
-      </div>
-    </div>
-
-    <button onclick="createNewTheme()" class="arcadiX-btn" style="margin-top: 1.5rem; margin-bottom: 2rem;">Save & Register Theme</button>
+          <div class="color-field">
+            <label style="font-size:0.8rem;">Moving Speed (s)</label>
+            <input type="number" id="theme-gradient-speed" class="arcadiX-input" value="12" min="1" style="width: 100%;">
+          </div>
+        </div>
+        
+        <button onclick="createNewTheme()" class="arcadiX-btn" style="margin-top: 1.5rem; margin-bottom: 2rem;">Save & Register Theme</button>
         <div class="section-header-box">Available Site Themes</div>
         ${themesHTML}
     `; 
