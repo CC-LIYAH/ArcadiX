@@ -16,15 +16,22 @@
   <!-- Favicon -->
   <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
 
-  <style id="dynamic-theme-style">
+<style id="dynamic-theme-style">
     :root {
       --bg-color: #000000;
+      --bg-gradient: linear-gradient(135deg, #0d0e15 0%, #1a1c29 100%);
       --header-bg: linear-gradient(180deg, #1f1224 0%, #120916 100%);
       --header-border: #2a1832;
       --card-bg: #120916;
       --card-border: #331940;
       --accent-color: #a855f7;
+      --accent-glow: rgba(168, 85, 247, 0.5);
       --text-color: #ffffff;
+      --text-outline-color: transparent;
+      --text-outline-width: 0px;
+      
+      /* Gradient Animation Config */
+      --gradient-speed: 12s;
     }
 
     * {
@@ -32,15 +39,33 @@
       margin: 0;
       padding: 0;
     }
+
     body {
       font-family: 'Orbitron', sans-serif;
       font-weight: 700;
-      background: var(--bg-color);
+      background: var(--bg-gradient);
+      background-size: 300% 300%;
+      animation: gradientMove var(--gradient-speed) ease infinite;
       color: var(--text-color);
       display: flex;
       flex-direction: column;
       height: 100vh;
       overflow: hidden;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Dynamic Text Outline & Glow */
+    h1, h2, h3, h4, h5, h6, .player-name, .badge-tooltip strong {
+      color: var(--text-color);
+      text-shadow: 
+        0 0 10px var(--accent-glow),
+        0 0 20px var(--accent-glow);
+      -webkit-text-stroke: var(--text-outline-width) var(--text-outline-color);
     }
 
     /* Universal Navigation Header */
@@ -1349,6 +1374,38 @@
         console.warn("Analytics write failure: ", e);
       }
     }
+
+    // Apply Site Theme Settings Dynamically
+function applySiteTheme(theme = {}) {
+  const root = document.documentElement.style;
+
+  // 1. Accent & Card Background Parameters (Supports Gradients)
+  if (theme.accentColor) {
+    root.setProperty('--accent-color', theme.accentColor);
+  }
+  if (theme.accentGlow) {
+    root.setProperty('--accent-glow', theme.accentGlow);
+  } else if (theme.accentColor) {
+    root.setProperty('--accent-glow', `${theme.accentColor}80`); // 50% Opacity Fallback
+  }
+
+  // 2. Main Background (Solid Color, Multi-Stop Gradient, or Custom CSS)
+  if (theme.bgGradient) {
+    root.setProperty('--bg-gradient', theme.bgGradient);
+  } else if (theme.bgColor) {
+    root.setProperty('--bg-gradient', theme.bgColor);
+  }
+
+  // 3. Moving Gradient Animation Speed
+  if (theme.gradientSpeed) {
+    root.setProperty('--gradient-speed', typeof theme.gradientSpeed === 'number' ? `${theme.gradientSpeed}s` : theme.gradientSpeed);
+  }
+
+// 4. Text Color, Outline, and Glow
+  if (theme.textColor) root.setProperty('--text-color', theme.textColor);
+  if (theme.textOutlineColor) root.setProperty('--text-outline-color', theme.textOutlineColor);
+  if (theme.textOutlineWidth) root.setProperty('--text-outline-width', typeof theme.textOutlineWidth === 'number' ? `${theme.textOutlineWidth}px` : theme.textOutlineWidth);
+}
 
     // MAIN ROUTER & AUTH GUARD
     onAuthStateChanged(auth, async (user) => {
