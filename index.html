@@ -2641,65 +2641,91 @@ window.loadUserProfile = async function(userId) {
           </div>`;
       }).join('');
 
-      body.innerHTML = `
-        <div class="section-header-box" style="margin-top:0;">Create Custom Theme</div>
-        <div class="form-group">
-          <label>Theme Name</label>
-          <input type="text" id="theme-name-input" class="arcadix-input" placeholder="e.g. ArcadiX Emerald">
-        </div>
-        <div class="color-picker-grid">
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Page Background</label>
-            <input type="color" id="theme-bg" value="#000000">
-          </div>
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Header Background</label>
-            <input type="color" id="theme-header" value="#1f1224">
-          </div>
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Card Background</label>
-            <input type="color" id="theme-card" value="#120916">
-          </div>
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Card Border</label>
-            <input type="color" id="theme-border" value="#331940">
-          </div>
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Accent Color</label>
-            <input type="color" id="theme-accent" value="#a855f7">
-          </div>
-        </div>
-        <button onclick="createNewTheme()" class="arcadix-btn" style="margin-bottom:2rem;">Save & Register Theme</button>
+    body.innerHTML = `
+    <div class="section-header-box" style="margin-top:0;">Create Custom Theme</div>
+    <div class="form-group">
+      <label>Theme Name</label>
+      <input type="text" id="theme-name-input" class="arcadiX-input" placeholder="e.g. ArcadiX Emerald">
+    </div>
+    
+    <div class="color-picker-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+      <div class="color-field">
+        <label style="font-size:0.8rem;">Page Background (Color or CSS Gradient)</label>
+        <input type="text" id="theme-bg" class="arcadiX-input" placeholder="linear-gradient(135deg, #0d0e15, #1a1c29)">
+      </div>
+      <div class="color-field">
+        <label style="font-size:0.8rem;">Header Background</label>
+        <input type="text" id="theme-header" class="arcadiX-input" placeholder="#1f1224 or gradient...">
+      </div>
+      <div class="color-field">
+        <label style="font-size:0.8rem;">Card Background</label>
+        <input type="text" id="theme-card" class="arcadiX-input" placeholder="#120916">
+      </div>
+      <div class="color-field">
+        <label style="font-size:0.8rem;">Card Border</label>
+        <input type="color" id="theme-border" value="#331940">
+      </div>
+      <div class="color-field">
+        <label style="font-size:0.8rem;">Accent Color / Gradient</label>
+        <input type="text" id="theme-accent" class="arcadiX-input" placeholder="#a855f7 or gradient...">
+      </div>
+      <div class="color-field">
+        <label style="font-size:0.8rem;">Accent Glow Color</label>
+        <input type="text" id="theme-glow" class="arcadiX-input" placeholder="rgba(168, 85, 247, 0.5)">
+      </div>
+      <div class="color-field">
+        <label style="font-size:0.8rem;">Text Color</label>
+        <input type="color" id="theme-text-color" value="#ffffff">
+      </div>
+      <div class="color-field">
+        <label style="font-size:0.8rem;">Text Outline Color</label>
+        <input type="color" id="theme-outline-color" value="#000000">
+      </div>
+      <div class="color-field">
+        <label style="font-size:0.8rem;">Text Outline Width (px)</label>
+        <input type="number" id="theme-outline-width" class="arcadiX-input" placeholder="1" min="0" max="5">
+      </div>
+      <div class="color-field">
+        <label style="font-size:0.8rem;">Moving Gradient Speed (s)</label>
+        <input type="number" id="theme-gradient-speed" class="arcadiX-input" placeholder="12" min="1">
+      </div>
+    </div>
 
-        <div class="section-header-box">Available Site Themes</div>
-        ${themesHTML}`;
+    <button onclick="createNewTheme()" class="arcadiX-btn" style="margin-top:1rem; margin-bottom:2rem;">Save & Register Theme</button>
+
+    <div class="section-header-box">Available Site Themes</div>
+    ${themesHTML}`;
     }
 
-    window.createNewTheme = async function() {
-      const name = document.getElementById('theme-name-input').value.trim();
-      if (!name) return window.showArcadiXAlert("Please enter a name for the theme.", "Error");
+window.createNewTheme = async function() {
+  const name = document.getElementById('theme-name-input').value.trim();
+  if (!name) return window.showArcadiXAlert("Please enter a name for the theme.", "Error");
 
-      const themeId = "theme-" + Date.now();
-      const newTheme = {
-        id: themeId,
-        name: name,
-        bgColor: document.getElementById('theme-bg').value,
-        headerBg: document.getElementById('theme-header').value,
-        cardBg: document.getElementById('theme-card').value,
-        cardBorder: document.getElementById('theme-border').value,
-        accentColor: document.getElementById('theme-accent').value,
-        textColor: "#ffffff",
-        isDefault: false
-      };
+  const themeId = "theme-" + Date.now();
+  const newTheme = {
+    id: themeId,
+    name: name,
+    bgGradient: document.getElementById('theme-bg').value.trim() || '#000000',
+    headerBg: document.getElementById('theme-header').value.trim() || '#1f1224',
+    cardBg: document.getElementById('theme-card').value.trim() || '#120916',
+    cardBorder: document.getElementById('theme-border').value || '#331940',
+    accentColor: document.getElementById('theme-accent').value.trim() || '#a855f7',
+    accentGlow: document.getElementById('theme-glow')?.value.trim() || 'rgba(168, 85, 247, 0.5)',
+    textColor: document.getElementById('theme-text-color')?.value || '#ffffff',
+    textOutlineColor: document.getElementById('theme-outline-color')?.value || '#000000',
+    textOutlineWidth: document.getElementById('theme-outline-width')?.value || 0,
+    gradientSpeed: document.getElementById('theme-gradient-speed')?.value || 12,
+    isDefault: false
+  };
 
-      try {
-        await setDoc(doc(db, "themes", themeId), newTheme);
-        await window.showArcadiXAlert("Theme saved site-wide!", "Success");
-        window.switchAdminTab('themes');
-      } catch (err) {
-        window.showArcadiXAlert("Error creating theme: " + err.message, "Error");
-      }
-    };
+  try {
+    await setDoc(doc(db, "themes", themeId), newTheme);
+    await window.showArcadiXAlert("Theme saved site-wide!", "Success");
+    window.switchAdminTab('themes');
+  } catch (err) {
+    window.showArcadiXAlert("Error creating theme: " + err.message, "Error");
+  }
+};
 
     window.activateTheme = function(themeId) {
       const theme = fetchedThemesCache.find(t => t.id === themeId);
