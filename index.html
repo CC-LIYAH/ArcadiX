@@ -799,14 +799,15 @@
       <img src="./LogoV2.png" alt="Planet ArcadiX" class="logo-img">
       <span id="header-game-title" class="game-title-display" style="display: none;"></span>
     </a>
-    <nav class="nav-links">
-      <a href="./">Games</a>
-      <a href="?page=updates">Updates</a>
-      <a href="?page=admin" id="admin-nav-link" style="display: none;">Admin</a>
-      <span id="auth-nav-slot">
-        <a href="?page=login">Login</a>
-      </span>
-    </nav>
+<nav class="nav-links">
+  <a href="./">Home</a>
+  <a href="?page=allgames">All Games</a>
+  <a href="?page=updates">Updates</a>
+  <a href="?page=admin" id="admin-nav-link" style="display: none;">Admin</a>
+  <span id="auth-nav-slot">
+    <a href="?page=login">Login</a>
+  </span>
+</nav>
   </header>
 
   <main class="main-content" id="container">
@@ -1242,20 +1243,22 @@
           siteFooter.style.display = 'flex';
           recordPageView();
 
-          // Render Logged-In Application Views
-          if (userIdParam) {
-            window.loadUserProfile(userIdParam);
-          } else if (pageIdParam === 'updates') {
-            window.renderPublicUpdates();
-          } else if (pageIdParam === 'settings') {
-            window.renderSettingsPage();
-          } else if (pageIdParam === 'admin') {
-            window.renderAdminLayout();
-          } else if (gameIdParam) {
-            handleGamePageRouting();
-          } else {
-            renderHomePageGames();
-          }
+        // Render Logged-In Application Views
+      if (userIdParam) {
+        window.loadUserProfile(userIdParam);
+      } else if (pageIdParam === 'updates') {
+        window.renderPublicUpdates();
+      } else if (pageIdParam === 'settings') {
+        window.renderSettingsPage();
+      } else if (pageIdParam === 'admin') {
+        window.renderAdminLayout();
+      } else if (pageIdParam === 'allgames') {
+        window.renderAllGamesPage();
+      } else if (gameIdParam) {
+        handleGamePageRouting();
+      } else {
+        renderHomePageGames();
+      }
         }
       } else {
         // NON-LOGGED IN USER LOGIC: Lock out all inner views
@@ -2421,50 +2424,125 @@
       }
     }
 
-    async function renderHomePageGames() {
-      let cardsHTML = '';
-      for (const [id, game] of Object.entries(GAMES_REGISTRY)) {
-        const iconTag = game.icon ? `<img src="${game.icon}" class="game-icon-img" alt="${game.title}">` : '';
-        cardsHTML += `
-          <a href="?game=${id}" class="game-card">
-            ${iconTag}
-            <h3>${game.title}</h3>
-            <span>Play Game &rarr;</span>
-          </a>`;
-      }
+// Helper to aggregate static and Firestore custom games
+async function fetchAllGamesList() {
+  let gamesList = [];
 
-      try {
-        const querySnapshot = await getDocs(collection(db, "custom_games"));
-        querySnapshot.forEach((docSnap) => {
-          const game = docSnap.data();
-          if (!game.hidden) {
-            const iconTag = game.iconUrl ? `<img src="${game.iconUrl}" class="game-icon-img" alt="${game.title}">` : '';
-            cardsHTML += `
-              <a href="?game=${docSnap.id}" class="game-card">
-                ${iconTag}
-                <h3>${game.title}</h3>
-                <span>Play Game &rarr;</span>
-              </a>`;
-          }
+  // Add static games from registry
+  for (const [id, game] of Object.entries(GAMES_REGISTRY)) {
+    gamesList.push({
+      id: id,
+      title: game.title,
+      icon: game.icon
+    });
+  }
+
+  // Add dynamic games from Firestore
+  try {
+    const querySnapshot = await getDocs(collection(db, "custom_games"));
+    querySnapshot.forEach((docSnap) => {
+      const game = docSnap.data();
+      if (!game.hidden) {
+        gamesList.push({
+          id: docSnap.id,
+          title: game.title,
+          icon: game.iconUrl
         });
-      } catch (e) {
-        console.warn("Could not fetch custom games: ", e);
       }
+    });
+  } catch (e) {
+    console.warn("Could not fetch custom games: ", e);
+  }
 
-      container.innerHTML = `
-        <div class="page-scroll-container">
-          <h1 class="hero-title">Welcome to Planet ArcadiX!</h1>
-          <p class="hero-description">
-            Planet ArcadiX is the brand-new successor to Planet Arcadia, a project that ran from 2023 to 2025. It has returned with a brand new look, more games & features will be arriving soon, so check back frequently!
-          </p>
+  return gamesList;
+}
 
-          <div class="section-header-box">Games</div>
+// Capped Home Page View (Max 5 Games)
+async function renderHomePageGames() {
+  const allGames = await fetchAllGamesList();
+  const homeGames = allGames.slice(0, 5); // Limit to top 5 games
 
-          <div class="games-grid">
-            ${cardsHTML}
-          </div>
-        </div>`;
-    }
+  let cardsHTML = homeGames.map(game => {
+    const iconTag = game.icon ? `<img src="${game.icon}" class="game-icon-img" alt="${game.title}">` : '';
+    return `
+      <a href="?game=${game.id}" class="game-card">
+        ${iconTag}
+        <h3>${game.title}</h3>
+        <span>Play Game &rarr;</span>
+      </a>`;
+  }).join('');
+
+  const viewMoreBtnHTML = allGames.length > 5 ? `
+    <div style="text-align: center; margin-top: 2rem;">
+      <a href="?page=allgames" class="arcadix-btn" style="text-decoration: none; display: inline-block; width: auto; padding: 0.8rem 2.5rem;">
+        View More (${allGames.length - 5} More Games) &rarr;
+      </a>
+    </div>
+  ` : '';
+
+  container.innerHTML = `
+    <div class="page-scroll-container">
+      <h1 class="hero-title">Welcome to Planet ArcadiX!</h1>
+      <p class="hero-description">
+        Planet ArcadiX is the brand-new successor to Planet Arcadia, a project that ran from 2023 to 2025. It has returned with a brand new look, more games & features will be arriving soon, so check back frequently!
+      </p>
+
+      <div class="section-header-box">Featured Games</div>
+
+      <div class="games-grid">
+        ${cardsHTML}
+      </div>
+
+      ${viewMoreBtnHTML}
+    </div>`;
+}
+
+// Dedicated All Games Page View with Real-time Search
+window.renderAllGamesPage = async function() {
+  container.innerHTML = `
+    <div class="page-scroll-container">
+      <div class="section-header-box" style="margin-top:0;">All Games</div>
+      
+      <div class="form-group" style="margin-bottom: 2rem;">
+        <label>Search Games by Name</label>
+        <input type="text" id="game-search-input" class="arcadix-input" placeholder="Type a game title..." oninput="window.filterGamesCatalog()">
+      </div>
+
+      <div class="games-grid" id="all-games-grid">
+        <p style="text-align:center; color:#888; grid-column: 1/-1;">Loading catalog...</p>
+      </div>
+    </div>`;
+
+  window.cachedGamesCatalog = await fetchAllGamesList();
+  window.filterGamesCatalog();
+};
+
+// Search filter handler for All Games page
+window.filterGamesCatalog = function() {
+  const gridContainer = document.getElementById('all-games-grid');
+  if (!gridContainer || !window.cachedGamesCatalog) return;
+
+  const searchTerm = (document.getElementById('game-search-input')?.value || '').trim().toLowerCase();
+  
+  const filteredGames = window.cachedGamesCatalog.filter(game => 
+    game.title.toLowerCase().includes(searchTerm)
+  );
+
+  if (filteredGames.length === 0) {
+    gridContainer.innerHTML = `<p style="text-align:center; color:#888; grid-column: 1/-1; padding: 2rem;">No games match "${searchTerm}".</p>`;
+    return;
+  }
+
+  gridContainer.innerHTML = filteredGames.map(game => {
+    const iconTag = game.icon ? `<img src="${game.icon}" class="game-icon-img" alt="${game.title}">` : '';
+    return `
+      <a href="?game=${game.id}" class="game-card">
+        ${iconTag}
+        <h3>${game.title}</h3>
+        <span>Play Game &rarr;</span>
+      </a>`;
+  }).join('');
+};
 
     function renderAuthForm(isLoginView) {
       container.innerHTML = `
