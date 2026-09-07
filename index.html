@@ -2641,57 +2641,78 @@ window.loadUserProfile = async function(userId) {
           </div>`;
       }).join('');
 
-    body.innerHTML = `
+   body.innerHTML = `
     <div class="section-header-box" style="margin-top:0;">Create Custom Theme</div>
     <div class="form-group">
       <label>Theme Name</label>
       <input type="text" id="theme-name-input" class="arcadiX-input" placeholder="e.g. ArcadiX Emerald">
     </div>
     
-    <div class="color-picker-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+    <div class="color-picker-grid">
       <div class="color-field">
-        <label style="font-size:0.8rem;">Page Background (Color or CSS Gradient)</label>
-        <input type="text" id="theme-bg" class="arcadiX-input" placeholder="linear-gradient(135deg, #0d0e15, #1a1c29)">
+        <label style="font-size:0.8rem;">Page Background</label>
+        <div style="display: flex; gap: 6px; width: 100%;">
+          <input type="color" id="theme-bg-color" value="#000000">
+          <input type="text" id="theme-bg" class="arcadiX-input" placeholder="Or CSS gradient..." style="font-size: 0.7rem;">
+        </div>
       </div>
+
       <div class="color-field">
         <label style="font-size:0.8rem;">Header Background</label>
-        <input type="text" id="theme-header" class="arcadiX-input" placeholder="#1f1224 or gradient...">
+        <div style="display: flex; gap: 6px; width: 100%;">
+          <input type="color" id="theme-header-color" value="#1f1224">
+          <input type="text" id="theme-header" class="arcadiX-input" placeholder="Or gradient..." style="font-size: 0.7rem;">
+        </div>
       </div>
+
       <div class="color-field">
         <label style="font-size:0.8rem;">Card Background</label>
-        <input type="text" id="theme-card" class="arcadiX-input" placeholder="#120916">
+        <div style="display: flex; gap: 6px; width: 100%;">
+          <input type="color" id="theme-card-color" value="#120916">
+          <input type="text" id="theme-card" class="arcadiX-input" placeholder="Or gradient..." style="font-size: 0.7rem;">
+        </div>
       </div>
+
       <div class="color-field">
         <label style="font-size:0.8rem;">Card Border</label>
         <input type="color" id="theme-border" value="#331940">
       </div>
+
       <div class="color-field">
-        <label style="font-size:0.8rem;">Accent Color / Gradient</label>
-        <input type="text" id="theme-accent" class="arcadiX-input" placeholder="#a855f7 or gradient...">
+        <label style="font-size:0.8rem;">Accent Color</label>
+        <div style="display: flex; gap: 6px; width: 100%;">
+          <input type="color" id="theme-accent-color" value="#a855f7">
+          <input type="text" id="theme-accent" class="arcadiX-input" placeholder="Or gradient..." style="font-size: 0.7rem;">
+        </div>
       </div>
+
       <div class="color-field">
         <label style="font-size:0.8rem;">Accent Glow Color</label>
-        <input type="text" id="theme-glow" class="arcadiX-input" placeholder="rgba(168, 85, 247, 0.5)">
+        <input type="color" id="theme-glow-color" value="#a855f7">
       </div>
+
       <div class="color-field">
         <label style="font-size:0.8rem;">Text Color</label>
         <input type="color" id="theme-text-color" value="#ffffff">
       </div>
+
       <div class="color-field">
         <label style="font-size:0.8rem;">Text Outline Color</label>
         <input type="color" id="theme-outline-color" value="#000000">
       </div>
+
       <div class="color-field">
-        <label style="font-size:0.8rem;">Text Outline Width (px)</label>
-        <input type="number" id="theme-outline-width" class="arcadiX-input" placeholder="1" min="0" max="5">
+        <label style="font-size:0.8rem;">Outline Width (px)</label>
+        <input type="number" id="theme-outline-width" class="arcadiX-input" placeholder="0" min="0" max="5">
       </div>
+
       <div class="color-field">
-        <label style="font-size:0.8rem;">Moving Gradient Speed (s)</label>
+        <label style="font-size:0.8rem;">Moving Speed (s)</label>
         <input type="number" id="theme-gradient-speed" class="arcadiX-input" placeholder="12" min="1">
       </div>
     </div>
 
-    <button onclick="createNewTheme()" class="arcadiX-btn" style="margin-top:1rem; margin-bottom:2rem;">Save & Register Theme</button>
+    <button onclick="createNewTheme()" class="arcadiX-btn" style="margin-bottom:2rem;">Save & Register Theme</button>
 
     <div class="section-header-box">Available Site Themes</div>
     ${themesHTML}`;
@@ -2702,15 +2723,22 @@ window.createNewTheme = async function() {
   if (!name) return window.showArcadiXAlert("Please enter a name for the theme.", "Error");
 
   const themeId = "theme-" + Date.now();
+  
+  // Prefer text input (for gradients) if filled, otherwise fallback to native color picker
+  const bgVal = document.getElementById('theme-bg')?.value.trim() || document.getElementById('theme-bg-color')?.value || '#000000';
+  const headerVal = document.getElementById('theme-header')?.value.trim() || document.getElementById('theme-header-color')?.value || '#1f1224';
+  const cardVal = document.getElementById('theme-card')?.value.trim() || document.getElementById('theme-card-color')?.value || '#120916';
+  const accentVal = document.getElementById('theme-accent')?.value.trim() || document.getElementById('theme-accent-color')?.value || '#a855f7';
+
   const newTheme = {
     id: themeId,
     name: name,
-    bgGradient: document.getElementById('theme-bg').value.trim() || '#000000',
-    headerBg: document.getElementById('theme-header').value.trim() || '#1f1224',
-    cardBg: document.getElementById('theme-card').value.trim() || '#120916',
-    cardBorder: document.getElementById('theme-border').value || '#331940',
-    accentColor: document.getElementById('theme-accent').value.trim() || '#a855f7',
-    accentGlow: document.getElementById('theme-glow')?.value.trim() || 'rgba(168, 85, 247, 0.5)',
+    bgGradient: bgVal,
+    headerBg: headerVal,
+    cardBg: cardVal,
+    cardBorder: document.getElementById('theme-border')?.value || '#331940',
+    accentColor: accentVal,
+    accentGlow: document.getElementById('theme-glow-color')?.value || 'rgba(168, 85, 247, 0.5)',
     textColor: document.getElementById('theme-text-color')?.value || '#ffffff',
     textOutlineColor: document.getElementById('theme-outline-color')?.value || '#000000',
     textOutlineWidth: document.getElementById('theme-outline-width')?.value || 0,
