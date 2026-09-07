@@ -395,6 +395,92 @@
       margin-top: 0.4rem;
     }
 
+    /* Dynamic Badges Container & Tooltip CSS */
+    .user-badges-container {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-left: 0.6rem;
+      vertical-align: middle;
+      flex-wrap: wrap;
+    }
+    .badge-icon-item {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      padding: 3px;
+      cursor: help;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .badge-icon-item:hover {
+      transform: scale(1.15);
+      border-color: var(--accent-color);
+      z-index: 10;
+    }
+    .badge-icon-item img, .badge-icon-item svg {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .badge-icon-item.recolorable img, .badge-icon-item.recolorable svg {
+      fill: var(--accent-color);
+      color: var(--accent-color);
+    }
+    .badge-tooltip {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--card-bg);
+      border: 1px solid var(--accent-color);
+      color: var(--text-color);
+      padding: 0.5rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+      z-index: 99;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      text-align: center;
+    }
+    .badge-tooltip strong {
+      display: block;
+      color: var(--accent-color);
+      margin-bottom: 2px;
+    }
+    .badge-icon-item:hover .badge-tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+    .badge-order-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .badge-order-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-color);
+      border: 1px solid var(--card-border);
+      padding: 0.6rem 0.8rem;
+      border-radius: 6px;
+    }
+    .badge-order-controls {
+      display: flex;
+      gap: 0.3rem;
+    }
+
     /* Updates Timeline Styling */
     .update-card {
       background: var(--card-bg);
@@ -862,6 +948,19 @@
     </div>
   </div>
 
+  <!-- Dedicated Badge Customizer Modal -->
+  <div class="custom-modal-overlay" id="badge-customizer-overlay">
+    <div class="custom-modal-box" style="max-width: 520px;">
+      <div class="custom-modal-title">Customize Profile Badges</div>
+      <div class="custom-modal-msg" style="font-size:0.85rem; color:#aaa; margin-bottom:0.5rem;">Select which badges to display and reorder them:</div>
+      <div id="badge-selection-list" class="badge-order-list" style="max-height: 300px; overflow-y: auto;"></div>
+      <div class="custom-modal-actions" style="margin-top:1.5rem;">
+        <button class="action-btn" style="padding: 0.6rem 1.2rem;" onclick="closeBadgeCustomizerModal()">Cancel</button>
+        <button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="badge-customizer-save-btn">Save Display Preferences</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Dedicated Manage Permissions Modal -->
   <div class="custom-modal-overlay" id="permissions-modal-overlay">
     <div class="custom-modal-box" style="max-width: 520px;">
@@ -902,7 +1001,6 @@
       </div>
     </div>
   </div>
-
   <!-- UI Popups Helpers JS -->
   <script>
     /* Device Fingerprinting Identification Helper */
@@ -1008,6 +1106,11 @@
       if (overlay) overlay.classList.remove('active');
     };
 
+    window.closeBadgeCustomizerModal = function() {
+      const overlay = document.getElementById('badge-customizer-overlay');
+      if (overlay) overlay.classList.remove('active');
+    };
+
     // Close Profile Menu when clicking outside
     window.addEventListener('click', function(e) {
       const menu = document.querySelector('.user-profile-menu');
@@ -1092,6 +1195,15 @@
       }
     };
 
+    const BADGES_REGISTRY = {
+      'owner': {
+        name: 'Owner',
+        description: 'Exclusive to the owner of Planet ArcadiX.',
+        recolorable: false,
+        icon: '/PAXIcons/PlanetArcadiXOwner.png'
+      }
+    };
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -1110,6 +1222,46 @@
     const headerGameTitle = document.getElementById('header-game-title');
     const siteHeader = document.getElementById('site-header');
     const siteFooter = document.getElementById('site-footer');
+
+    // Helper to render badges next to a player name
+    window.renderBadgesHTML = function(userBadges = [], badgeOrder = [], dynamicRegistry = {}) {
+      if (!userBadges || userBadges.length === 0) return '';
+      
+      const mergedRegistry = { ...BADGES_REGISTRY, ...dynamicRegistry };
+      
+      let badgesToRender = userBadges.filter(bId => mergedRegistry[bId]);
+      if (badgeOrder && badgeOrder.length > 0) {
+        badgesToRender.sort((a, b) => {
+          let idxA = badgeOrder.indexOf(a);
+          let idxB = badgeOrder.indexOf(b);
+          if (idxA === -1) idxA = 999;
+          if (idxB === -1) idxB = 999;
+          return idxA - idxB;
+        });
+      }
+
+      let html = '<div class="user-badges-container">';
+      badgesToRender.forEach(badgeId => {
+        const badge = mergedRegistry[badgeId];
+        if (!badge) return;
+        const isRecolor = badge.recolorable !== false;
+        
+        let iconContent = badge.icon.startsWith('<svg') || badge.icon.startsWith('http') 
+          ? (badge.icon.startsWith('http') ? `<img src="${badge.icon}" alt="${badge.name}">` : badge.icon)
+          : `<img src="${badge.icon}" alt="${badge.name}">`;
+
+        html += `
+          <div class="badge-icon-item ${isRecolor ? 'recolorable' : ''}">
+            ${iconContent}
+            <div class="badge-tooltip">
+              <strong>${badge.name}</strong>
+              ${badge.description || ''}
+            </div>
+          </div>`;
+      });
+      html += '</div>';
+      return html;
+    };
 
     function applyTheme(theme) {
       if (!theme) return;
@@ -1225,10 +1377,20 @@
               resetUserInfo: true, 
               banUser: true, 
               banDevice: true, 
+              manageBadges: true,
               isSuperAdmin: true 
             };
             currentUserData.hasAdminAccess = true;
             currentUserData.permissions = superAdminPermissions;
+            
+            // Give Admin badge if missing
+            const currentOwnedBadges = currentUserData.ownedBadges || [];
+            if (!currentOwnedBadges.includes('admin')) {
+              currentOwnedBadges.push('admin');
+              await updateDoc(doc(db, "users", user.uid), { ownedBadges: currentOwnedBadges });
+              currentUserData.ownedBadges = currentOwnedBadges;
+            }
+
             await updateDoc(doc(db, "users", user.uid), {
               hasAdminAccess: true,
               permissions: superAdminPermissions
@@ -1344,6 +1506,9 @@
     await updateProfile(user, { displayName: username, photoURL: DEFAULT_AVATAR });
 
     const isSuperAdmin = newUserId === 1;
+    const initialBadges = ['verified', 'early_founder'];
+    if (isSuperAdmin) initialBadges.push('admin');
+
     const userData = {
       uid: user.uid,
       userId: newUserId,
@@ -1358,6 +1523,9 @@
       banUntil: null,
       registeredDeviceId: deviceId,
       isDeviceBanned: false,
+      ownedBadges: initialBadges,
+      displayedBadges: initialBadges,
+      badgeOrder: initialBadges,
       permissions: {
         manageUpdates: isSuperAdmin,
         manageUsers: isSuperAdmin,
@@ -1369,6 +1537,7 @@
         resetUserInfo: isSuperAdmin,
         banUser: isSuperAdmin,
         banDevice: isSuperAdmin,
+        manageBadges: isSuperAdmin,
         isSuperAdmin: isSuperAdmin
       }
     };
@@ -1382,8 +1551,7 @@
     window.showArcadiXAlert("Sign Up Error: " + error.message, "Error");
   }
 };
-
-    window.handleSignIn = async function() {
+window.handleSignIn = async function() {
       const identifier = document.getElementById('auth-identifier').value.trim();
       const password = document.getElementById('auth-password').value;
       const deviceId = window.getDeviceFingerprint();
@@ -1440,6 +1608,23 @@ window.loadUserProfile = async function(userId) {
   const pfp = profileData.photoURL || DEFAULT_AVATAR;
   const imgTag = pfp ? `<img src="${pfp}" class="profile-avatar-large" alt="">` : '';
 
+  // Fetch dynamic custom badges from Firestore
+  let dynamicBadges = {};
+  try {
+    const badgeSnaps = await getDocs(collection(db, "custom_badges"));
+    badgeSnaps.forEach(docSnap => dynamicBadges[docSnap.id] = docSnap.data());
+  } catch (e) {
+    console.warn("Could not load dynamic badges", e);
+  }
+
+  const badgesHTML = window.renderBadgesHTML(
+    profileData.displayedBadges || profileData.ownedBadges || [],
+    profileData.badgeOrder || [],
+    dynamicBadges
+  );
+
+  const isSelf = currentUserData && currentUserData.userId === profileData.userId;
+
   // Format join date with fallback
   const rawDate = profileData.createdAt || (auth.currentUser?.uid === profileData.uid ? auth.currentUser.metadata.creationTime : null);
   const formattedJoinedDate = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'Unknown';
@@ -1450,7 +1635,10 @@ window.loadUserProfile = async function(userId) {
         <div class="profile-header">
           ${imgTag}
           <div>
-            <h2>${profileData.username}</h2>
+            <div style="display:flex; align-items:center; flex-wrap:wrap;">
+              <h2 style="display:inline-block;">${profileData.username}</h2>
+              ${badgesHTML}
+            </div>
             <span class="user-id-badge">ID: #${profileData.userId}</span>
             <p style="color:#aaa; font-size: 0.85rem; margin-top: 4px;">Joined: ${formattedJoinedDate}</p>
           </div>
@@ -1459,9 +1647,91 @@ window.loadUserProfile = async function(userId) {
           <label>Bio</label>
           <p style="line-height:1.6; color:#ddd;">${profileData.bio || 'No bio available.'}</p>
         </div>
+        ${isSelf ? `
+          <button onclick="window.openBadgeCustomizer()" class="action-btn" style="margin-top: 1rem;">Customize Displayed Badges</button>
+        ` : ''}
       </div>
     </div>`;
 };
+
+    window.openBadgeCustomizer = async function() {
+      if (!currentUserData) return;
+
+      let dynamicBadges = {};
+      try {
+        const badgeSnaps = await getDocs(collection(db, "custom_badges"));
+        badgeSnaps.forEach(docSnap => dynamicBadges[docSnap.id] = docSnap.data());
+      } catch (e) {}
+
+      const mergedRegistry = { ...BADGES_REGISTRY, ...dynamicBadges };
+      const owned = currentUserData.ownedBadges || [];
+      const displayed = currentUserData.displayedBadges || [...owned];
+      let order = currentUserData.badgeOrder || [...displayed];
+
+      order = order.filter(bId => owned.includes(bId));
+      owned.forEach(bId => {
+        if (!order.includes(bId)) order.push(bId);
+      });
+
+      window.tempBadgeOrder = [...order];
+
+      const renderSelectionList = () => {
+        const listEl = document.getElementById('badge-selection-list');
+        if (!listEl) return;
+
+        listEl.innerHTML = window.tempBadgeOrder.map((bId, index) => {
+          const badge = mergedRegistry[bId];
+          if (!badge) return '';
+          const isChecked = displayed.includes(bId);
+
+          return `
+            <div class="badge-order-item">
+              <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;">
+                <input type="checkbox" class="badge-display-chk" value="${bId}" ${isChecked ? 'checked' : ''}>
+                <span>${badge.name}</span>
+              </label>
+              <div class="badge-order-controls">
+                <button class="action-btn" onclick="window.moveBadgeOrder(${index}, -1)">&uarr;</button>
+                <button class="action-btn" onclick="window.moveBadgeOrder(${index}, 1)">&darr;</button>
+              </div>
+            </div>`;
+        }).join('');
+      };
+
+      window.moveBadgeOrder = (idx, direction) => {
+        const targetIdx = idx + direction;
+        if (targetIdx < 0 || targetIdx >= window.tempBadgeOrder.length) return;
+        const item = window.tempBadgeOrder.splice(idx, 1)[0];
+        window.tempBadgeOrder.splice(targetIdx, 0, item);
+        renderSelectionList();
+      };
+
+      const overlay = document.getElementById('badge-customizer-overlay');
+      overlay.classList.add('active');
+      renderSelectionList();
+
+      document.getElementById('badge-customizer-save-btn').onclick = async () => {
+        const checkboxes = document.querySelectorAll('.badge-display-chk');
+        const newDisplayed = [];
+        checkboxes.forEach(chk => {
+          if (chk.checked) newDisplayed.push(chk.value);
+        });
+
+        try {
+          await updateDoc(doc(db, "users", auth.currentUser.uid), {
+            displayedBadges: newDisplayed,
+            badgeOrder: window.tempBadgeOrder
+          });
+          currentUserData.displayedBadges = newDisplayed;
+          currentUserData.badgeOrder = window.tempBadgeOrder;
+          overlay.classList.remove('active');
+          await window.showArcadiXAlert("Badge preferences saved!", "Success");
+          window.loadUserProfile(currentUserData.userId);
+        } catch (e) {
+          window.showArcadiXAlert("Error saving badge order: " + e.message, "Error");
+        }
+      };
+    };
 
     window.renderSettingsPage = function() {
       if (!auth.currentUser || !currentUserData) return;
@@ -1572,6 +1842,7 @@ window.loadUserProfile = async function(userId) {
             <button id="btn-tab-games" onclick="switchAdminTab('games')">Games Manager</button>
             <button id="btn-tab-updates" onclick="switchAdminTab('updates')">Site Updates</button>
             <button id="btn-tab-users" onclick="switchAdminTab('users')">User Management</button>
+            <button id="btn-tab-badges" onclick="switchAdminTab('badges')">Badges Manager</button>
             <button id="btn-tab-assets" onclick="switchAdminTab('assets')">Asset Approval</button>
             <button id="btn-tab-themes" onclick="switchAdminTab('themes')">Site Themes</button>
           </div>
@@ -1599,6 +1870,8 @@ window.loadUserProfile = async function(userId) {
         renderUpdatesTab(body);
       } else if (tabName === 'users') {
         renderUsersTab(body);
+      } else if (tabName === 'badges') {
+        renderBadgesTab(body);
       } else if (tabName === 'assets') {
         renderAssetsTab(body);
       } else if (tabName === 'themes') {
@@ -1928,7 +2201,120 @@ window.loadUserProfile = async function(userId) {
       }
     }
 
-    window.filterUsersList = function() {
+    async function renderBadgesTab(body) {
+      body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Badges Manager...</div>`;
+
+      let dynamicBadges = {};
+      try {
+        const badgeSnaps = await getDocs(collection(db, "custom_badges"));
+        badgeSnaps.forEach(docSnap => dynamicBadges[docSnap.id] = docSnap.data());
+      } catch (e) {}
+
+      const mergedRegistry = { ...BADGES_REGISTRY, ...dynamicBadges };
+
+      let listHTML = Object.entries(mergedRegistry).map(([bId, badge]) => {
+        return `
+          <div class="user-list-card">
+            <div class="user-card-header">
+              <div style="display:flex; align-items:center; gap:0.8rem;">
+                <div style="width:32px; height:32px;">${badge.icon.startsWith('<svg') ? badge.icon : `<img src="${badge.icon}" style="width:100%; height:100%; object-fit:contain;">`}</div>
+                <div>
+                  <strong>${badge.name}</strong> <span style="font-size:0.75rem; color:#888;">(ID: ${bId})</span>
+                  <div style="font-size:0.8rem; color:#aaa;">${badge.description}</div>
+                </div>
+              </div>
+              <span class="user-badge">${badge.recolorable !== false ? 'Recolorable' : 'Fixed Color'}</span>
+            </div>
+            <div class="user-actions">
+              <button class="action-btn" onclick="window.adminGrantBadgePrompt('${bId}')">Grant to Player</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      body.innerHTML = `
+        <div class="section-header-box" style="margin-top:0;">Create Custom Badge</div>
+        <div class="form-group">
+          <label>Badge Unique ID</label>
+          <input type="text" id="admin-badge-id" class="arcadix-input" placeholder="e.g. tournament_winner">
+        </div>
+        <div class="form-group">
+          <label>Badge Display Name</label>
+          <input type="text" id="admin-badge-name" class="arcadix-input" placeholder="e.g. Tournament Champion">
+        </div>
+        <div class="form-group">
+          <label>How Obtained / Description</label>
+          <input type="text" id="admin-badge-desc" class="arcadix-input" placeholder="e.g. Won 1st place in official Planet ArcadiX tournament">
+        </div>
+        <div class="form-group">
+          <label>Badge Icon (Image URL or Inline SVG markup)</label>
+          <textarea id="admin-badge-icon" class="arcadix-textarea" rows="2" placeholder="https://... or <svg>...</svg>"></textarea>
+        </div>
+        <div class="form-group">
+          <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; color:var(--text-color);">
+            <input type="checkbox" id="admin-badge-recolor" checked style="accent-color: var(--accent-color); width:18px; height:18px;">
+            <span>Recolor icon with active theme accent color?</span>
+          </label>
+        </div>
+        <button onclick="window.adminCreateBadge()" class="arcadix-btn" style="margin-bottom:2rem;">Register Badge</button>
+
+        <div class="section-header-box">Registered Badges Catalog</div>
+        ${listHTML}`;
+    }
+
+    window.adminCreateBadge = async function() {
+      const bId = document.getElementById('admin-badge-id').value.trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+      const name = document.getElementById('admin-badge-name').value.trim();
+      const desc = document.getElementById('admin-badge-desc').value.trim();
+      const icon = document.getElementById('admin-badge-icon').value.trim();
+      const recolorable = document.getElementById('admin-badge-recolor').checked;
+
+      if (!bId || !name || !icon) {
+        return window.showArcadiXAlert("Please fill in the ID, Name, and Icon fields.", "Error");
+      }
+
+      try {
+        await setDoc(doc(db, "custom_badges", bId), {
+          name: name,
+          description: desc,
+          icon: icon,
+          recolorable: recolorable
+        });
+        await window.showArcadiXAlert(`Badge '${name}' created successfully!`, "Success");
+        window.switchAdminTab('badges');
+      } catch (e) {
+        window.showArcadiXAlert("Error registering badge: " + e.message, "Error");
+      }
+    };
+
+    window.adminGrantBadgePrompt = async function(badgeId) {
+      const targetUserId = await window.showArcadiXPrompt("Enter the Player ID (#) to grant this badge to:", "", "Grant Badge");
+      if (!targetUserId) return;
+
+      try {
+        const q = query(collection(db, "users"), where("userId", "==", parseInt(targetUserId)));
+        const snaps = await getDocs(q);
+        if (snaps.empty) return window.showArcadiXAlert("No player found with that ID.", "Error");
+
+        const targetDoc = snaps.docs[0];
+        const uData = targetDoc.data();
+        const owned = uData.ownedBadges || [];
+
+        if (!owned.includes(badgeId)) owned.push(badgeId);
+
+        const displayed = uData.displayedBadges || [...owned];
+        if (!displayed.includes(badgeId)) displayed.push(badgeId);
+
+        await updateDoc(doc(db, "users", targetDoc.id), {
+          ownedBadges: owned,
+          displayedBadges: displayed
+        });
+
+        await window.showArcadiXAlert(`Granted badge to ${uData.username}!`, "Success");
+      } catch (e) {
+        window.showArcadiXAlert("Error granting badge: " + e.message, "Error");
+      }
+    };
+  window.filterUsersList = function() {
       const container = document.getElementById('user-list-container');
       if (!container) return;
 
@@ -2314,7 +2700,8 @@ window.loadUserProfile = async function(userId) {
           "permissions.deleteGames": grantState,
           "permissions.resetUserInfo": grantState,
           "permissions.banUser": grantState,
-          "permissions.banDevice": grantState
+          "permissions.banDevice": grantState,
+          "permissions.manageBadges": grantState
         });
         await window.showArcadiXAlert(`Admin access ${grantState ? 'granted' : 'revoked'}.`, "Permissions Updated");
         window.switchAdminTab('users');
