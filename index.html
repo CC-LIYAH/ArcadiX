@@ -2649,477 +2649,431 @@ window.loadUserProfile = async function(userId) {
           <input type="text" id="theme-name-input" class="arcadiX-input" placeholder="e.g. ArcadiX Emerald" style="width: 100%;">
         </div>
         
-        <div class="color-picker-grid">
+       <div class="color-picker-grid">
           <div class="color-field">
-            <label style="font-size:0.8rem;">Page Background</label>
+            <label>Background</label>
             <input type="color" id="theme-bg" value="#000000">
           </div>
-
           <div class="color-field">
-            <label style="font-size:0.8rem;">Header Background</label>
-            <input type="color" id="theme-header" value="#1f1224">
-          </div>
-
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Card Background</label>
+            <label>Card Background</label>
             <input type="color" id="theme-card" value="#120916">
           </div>
-
           <div class="color-field">
-            <label style="font-size:0.8rem;">Card Border</label>
+            <label>Card Border</label>
             <input type="color" id="theme-border" value="#331940">
           </div>
-
           <div class="color-field">
-            <label style="font-size:0.8rem;">Accent Color</label>
+            <label>Accent Color</label>
             <input type="color" id="theme-accent" value="#a855f7">
           </div>
-
           <div class="color-field">
-            <label style="font-size:0.8rem;">Accent Glow Color</label>
-            <input type="color" id="theme-glow" value="#a855f7">
-          </div>
-
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Text Color</label>
-            <input type="color" id="theme-text-color" value="#ffffff">
-          </div>
-
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Text Outline Color</label>
-            <input type="color" id="theme-outline-color" value="#000000">
-          </div>
-
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Outline Width (px)</label>
-            <input type="number" id="theme-outline-width" class="arcadiX-input" value="0" min="0" max="5" style="width: 100%;">
-          </div>
-
-          <div class="color-field">
-            <label style="font-size:0.8rem;">Moving Speed (s)</label>
-            <input type="number" id="theme-gradient-speed" class="arcadiX-input" value="12" min="1" style="width: 100%;">
+            <label>Text Color</label>
+            <input type="color" id="theme-text" value="#ffffff">
           </div>
         </div>
-        
-        <button onclick="createNewTheme()" class="arcadiX-btn" style="margin-top: 1.5rem; margin-bottom: 2rem;">Save & Register Theme</button>
-        <div class="section-header-box">Available Site Themes</div>
-        ${themesHTML}
-    `; 
-}
+        <button onclick="createNewTheme()" class="arcadix-btn" style="margin-bottom:2rem;">Save New Theme</button>
 
-window.createNewTheme = async function() {
-  const name = document.getElementById('theme-name-input').value.trim();
-  if (!name) return window.showArcadiXAlert("Please enter a name for the theme.", "Error");
+        <div class="section-header-box">Existing Site Themes</div>
+        ${themesHTML}`;
+    }
 
-  const themeId = "theme-" + Date.now();
-  
- window.createNewTheme = async function() {
-  const nameInput = document.getElementById('theme-name-input');
-  const name = nameInput ? nameInput.value.trim() : '';
+    window.createNewTheme = async function() {
+      const name = document.getElementById('theme-name-input').value.trim();
+      if (!name) return window.showArcadiXAlert("Please provide a name for the theme.", "Error");
 
-  if (!name) return window.showArcadiXAlert("Please enter a name for the theme.", "Error");
+      const themeId = 'theme-' + Date.now();
+      const bgColor = document.getElementById('theme-bg').value;
+      const cardBg = document.getElementById('theme-card').value;
+      const cardBorder = document.getElementById('theme-border').value;
+      const accentColor = document.getElementById('theme-accent').value;
+      const textColor = document.getElementById('theme-text').value;
 
-  const themeId = "theme-" + Date.now();
-  
-  const newTheme = {
-    id: themeId,
-    name: name,
-    bgColor: document.getElementById('theme-bg')?.value || '#000000',
-    headerBg: document.getElementById('theme-header')?.value || '#1f1224',
-    cardBg: document.getElementById('theme-card')?.value || '#120916',
-    cardBorder: document.getElementById('theme-border')?.value || '#331940',
-    accentColor: document.getElementById('theme-accent')?.value || '#a855f7',
-    accentGlow: document.getElementById('theme-glow')?.value || '#a855f7',
-    textColor: document.getElementById('theme-text-color')?.value || '#ffffff',
-    textOutlineColor: document.getElementById('theme-outline-color')?.value || '#000000',
-    textOutlineWidth: document.getElementById('theme-outline-width')?.value || 0,
-    gradientSpeed: document.getElementById('theme-gradient-speed')?.value || 12,
-    isDefault: false
-  };
+      const newTheme = {
+        id: themeId,
+        name: name,
+        bgColor: bgColor,
+        headerBg: `linear-gradient(180deg, ${cardBg} 0%, #000000 100%)`,
+        cardBg: cardBg,
+        cardBorder: cardBorder,
+        accentColor: accentColor,
+        textColor: textColor,
+        isDefault: false
+      };
 
-  try {
-    await setDoc(doc(db, "themes", themeId), newTheme);
-    await window.showArcadiXAlert("Theme saved site-wide!", "Success");
-    window.switchAdminTab('themes');
-  } catch (err) {
-    window.showArcadiXAlert("Error creating theme: " + err.message, "Error");
-  }
-};
+      try {
+        await setDoc(doc(db, "themes", themeId), newTheme);
+        await window.showArcadiXAlert("Theme created successfully!", "Success");
+        window.switchAdminTab('themes');
+      } catch (e) {
+        window.showArcadiXAlert("Error saving theme: " + e.message, "Error");
+      }
+    };
 
     window.activateTheme = function(themeId) {
-      const theme = fetchedThemesCache.find(t => t.id === themeId);
-      if (theme) {
-        localStorage.setItem('arcadix_active_theme_id', theme.id);
-        applyTheme(theme);
-        window.switchAdminTab('themes');
-      }
+      localStorage.setItem('arcadix_active_theme_id', themeId);
+      const target = fetchedThemesCache.find(t => t.id === themeId);
+      if (target) applyTheme(target);
+      window.switchAdminTab('themes');
     };
 
     window.setDefaultTheme = async function(themeId) {
       try {
-        for (const theme of fetchedThemesCache) {
-          const isTarget = theme.id === themeId;
-          if (theme.isDefault !== isTarget) {
-            await updateDoc(doc(db, "themes", theme.id), { isDefault: isTarget });
-          }
+        for (const t of fetchedThemesCache) {
+          await updateDoc(doc(db, "themes", t.id), { isDefault: t.id === themeId });
         }
-        await window.showArcadiXAlert("Site default theme updated globally.", "Success");
+        await window.showArcadiXAlert("Default site theme updated!", "Success");
         window.switchAdminTab('themes');
-      } catch (err) {
-        window.showArcadiXAlert("Error updating default theme: " + err.message, "Error");
+      } catch (e) {
+        window.showArcadiXAlert("Error updating default theme: " + e.message, "Error");
       }
     };
 
     window.deleteTheme = async function(themeId) {
-      const confirmed = await window.showArcadiXConfirm("Are you sure you want to delete this theme?", "Delete Theme");
-      if (!confirmed) return;
-
-      try {
-        await deleteDoc(doc(db, "themes", themeId));
-        window.switchAdminTab('themes');
-      } catch (err) {
-        window.showArcadiXAlert("Error deleting theme: " + err.message, "Error");
-      }
-    };
-
-    window.adminResetUsername = async function(targetUid, userId) {
-      const defaultUsername = `PAX_USER_${userId}`;
-      const confirmed = await window.showArcadiXConfirm(`Reset username to ${defaultUsername}?`, "Reset Username");
-      if (!confirmed) return;
-
-      try {
-        const targetDoc = await getDoc(doc(db, "users", targetUid));
-        if (targetDoc.exists()) {
-          const oldUsername = targetDoc.data().username;
-          await deleteDoc(doc(db, "usernames", oldUsername.toLowerCase()));
+      const confirmDelete = await window.showArcadiXConfirm("Are you sure you want to delete this theme?", "Delete Theme");
+      if (confirmDelete) {
+        try {
+          await deleteDoc(doc(db, "themes", themeId));
+          window.switchAdminTab('themes');
+        } catch (e) {
+          window.showArcadiXAlert("Error deleting theme: " + e.message, "Error");
         }
-
-        await setDoc(doc(db, "usernames", defaultUsername.toLowerCase()), { uid: targetUid });
-        await updateDoc(doc(db, "users", targetUid), { username: defaultUsername });
-
-        await window.showArcadiXAlert(`Username reset to ${defaultUsername}`, "Success");
-        window.switchAdminTab('users');
-      } catch (err) {
-        window.showArcadiXAlert("Error resetting username: " + err.message, "Error");
       }
     };
 
-    window.adminResetBio = async function(targetUid) {
-      const confirmed = await window.showArcadiXConfirm("Reset bio to [CONTENT DELETED]?", "Reset Bio");
-      if (!confirmed) return;
+    // Modal and Detailed User Management Handlers
+    window.renderUserAdminModal = async function(uid) {
       try {
-        await updateDoc(doc(db, "users", targetUid), { bio: "[CONTENT DELETED]" });
-        await window.showArcadiXAlert("Bio reset successfully.", "Success");
-        window.switchAdminTab('users');
-      } catch (err) {
-        window.showArcadiXAlert("Error resetting bio: " + err.message, "Error");
+        const userDoc = await getDoc(doc(db, "users", uid));
+        if (!userDoc.exists()) return window.showArcadiXAlert("User not found.", "Error");
+
+        const uData = userDoc.data();
+        const currentUserId = uData.userId || 'N/A';
+
+        const modalContainer = document.getElementById('user-admin-modal-container');
+        modalContainer.innerHTML = `
+          <div class="modal-overlay active" id="user-admin-overlay">
+            <div class="modal-box">
+              <div class="modal-header">
+                <h3>Manage User #${currentUserId}</h3>
+                <button class="close-modal-btn" onclick="document.getElementById('user-admin-overlay').remove()">&times;</button>
+              </div>
+              <div class="modal-body">
+                <p><strong>Username:</strong> ${uData.username || 'N/A'}</p>
+                <p><strong>Email:</strong> ${uData.email || 'N/A'}</p>
+                <p><strong>Bio:</strong> ${uData.bio || 'None'}</p>
+                <p><strong>Admin Rights:</strong> ${uData.hasAdminAccess ? 'Yes' : 'No'}</p>
+
+                <div class="action-btn-group" style="margin-top:1rem; display:flex; flex-direction:column; gap:0.5rem;">
+                  <button class="arcadix-btn secondary" onclick="adminResetUsername('${uid}', '${currentUserId}')">Reset Username</button>
+                  <button class="arcadix-btn secondary" onclick="adminResetBio('${uid}')">Clear Bio</button>
+                  <button class="arcadix-btn secondary" onclick="adminResetPassword('${uid}')">Send Password Reset</button>
+                  <button class="arcadix-btn secondary" onclick="adminManagePermissions('${uid}')">Configure Permissions</button>
+                  ${uData.hasAdminAccess ? 
+                    `<button class="arcadix-btn danger" onclick="adminToggleAdminAccess('${uid}', false)">Revoke Admin Status</button>` : 
+                    `<button class="arcadix-btn" onclick="adminToggleAdminAccess('${uid}', true)">Grant Admin Status</button>`
+                  }
+                </div>
+              </div>
+            </div>
+          </div>`;
+      } catch (e) {
+        window.showArcadiXAlert("Error loading user profile data: " + e.message, "Error");
       }
     };
 
-    window.adminResetPassword = async function(targetUid) {
-      await window.showArcadiXPrompt("Enter a new temporary password for this account:", "", "Password Reset");
-      await window.showArcadiXAlert("Password reset requested.", "Success");
-    };
+    // User Admin Utility Operations
+    window.adminResetUsername = async function(uid, currentUserId) {
+      const newName = await window.showArcadiXPrompt("Enter new username for user #" + currentUserId + ":", "", "Reset Username");
+      if (!newName) return;
 
-    window.adminToggleAdminAccess = async function(targetUid, grantState) {
       try {
-        await updateDoc(doc(db, "users", targetUid), {
-          hasAdminAccess: grantState,
-          "permissions.manageUpdates": grantState,
-          "permissions.manageUsers": grantState,
-          "permissions.approveAssets": grantState,
-          "permissions.manageGames": grantState,
-          "permissions.addGames": grantState,
-          "permissions.hideGames": grantState,
-          "permissions.deleteGames": grantState,
-          "permissions.resetUserInfo": grantState,
-          "permissions.banUser": grantState,
-          "permissions.banDevice": grantState,
-          "permissions.manageBadges": grantState
-        });
-        await window.showArcadiXAlert(`Admin access ${grantState ? 'granted' : 'revoked'}.`, "Permissions Updated");
+        const usernameCheck = await getDoc(doc(db, "usernames", newName.toLowerCase()));
+        if (usernameCheck.exists()) return window.showArcadiXAlert("Username is already taken!", "Error");
+
+        await updateDoc(doc(db, "users", uid), { username: newName });
+        await setDoc(doc(db, "usernames", newName.toLowerCase()), { uid: uid });
+        await window.showArcadiXAlert("Username updated successfully.", "Success");
         window.switchAdminTab('users');
-      } catch (err) {
-        window.showArcadiXAlert("Error updating admin access: " + err.message, "Error");
+      } catch (e) {
+        window.showArcadiXAlert("Error: " + e.message, "Error");
       }
     };
 
-    window.adminManagePermissions = async function(targetUid) {
-      const targetDoc = await getDoc(doc(db, "users", targetUid));
-      if (!targetDoc.exists()) return;
+    window.adminResetBio = async function(uid) {
+      const confirmed = await window.showArcadiXConfirm("Reset this user's bio?", "Reset Bio");
+      if (confirmed) {
+        try {
+          await updateDoc(doc(db, "users", uid), { bio: "Bio cleared by moderator." });
+          window.switchAdminTab('users');
+        } catch (e) {
+          window.showArcadiXAlert("Error resetting bio: " + e.message, "Error");
+        }
+      }
+    };
 
-      const p = targetDoc.data().permissions || {};
+    window.adminResetPassword = async function(uid) {
+      await window.showArcadiXAlert("Password reset link request logged for account ID.", "Notification");
+    };
+
+    window.adminToggleAdminAccess = async function(uid, giveAdmin) {
+      try {
+        await updateDoc(doc(db, "users", uid), { hasAdminAccess: giveAdmin });
+        window.switchAdminTab('users');
+      } catch (e) {
+        window.showArcadiXAlert("Error toggling admin status: " + e.message, "Error");
+      }
+    };
+
+    window.adminManagePermissions = async function(uid) {
+      const userDoc = await getDoc(doc(db, "users", uid));
+      if (!userDoc.exists()) return;
+
+      const perms = userDoc.data().permissions || {};
       const overlay = document.getElementById('permissions-modal-overlay');
-      const submitBtn = document.getElementById('perm-modal-submit-btn');
-      
-      document.getElementById('perm-modal-subtitle').innerText = `Select access permissions for user: ${targetDoc.data().username}`;
-      document.getElementById('perm-chk-updates').checked = !!p.manageUpdates;
-      document.getElementById('perm-chk-users').checked = !!p.manageUsers;
-      document.getElementById('perm-chk-assets').checked = !!p.approveAssets;
-      document.getElementById('perm-chk-addgames').checked = !!p.addGames;
-      document.getElementById('perm-chk-hidegames').checked = !!p.hideGames;
-      document.getElementById('perm-chk-deletegames').checked = !!p.deleteGames;
-      document.getElementById('perm-chk-reset').checked = !!p.resetUserInfo;
-      document.getElementById('perm-chk-banuser').checked = !!p.banUser;
-      document.getElementById('perm-chk-bandevice').checked = !!p.banDevice;
+
+      document.getElementById('perm-chk-updates').checked = !!perms.manageUpdates;
+      document.getElementById('perm-chk-users').checked = !!perms.manageUsers;
+      document.getElementById('perm-chk-assets').checked = !!perms.approveAssets;
+      document.getElementById('perm-chk-addgames').checked = !!perms.addGames;
+      document.getElementById('perm-chk-hidegames').checked = !!perms.hideGames;
+      document.getElementById('perm-chk-deletegames').checked = !!perms.deleteGames;
+      document.getElementById('perm-chk-reset').checked = !!perms.resetUserInfo;
+      document.getElementById('perm-chk-banuser').checked = !!perms.banUser;
+      document.getElementById('perm-chk-bandevice').checked = !!perms.banDevice;
 
       overlay.classList.add('active');
 
-      submitBtn.onclick = async () => {
+      document.getElementById('perm-modal-submit-btn').onclick = async () => {
         const updatedPerms = {
-          "permissions.manageUpdates": document.getElementById('perm-chk-updates').checked,
-          "permissions.manageUsers": document.getElementById('perm-chk-users').checked,
-          "permissions.approveAssets": document.getElementById('perm-chk-assets').checked,
-          "permissions.addGames": document.getElementById('perm-chk-addgames').checked,
-          "permissions.hideGames": document.getElementById('perm-chk-hidegames').checked,
-          "permissions.deleteGames": document.getElementById('perm-chk-deletegames').checked,
-          "permissions.resetUserInfo": document.getElementById('perm-chk-reset').checked,
-          "permissions.banUser": document.getElementById('perm-chk-banuser').checked,
-          "permissions.banDevice": document.getElementById('perm-chk-bandevice').checked
+          manageUpdates: document.getElementById('perm-chk-updates').checked,
+          manageUsers: document.getElementById('perm-chk-users').checked,
+          approveAssets: document.getElementById('perm-chk-assets').checked,
+          addGames: document.getElementById('perm-chk-addgames').checked,
+          hideGames: document.getElementById('perm-chk-hidegames').checked,
+          deleteGames: document.getElementById('perm-chk-deletegames').checked,
+          resetUserInfo: document.getElementById('perm-chk-reset').checked,
+          banUser: document.getElementById('perm-chk-banuser').checked,
+          banDevice: document.getElementById('perm-chk-bandevice').checked
         };
 
         try {
-          await updateDoc(doc(db, "users", targetUid), updatedPerms);
+          await updateDoc(doc(db, "users", uid), { permissions: updatedPerms });
           overlay.classList.remove('active');
-          await window.showArcadiXAlert("Permissions updated!", "Success");
+          await window.showArcadiXAlert("Permissions saved!", "Success");
           window.switchAdminTab('users');
-        } catch (err) {
-          window.showArcadiXAlert("Error updating permissions: " + err.message, "Error");
+        } catch (e) {
+          window.showArcadiXAlert("Error saving permissions: " + e.message, "Error");
         }
       };
     };
 
-    window.renderPublicUpdates = function() {
-      container.innerHTML = `<div class="page-scroll-container"><div class="section-header-box">Site Updates</div><p style="text-align:center; color:#888;">Loading updates...</p></div>`;
-
-      onSnapshot(query(collection(db, "updates"), orderBy("createdAt", "desc")), (snapshot) => {
-        if (snapshot.empty) {
-          container.innerHTML = `
-            <div class="page-scroll-container">
-              <div class="section-header-box">Site Updates</div>
-              <p style="text-align:center; color:#888;">No updates posted yet.</p>
-            </div>`;
+    // User Profile View Handlers
+    window.renderUserProfilePage = async function(targetUid) {
+      container.innerHTML = `<div class="page-scroll-container"><div style="text-align:center; color:#888;">Loading Profile...</div></div>`;
+      try {
+        const userDoc = await getDoc(doc(db, "users", targetUid));
+        if (!userDoc.exists()) {
+          container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center;">User not found.</p></div>`;
           return;
         }
 
-        let updatesHTML = '';
-        snapshot.forEach(docSnap => {
-          const item = docSnap.data();
-          updatesHTML += `
-            <div class="update-card">
-              <div class="update-header">
-                <span class="update-title">${item.title}</span>
-                <span class="update-date">${item.date}</span>
-              </div>
-              <div class="update-body">${item.content}</div>
-            </div>`;
-        });
-
+        const data = userDoc.data();
         container.innerHTML = `
           <div class="page-scroll-container">
-            <div class="section-header-box">Site Updates</div>
-            ${updatesHTML}
+            <div class="profile-card">
+              <div class="profile-header">
+                <img src="${data.avatarUrl || 'https://via.placeholder.com/100'}" class="profile-avatar" alt="User Avatar">
+                <div>
+                  <h2 style="margin:0;">${data.username || 'User'}</h2>
+                  <span class="user-id-badge">ID: #${data.userId || 'N/A'}</span>
+                </div>
+              </div>
+              <div class="profile-body">
+                <p><strong>Bio:</strong> ${data.bio || 'No bio written yet.'}</p>
+                <p><strong>Joined:</strong> ${data.joinedDate || 'Recently'}</p>
+              </div>
+            </div>
           </div>`;
-      });
+      } catch (e) {
+        container.innerHTML = `<div class="page-scroll-container"><p style="color:#ef4444; text-align:center;">Failed to load user profile.</p></div>`;
+      }
     };
 
-    async function handleGamePageRouting() {
-      if (gameIdParam) {
-        let selectedGame = GAMES_REGISTRY[gameIdParam];
-        let embedPath = selectedGame ? selectedGame.path : null;
-        let gameTitle = selectedGame ? selectedGame.title : null;
-
-        if (!selectedGame) {
-          const docSnap = await getDoc(doc(db, "custom_games", gameIdParam));
-          if (docSnap.exists() && !docSnap.data().hidden) {
-            const data = docSnap.data();
-            gameTitle = data.title;
-            embedPath = data.embedUrl;
-          }
-        }
-
-        if (embedPath) {
-          titleEl.innerText = `${gameTitle} - Planet ArcadiX`;
-          headerGameTitle.innerText = gameTitle;
-          headerGameTitle.style.display = 'inline-block';
-
-          container.innerHTML = `
-            <div class="game-viewport">
-              <div class="iframe-wrapper">
-                <iframe 
-                  src="${embedPath}" 
-                  allow="autoplay; gamepad; fullscreen; focus-without-user-activation" 
-                  allowfullscreen>
-                </iframe>
-              </div>
-            </div>`;
-        } else {
-          container.innerHTML = `
-            <div class="status-msg" style="text-align:center; padding:3rem;">
-              <h2>Game Not Found</h2>
-              <p style="margin:1rem 0; color:#aaa;">No game registered under id: <strong>${gameIdParam}</strong></p>
-              <a href="./" class="arcadix-btn" style="text-decoration: none; width: auto; padding: 0.8rem 2rem; display: inline-block;">Return to Home</a>
-            </div>`;
-        }
-      }
-    }
-
-// Helper to aggregate static and Firestore custom games
-async function fetchAllGamesList() {
-  let gamesList = [];
-
-  // Add static games from registry
-  for (const [id, game] of Object.entries(GAMES_REGISTRY)) {
-    gamesList.push({
-      id: id,
-      title: game.title,
-      icon: game.icon
-    });
-  }
-
-  // Add dynamic games from Firestore
-  try {
-    const querySnapshot = await getDocs(collection(db, "custom_games"));
-    querySnapshot.forEach((docSnap) => {
-      const game = docSnap.data();
-      if (!game.hidden) {
-        gamesList.push({
-          id: docSnap.id,
-          title: game.title,
-          icon: game.iconUrl
-        });
-      }
-    });
-  } catch (e) {
-    console.warn("Could not fetch custom games: ", e);
-  }
-
-  return gamesList;
-}
-
-// Capped Home Page View (Max 5 Games)
-async function renderHomePageGames() {
-  const allGames = await fetchAllGamesList();
-  const homeGames = allGames.slice(0, 5); // Limit to top 5 games
-
-  let cardsHTML = homeGames.map(game => {
-    const iconTag = game.icon ? `<img src="${game.icon}" class="game-icon-img" alt="${game.title}">` : '';
-    return `
-      <a href="?game=${game.id}" class="game-card">
-        ${iconTag}
-        <h3>${game.title}</h3>
-        <span>Play Game &rarr;</span>
-      </a>`;
-  }).join('');
-
-  const viewMoreBtnHTML = allGames.length > 5 ? `
-    <div style="text-align: center; margin-top: 2rem;">
-      <a href="?page=allgames" class="arcadix-btn" style="text-decoration: none; display: inline-block; width: auto; padding: 0.8rem 2.5rem;">
-        View More (${allGames.length - 5} More Games) &rarr;
-      </a>
-    </div>
-  ` : '';
-
-  container.innerHTML = `
-    <div class="page-scroll-container">
-      <h1 class="hero-title">Welcome to Planet ArcadiX!</h1>
-      <p class="hero-description">
-        Planet ArcadiX is the brand-new successor to Planet Arcadia, a project that ran from 2023 to 2025. It has returned with a brand new look, more games & features will be arriving soon, so check back frequently!
-      </p>
-
-      <div class="section-header-box">Featured Games</div>
-
-      <div class="games-grid">
-        ${cardsHTML}
-      </div>
-
-      ${viewMoreBtnHTML}
-    </div>`;
-}
-
-// Dedicated All Games Page View with Real-time Search
-window.renderAllGamesPage = async function() {
-  container.innerHTML = `
-    <div class="page-scroll-container">
-      <div class="section-header-box" style="margin-top:0;">All Games</div>
-      
-      <div class="form-group" style="margin-bottom: 2rem;">
-        <label>Search Games by Name</label>
-        <input type="text" id="game-search-input" class="arcadix-input" placeholder="Type a game title..." oninput="window.filterGamesCatalog()">
-      </div>
-
-      <div class="games-grid" id="all-games-grid">
-        <p style="text-align:center; color:#888; grid-column: 1/-1;">Loading catalog...</p>
-      </div>
-    </div>`;
-
-  window.cachedGamesCatalog = await fetchAllGamesList();
-  window.filterGamesCatalog();
-};
-
-// Search filter handler for All Games page
-window.filterGamesCatalog = function() {
-  const gridContainer = document.getElementById('all-games-grid');
-  if (!gridContainer || !window.cachedGamesCatalog) return;
-
-  const searchTerm = (document.getElementById('game-search-input')?.value || '').trim().toLowerCase();
-  
-  const filteredGames = window.cachedGamesCatalog.filter(game => 
-    game.title.toLowerCase().includes(searchTerm)
-  );
-
-  if (filteredGames.length === 0) {
-    gridContainer.innerHTML = `<p style="text-align:center; color:#888; grid-column: 1/-1; padding: 2rem;">No games match "${searchTerm}".</p>`;
-    return;
-  }
-
-  gridContainer.innerHTML = filteredGames.map(game => {
-    const iconTag = game.icon ? `<img src="${game.icon}" class="game-icon-img" alt="${game.title}">` : '';
-    return `
-      <a href="?game=${game.id}" class="game-card">
-        ${iconTag}
-        <h3>${game.title}</h3>
-        <span>Play Game &rarr;</span>
-      </a>`;
-  }).join('');
-};
-
-    function renderAuthForm(isLoginView) {
+    // Authentication Page Handlers
+    function renderAuthForm(isLogin) {
       container.innerHTML = `
         <div class="page-scroll-container">
           <div class="auth-box">
-            <div class="section-header-box" style="margin-top:0;">${isLoginView ? 'User Login' : 'Create Account'}</div>
-            ${!isLoginView ? `
-            <div class="form-group">
-              <label>Username</label>
-              <input type="text" id="auth-username" class="arcadix-input" placeholder="PlanetArcadiXPlayer">
-            </div>
-            <div class="form-group">
-              <label>Email Address</label>
-              <input type="email" id="auth-email" class="arcadix-input" placeholder="player@domain.com">
-            </div>
+            <h2 class="hero-title" style="margin-bottom:1.5rem;">${isLogin ? 'Login' : 'Create Account'}</h2>
+            ${isLogin ? `
+              <div class="form-group">
+                <label>Email or Username</label>
+                <input type="text" id="auth-identifier" class="arcadix-input" placeholder="Enter account email or username">
+              </div>
             ` : `
-            <div class="form-group">
-              <label>Username or Email Address</label>
-              <input type="text" id="auth-identifier" class="arcadix-input" placeholder="Username or email...">
-            </div>
+              <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="auth-username" class="arcadix-input" placeholder="Choose a username">
+              </div>
+              <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="auth-email" class="arcadix-input" placeholder="name@example.com">
+              </div>
             `}
             <div class="form-group">
               <label>Password</label>
               <input type="password" id="auth-password" class="arcadix-input" placeholder="••••••••">
             </div>
-            <button onclick="${isLoginView ? 'handleSignIn()' : 'handleSignUp()'}" class="arcadix-btn">
-              ${isLoginView ? 'Login' : 'Sign Up'}
-            </button>
+            <button onclick="${isLogin ? 'handleSignIn()' : 'handleSignUp()'}" class="arcadix-btn">${isLogin ? 'Sign In' : 'Register'}</button>
             <div class="auth-toggle-text">
-              ${isLoginView 
-                ? 'Need an account? <a href="?page=signup" class="auth-toggle-link">Sign Up</a>' 
-                : 'Already have an account? <a href="?page=login" class="auth-toggle-link">Login</a>'}
+              ${isLogin ? `Need an account? <a href="?page=signup" class="auth-toggle-link">Sign Up</a>` : `Already registered? <a href="?page=login" class="auth-toggle-link">Login</a>`}
             </div>
           </div>
         </div>`;
     }
-  </script>
 
+    window.renderPublicUpdates = async function() {
+      container.innerHTML = `<div class="page-scroll-container"><div style="text-align:center; color:#888;">Loading Site Updates...</div></div>`;
+      try {
+        const q = query(collection(db, "updates"), orderBy("createdAt", "desc"));
+        const snapshot = await getDocs(q);
+
+        let html = '<div class="page-scroll-container"><h1 class="hero-title">Site Updates & Patch Notes</h1>';
+        if (snapshot.empty) {
+          html += '<p style="text-align:center; color:#aaa;">No updates posted yet.</p>';
+        } else {
+          snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            html += `
+              <div class="update-card">
+                <div class="update-header">
+                  <span class="update-title">${data.title}</span>
+                  <span class="update-date">${data.date}</span>
+                </div>
+                <div class="update-body">${data.content}</div>
+              </div>`;
+          });
+        }
+        html += '</div>';
+        container.innerHTML = html;
+      } catch (e) {
+        container.innerHTML = `<div class="page-scroll-container"><p style="color:#ef4444; text-align:center;">Failed to load updates.</p></div>`;
+      }
+    };
+
+    function renderHomePageGames() {
+      let gamesHTML = '';
+      Object.entries(GAMES_REGISTRY).forEach(([key, game]) => {
+        gamesHTML += `
+          <a href="?game=${key}" class="game-card">
+            <img src="${game.icon}" class="game-icon-img" alt="${game.title}">
+            <h3>${game.title}</h3>
+            <span>Play Now &rarr;</span>
+          </a>`;
+      });
+
+      container.innerHTML = `
+        <div class="page-scroll-container">
+          <h1 class="hero-title">Welcome to Planet ArcadiX</h1>
+          <p class="hero-description">Explore our premier suite of custom web games, personalized user profiles, and active community features.</p>
+          <div class="section-header-box">Featured Arcade Games</div>
+          <div class="games-grid">${gamesHTML}</div>
+        </div>`;
+    }
+
+    window.renderAllGamesPage = async function() {
+      let gamesHTML = '';
+
+      Object.entries(GAMES_REGISTRY).forEach(([key, game]) => {
+        gamesHTML += `
+          <a href="?game=${key}" class="game-card">
+            <img src="${game.icon}" class="game-icon-img" alt="${game.title}">
+            <h3>${game.title}</h3>
+            <span>Play Now &rarr;</span>
+          </a>`;
+      });
+
+      try {
+        const customSnaps = await getDocs(collection(db, "custom_games"));
+        customSnaps.forEach(docSnap => {
+          const game = docSnap.data();
+          if (!game.hidden) {
+            gamesHTML += `
+              <a href="?game=${docSnap.id}" class="game-card">
+                ${game.iconUrl ? `<img src="${game.iconUrl}" class="game-icon-img" alt="${game.title}">` : ''}
+                <h3>${game.title}</h3>
+                <span>Play Now &rarr;</span>
+              </a>`;
+          }
+        });
+      } catch (e) {}
+
+      container.innerHTML = `
+        <div class="page-scroll-container">
+          <h1 class="hero-title">All Games</h1>
+          <div class="games-grid">${gamesHTML}</div>
+        </div>`;
+    };
+
+    async function handleGamePageRouting() {
+      let gameTitle = '';
+      let embedPath = '';
+
+      if (GAMES_REGISTRY[gameIdParam]) {
+        gameTitle = GAMES_REGISTRY[gameIdParam].title;
+        embedPath = GAMES_REGISTRY[gameIdParam].path;
+      } else {
+        const customGameDoc = await getDoc(doc(db, "custom_games", gameIdParam));
+        if (customGameDoc.exists()) {
+          const gameData = customGameDoc.data();
+          gameTitle = gameData.title;
+          embedPath = gameData.embedUrl;
+        }
+      }
+
+      if (embedPath) {
+        titleEl.innerText = `${gameTitle} - Planet ArcadiX`;
+        headerGameTitle.innerText = gameTitle;
+        headerGameTitle.style.display = 'inline-block';
+
+        container.innerHTML = `
+          <div class="game-viewport">
+            <div class="iframe-wrapper">
+              <iframe src="${embedPath}" allowfullscreen="true" scrolling="no"></iframe>
+            </div>
+          </div>`;
+      } else {
+        container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">Game not found.</p></div>`;
+      }
+    }
+
+    // Main App Routing Controller
+    function initializeRouter() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const page = urlParams.get('page');
+      const profileUid = urlParams.get('uid');
+
+      if (gameIdParam) {
+        handleGamePageRouting();
+      } else if (page === 'admin') {
+        if (typeof window.renderAdminDashboard === 'function') window.renderAdminDashboard();
+      } else if (page === 'login') {
+        renderAuthForm(true);
+      } else if (page === 'signup') {
+        renderAuthForm(false);
+      } else if (page === 'updates') {
+        window.renderPublicUpdates();
+      } else if (page === 'games') {
+        window.renderAllGamesPage();
+      } else if (page === 'profile' && profileUid) {
+        window.renderUserProfilePage(profileUid);
+      } else {
+        renderHomePageGames();
+      }
+    }
+
+    // Initialize application on load
+    initializeRouter();
+  </script>
 </body>
 </html>
