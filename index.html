@@ -360,30 +360,48 @@
       color: #ffffff;
     }
 
-    /* Color Input Swatches */
-    .color-picker-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
-    .color-field {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--bg-color);
-      padding: 0.6rem 0.8rem;
-      border-radius: 6px;
-      border: 1px solid var(--card-border);
-    }
-    .color-field input[type="color"] {
-      border: none;
-      background: none;
-      width: 32px;
-      height: 32px;
-      cursor: pointer;
-    }
+ /* Responsive Grid for Theme Parameters */
+.color-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
 
+/* Individual Parameter Cards */
+.color-field {
+  background: #120916;
+  border: 1px solid #331940;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.color-field label {
+  color: #a855f7;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.color-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Input elements inside parameter cards */
+.color-field input[type="color"] {
+  background: transparent;
+  border: 1px solid #331940;
+  border-radius: 4px;
+  cursor: pointer;
+  height: 38px;
+  width: 48px;
+  padding: 2px;
+}
     /* User Profile Cards */
     .profile-card {
       background: var(--card-bg);
@@ -2644,58 +2662,86 @@ window.loadUserProfile = async function(userId) {
     body.innerHTML = `
         <div class="section-header-box" style="margin-top:0;">Create Custom Theme</div>
         
-        <div class="form-group" style="margin-bottom: 1.5rem;">
-          <label style="color: var(--accent-color); font-weight: bold; display: block; margin-bottom: 0.5rem;">Theme Name</label>
-          <input type="text" id="theme-name-input" class="arcadiX-input" placeholder="e.g. ArcadiX Emerald" style="width: 100%;">
+      <!-- Styled Theme Name Input -->
+        <div style="margin-bottom: 1.5rem;">
+          <label style="color: #a855f7; font-weight: bold; display: block; margin-bottom: 0.5rem;">Theme Name</label>
+          <input type="text" id="theme-name-input" class="arcadix-input" placeholder="e.g. ArcadiX Emerald" style="width: 100%;">
         </div>
-        
-    <div class="color-picker-grid">
+
+        <!-- Expanded Parameter Grid -->
+        <div class="color-picker-grid">
           <div class="color-field">
             <label>Page Background</label>
-            <input type="color" id="theme-bg" value="#000000">
-            <input type="text" id="theme-bg-gradient" class="arcadix-input" placeholder="Or CSS gradient..." style="margin-top:0.5rem;">
+            <div class="color-picker-row">
+              <input type="color" id="theme-bg" value="#000000">
+              <input type="text" id="theme-bg-gradient" class="arcadix-input" placeholder="Or CSS gradient..." style="flex: 1;">
+            </div>
           </div>
+
           <div class="color-field">
             <label>Header Background</label>
-            <input type="color" id="theme-header-bg" value="#120916">
-            <input type="text" id="theme-header-gradient" class="arcadix-input" placeholder="Or gradient..." style="margin-top:0.5rem;">
+            <div class="color-picker-row">
+              <input type="color" id="theme-header-bg" value="#120916">
+              <input type="text" id="theme-header-gradient" class="arcadix-input" placeholder="Or gradient..." style="flex: 1;">
+            </div>
           </div>
+
           <div class="color-field">
             <label>Card Background</label>
-            <input type="color" id="theme-card" value="#120916">
-            <input type="text" id="theme-card-gradient" class="arcadix-input" placeholder="Or gradient..." style="margin-top:0.5rem;">
+            <div class="color-picker-row">
+              <input type="color" id="theme-card" value="#120916">
+              <input type="text" id="theme-card-gradient" class="arcadix-input" placeholder="Or gradient..." style="flex: 1;">
+            </div>
           </div>
+
           <div class="color-field">
             <label>Card Border</label>
-            <input type="color" id="theme-border" value="#331940">
+            <div class="color-picker-row">
+              <input type="color" id="theme-border" value="#331940">
+            </div>
           </div>
+
           <div class="color-field">
             <label>Accent Color</label>
-            <input type="color" id="theme-accent" value="#a855f7">
-            <input type="text" id="theme-accent-gradient" class="arcadix-input" placeholder="Or gradient..." style="margin-top:0.5rem;">
+            <div class="color-picker-row">
+              <input type="color" id="theme-accent" value="#a855f7">
+              <input type="text" id="theme-accent-gradient" class="arcadix-input" placeholder="Or gradient..." style="flex: 1;">
+            </div>
           </div>
+
           <div class="color-field">
             <label>Accent Glow Color</label>
-            <input type="color" id="theme-glow" value="#a855f7">
+            <div class="color-picker-row">
+              <input type="color" id="theme-glow" value="#a855f7">
+            </div>
           </div>
+
           <div class="color-field">
             <label>Text Color</label>
-            <input type="color" id="theme-text" value="#ffffff">
+            <div class="color-picker-row">
+              <input type="color" id="theme-text" value="#ffffff">
+            </div>
           </div>
+
           <div class="color-field">
             <label>Text Outline Color</label>
-            <input type="color" id="theme-text-outline" value="#000000">
+            <div class="color-picker-row">
+              <input type="color" id="theme-text-outline" value="#000000">
+            </div>
           </div>
+
           <div class="color-field">
             <label>Outline Width (px)</label>
-            <input type="number" id="theme-outline-width" class="arcadix-input" value="0" min="0" max="10" style="margin-top:0.5rem;">
+            <input type="number" id="theme-outline-width" class="arcadix-input" value="0" min="0" max="10">
           </div>
+
           <div class="color-field">
             <label>Moving Speed (s)</label>
-            <input type="number" id="theme-speed" class="arcadix-input" value="12" min="1" max="60" style="margin-top:0.5rem;">
+            <input type="number" id="theme-speed" class="arcadix-input" value="12" min="1" max="60">
           </div>
         </div>
-        <button onclick="createNewTheme()" class="arcadix-btn" style="margin-bottom:2rem; width:100%;">Save & Register Theme</button>
+
+        <button onclick="createNewTheme()" class="arcadix-btn" style="margin-bottom: 2rem; width: 100%;">Save & Register Theme</button>
 
         <div class="section-header-box">Existing Site Themes</div>
         ${themesHTML}`;
