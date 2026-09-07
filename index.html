@@ -2662,53 +2662,111 @@ window.loadUserProfile = async function(userId) {
     body.innerHTML = `
         <div class="section-header-box" style="margin-top:0;">Create Custom Theme</div>
         
-      <!-- Styled Theme Name Input -->
+     <!-- Styled Theme Name Input -->
         <div style="margin-bottom: 1.5rem;">
           <label style="color: #a855f7; font-weight: bold; display: block; margin-bottom: 0.5rem;">Theme Name</label>
           <input type="text" id="theme-name-input" class="arcadix-input" placeholder="e.g. ArcadiX Emerald" style="width: 100%;">
         </div>
 
-        <!-- Expanded Parameter Grid -->
+        <!-- Dynamic Parameter Grid with UI Gradient Pickers -->
         <div class="color-picker-grid">
+          
+          <!-- Page Background -->
           <div class="color-field">
             <label>Page Background</label>
             <div class="color-picker-row">
               <input type="color" id="theme-bg" value="#000000">
-              <input type="text" id="theme-bg-gradient" class="arcadix-input" placeholder="Or CSS gradient..." style="flex: 1;">
+              <label style="font-size:0.8rem; color:#aaa; margin-left: auto;">Enable Gradient</label>
+              <input type="checkbox" id="theme-bg-grad-toggle" onchange="toggleGradientInputs('bg')">
+            </div>
+            <div id="bg-gradient-controls" class="gradient-builder-row" style="display:none; margin-top:0.5rem; gap:0.5rem; flex-wrap:wrap;">
+              <select id="theme-bg-grad-dir" class="arcadix-input" style="padding:0.25rem;">
+                <option value="180deg">To Bottom ↓</option>
+                <option value="90deg">To Right →</option>
+                <option value="135deg">Diagonal ↘</option>
+              </select>
+              <input type="color" id="theme-bg-grad-c1" value="#000000">
+              <input type="color" id="theme-bg-grad-c2" value="#120916">
             </div>
           </div>
 
+          <!-- Header Background -->
           <div class="color-field">
             <label>Header Background</label>
             <div class="color-picker-row">
               <input type="color" id="theme-header-bg" value="#120916">
-              <input type="text" id="theme-header-gradient" class="arcadix-input" placeholder="Or gradient..." style="flex: 1;">
+              <label style="font-size:0.8rem; color:#aaa; margin-left: auto;">Enable Gradient</label>
+              <input type="checkbox" id="theme-header-grad-toggle" onchange="toggleGradientInputs('header')">
+            </div>
+            <div id="header-gradient-controls" class="gradient-builder-row" style="display:none; margin-top:0.5rem; gap:0.5rem; flex-wrap:wrap;">
+              <select id="theme-header-grad-dir" class="arcadix-input" style="padding:0.25rem;">
+                <option value="180deg">To Bottom ↓</option>
+                <option value="90deg">To Right →</option>
+                <option value="135deg">Diagonal ↘</option>
+              </select>
+              <input type="color" id="theme-header-grad-c1" value="#120916">
+              <input type="color" id="theme-header-grad-c2" value="#000000">
             </div>
           </div>
 
+          <!-- Card Background -->
           <div class="color-field">
             <label>Card Background</label>
             <div class="color-picker-row">
               <input type="color" id="theme-card" value="#120916">
-              <input type="text" id="theme-card-gradient" class="arcadix-input" placeholder="Or gradient..." style="flex: 1;">
+              <label style="font-size:0.8rem; color:#aaa; margin-left: auto;">Enable Gradient</label>
+              <input type="checkbox" id="theme-card-grad-toggle" onchange="toggleGradientInputs('card')">
+            </div>
+            <div id="card-gradient-controls" class="gradient-builder-row" style="display:none; margin-top:0.5rem; gap:0.5rem; flex-wrap:wrap;">
+              <select id="theme-card-grad-dir" class="arcadix-input" style="padding:0.25rem;">
+                <option value="180deg">To Bottom ↓</option>
+                <option value="90deg">To Right →</option>
+                <option value="135deg">Diagonal ↘</option>
+              </select>
+              <input type="color" id="theme-card-grad-c1" value="#120916">
+              <input type="color" id="theme-card-grad-c2" value="#1f0d27">
             </div>
           </div>
 
+          <!-- Card Border (Now with Gradient UI!) -->
           <div class="color-field">
             <label>Card Border</label>
             <div class="color-picker-row">
               <input type="color" id="theme-border" value="#331940">
+              <label style="font-size:0.8rem; color:#aaa; margin-left: auto;">Enable Gradient</label>
+              <input type="checkbox" id="theme-border-grad-toggle" onchange="toggleGradientInputs('border')">
+            </div>
+            <div id="border-gradient-controls" class="gradient-builder-row" style="display:none; margin-top:0.5rem; gap:0.5rem; flex-wrap:wrap;">
+              <select id="theme-border-grad-dir" class="arcadix-input" style="padding:0.25rem;">
+                <option value="90deg">To Right →</option>
+                <option value="180deg">To Bottom ↓</option>
+                <option value="135deg">Diagonal ↘</option>
+              </select>
+              <input type="color" id="theme-border-grad-c1" value="#331940">
+              <input type="color" id="theme-border-grad-c2" value="#a855f7">
             </div>
           </div>
 
+          <!-- Accent Color -->
           <div class="color-field">
             <label>Accent Color</label>
             <div class="color-picker-row">
               <input type="color" id="theme-accent" value="#a855f7">
-              <input type="text" id="theme-accent-gradient" class="arcadix-input" placeholder="Or gradient..." style="flex: 1;">
+              <label style="font-size:0.8rem; color:#aaa; margin-left: auto;">Enable Gradient</label>
+              <input type="checkbox" id="theme-accent-grad-toggle" onchange="toggleGradientInputs('accent')">
+            </div>
+            <div id="accent-gradient-controls" class="gradient-builder-row" style="display:none; margin-top:0.5rem; gap:0.5rem; flex-wrap:wrap;">
+              <select id="theme-accent-grad-dir" class="arcadix-input" style="padding:0.25rem;">
+                <option value="90deg">To Right →</option>
+                <option value="180deg">To Bottom ↓</option>
+                <option value="135deg">Diagonal ↘</option>
+              </select>
+              <input type="color" id="theme-accent-grad-c1" value="#a855f7">
+              <input type="color" id="theme-accent-grad-c2" value="#ec4899">
             </div>
           </div>
 
+          <!-- Accent Glow Color -->
           <div class="color-field">
             <label>Accent Glow Color</label>
             <div class="color-picker-row">
@@ -2716,6 +2774,7 @@ window.loadUserProfile = async function(userId) {
             </div>
           </div>
 
+          <!-- Text Color -->
           <div class="color-field">
             <label>Text Color</label>
             <div class="color-picker-row">
@@ -2723,6 +2782,7 @@ window.loadUserProfile = async function(userId) {
             </div>
           </div>
 
+          <!-- Text Outline Color -->
           <div class="color-field">
             <label>Text Outline Color</label>
             <div class="color-picker-row">
@@ -2730,15 +2790,18 @@ window.loadUserProfile = async function(userId) {
             </div>
           </div>
 
+          <!-- Outline Width -->
           <div class="color-field">
             <label>Outline Width (px)</label>
             <input type="number" id="theme-outline-width" class="arcadix-input" value="0" min="0" max="10">
           </div>
 
+          <!-- Moving Speed -->
           <div class="color-field">
             <label>Moving Speed (s)</label>
             <input type="number" id="theme-speed" class="arcadix-input" value="12" min="1" max="60">
           </div>
+
         </div>
 
         <button onclick="createNewTheme()" class="arcadix-btn" style="margin-bottom: 2rem; width: 100%;">Save & Register Theme</button>
@@ -2747,20 +2810,40 @@ window.loadUserProfile = async function(userId) {
         ${themesHTML}`;
     }
 
+  // Toggle UI visibility for gradient color pickers
+    window.toggleGradientInputs = function(type) {
+      const controls = document.getElementById(`${type}-gradient-controls`);
+      const isChecked = document.getElementById(`theme-${type}-grad-toggle`).checked;
+      if (controls) {
+        controls.style.display = isChecked ? 'flex' : 'none';
+      }
+    };
+
+    // Helper to construct CSS linear-gradient string from UI inputs
+    function buildGradientValue(type, fallbackColor) {
+      const isEnabled = document.getElementById(`theme-${type}-grad-toggle`)?.checked;
+      if (!isEnabled) return fallbackColor;
+
+      const dir = document.getElementById(`theme-${type}-grad-dir`).value;
+      const c1 = document.getElementById(`theme-${type}-grad-c1`).value;
+      const c2 = document.getElementById(`theme-${type}-grad-c2`).value;
+
+      return `linear-gradient(${dir}, ${c1}, ${c2})`;
+    }
+
+    // Updated creation handler that processes UI gradient selections
     window.createNewTheme = async function() {
       const name = document.getElementById('theme-name-input').value.trim();
       if (!name) return window.showArcadiXAlert("Please provide a name for the theme.", "Error");
 
       const themeId = 'theme-' + Date.now();
-      const bgColor = document.getElementById('theme-bg').value;
-      const bgGradient = document.getElementById('theme-bg-gradient').value.trim();
-      const headerColor = document.getElementById('theme-header-bg').value;
-      const headerGradient = document.getElementById('theme-header-gradient').value.trim();
-      const cardBg = document.getElementById('theme-card').value;
-      const cardGradient = document.getElementById('theme-card-gradient').value.trim();
-      const cardBorder = document.getElementById('theme-border').value;
-      const accentColor = document.getElementById('theme-accent').value;
-      const accentGradient = document.getElementById('theme-accent-gradient').value.trim();
+      
+      const bgColor = buildGradientValue('bg', document.getElementById('theme-bg').value);
+      const headerColor = buildGradientValue('header', document.getElementById('theme-header-bg').value);
+      const cardBg = buildGradientValue('card', document.getElementById('theme-card').value);
+      const cardBorder = buildGradientValue('border', document.getElementById('theme-border').value);
+      const accentColor = buildGradientValue('accent', document.getElementById('theme-accent').value);
+      
       const glowColor = document.getElementById('theme-glow').value;
       const textColor = document.getElementById('theme-text').value;
       const textOutline = document.getElementById('theme-text-outline').value;
@@ -2770,11 +2853,11 @@ window.loadUserProfile = async function(userId) {
       const newTheme = {
         id: themeId,
         name: name,
-        bgColor: bgGradient || bgColor,
-        headerBg: headerGradient || headerColor || `linear-gradient(180deg, ${cardBg} 0%, #000000 100%)`,
-        cardBg: cardGradient || cardBg,
+        bgColor: bgColor,
+        headerBg: headerColor,
+        cardBg: cardBg,
         cardBorder: cardBorder,
-        accentColor: accentGradient || accentColor,
+        accentColor: accentColor,
         glowColor: glowColor,
         textColor: textColor,
         textOutline: textOutline,
