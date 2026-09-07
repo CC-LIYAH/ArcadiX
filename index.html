@@ -1305,79 +1305,80 @@
       if (dropdown) dropdown.classList.toggle('active');
     };
 
-    window.handleSignUp = async function() {
-      const username = document.getElementById('auth-username').value.trim();
-      const email = document.getElementById('auth-email').value.trim();
-      const password = document.getElementById('auth-password').value;
-      const deviceId = window.getDeviceFingerprint();
+ window.handleSignUp = async function() {
+  const username = document.getElementById('auth-username').value.trim();
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const deviceId = window.getDeviceFingerprint();
 
-      const deviceBanDoc = await getDoc(doc(db, "banned_devices", deviceId));
-      if (deviceBanDoc.exists()) {
-        return window.showArcadiXAlert(`Account creation restricted. This device has been banned from Planet ArcadiX.`, "Device Banned");
+  const deviceBanDoc = await getDoc(doc(db, "banned_devices", deviceId));
+  if (deviceBanDoc.exists()) {
+    return window.showArcadiXAlert(`Account creation restricted. This device has been banned from Planet ArcadiX.`, "Device Banned");
+  }
+
+  if (!username) return window.showArcadiXAlert("Please enter a username.", "Error");
+
+  try {
+    const usernameCheck = await getDoc(doc(db, "usernames", username.toLowerCase()));
+    if (usernameCheck.exists()) return window.showArcadiXAlert("Username is already taken!", "Error");
+
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    let newUserId = 1;
+    const counterRef = doc(db, "counters", "users");
+    await runTransaction(db, async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+      if (!counterDoc.exists()) {
+        transaction.set(counterRef, { currentId: 1 });
+        newUserId = 1;
+      } else {
+        newUserId = counterDoc.data().currentId + 1;
+        transaction.update(counterRef, { currentId: newUserId });
       }
+    });
 
-      if (!username) return window.showArcadiXAlert("Please enter a username.", "Error");
+    await updateProfile(user, { displayName: username, photoURL: DEFAULT_AVATAR });
 
-      try {
-        const usernameCheck = await getDoc(doc(db, "usernames", username.toLowerCase()));
-        if (usernameCheck.exists()) return window.showArcadiXAlert("Username is already taken!", "Error");
-
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        let newUserId = 1;
-        const counterRef = doc(db, "counters", "users");
-        await runTransaction(db, async (transaction) => {
-          const counterDoc = await transaction.get(counterRef);
-          if (!counterDoc.exists()) {
-            transaction.set(counterRef, { currentId: 1 });
-            newUserId = 1;
-          } else {
-            newUserId = counterDoc.data().currentId + 1;
-            transaction.update(counterRef, { currentId: newUserId });
-          }
-        });
-
-        await updateProfile(user, { displayName: username, photoURL: DEFAULT_AVATAR });
-
-        const isSuperAdmin = newUserId === 1;
-        const userData = {
-          uid: user.uid,
-          userId: newUserId,
-          username: username,
-          email: email,
-          photoURL: DEFAULT_AVATAR,
-          bio: "Welcome to my Planet ArcadiX profile!",
-          hasAdminAccess: isSuperAdmin,
-          isBanned: false,
-          banReason: "",
-          banUntil: null,
-          registeredDeviceId: deviceId,
-          isDeviceBanned: false,
-          permissions: {
-            manageUpdates: isSuperAdmin,
-            manageUsers: isSuperAdmin,
-            approveAssets: isSuperAdmin,
-            manageGames: isSuperAdmin,
-            addGames: isSuperAdmin,
-            hideGames: isSuperAdmin,
-            deleteGames: isSuperAdmin,
-            resetUserInfo: isSuperAdmin,
-            banUser: isSuperAdmin,
-            banDevice: isSuperAdmin,
-            isSuperAdmin: isSuperAdmin
-          }
-        };
-
-        await setDoc(doc(db, "usernames", username.toLowerCase()), { uid: user.uid });
-        await setDoc(doc(db, "users", user.uid), userData);
-
-        await window.showArcadiXAlert("Account created successfully!", "Success");
-        window.location.href = `./`;
-      } catch (error) {
-        window.showArcadiXAlert("Sign Up Error: " + error.message, "Error");
+    const isSuperAdmin = newUserId === 1;
+    const userData = {
+      uid: user.uid,
+      userId: newUserId,
+      username: username,
+      email: email,
+      photoURL: DEFAULT_AVATAR,
+      bio: "Welcome to my Planet ArcadiX profile!",
+      createdAt: new Date().toISOString(), // Added join date timestamp
+      hasAdminAccess: isSuperAdmin,
+      isBanned: false,
+      banReason: "",
+      banUntil: null,
+      registeredDeviceId: deviceId,
+      isDeviceBanned: false,
+      permissions: {
+        manageUpdates: isSuperAdmin,
+        manageUsers: isSuperAdmin,
+        approveAssets: isSuperAdmin,
+        manageGames: isSuperAdmin,
+        addGames: isSuperAdmin,
+        hideGames: isSuperAdmin,
+        deleteGames: isSuperAdmin,
+        resetUserInfo: isSuperAdmin,
+        banUser: isSuperAdmin,
+        banDevice: isSuperAdmin,
+        isSuperAdmin: isSuperAdmin
       }
     };
+
+    await setDoc(doc(db, "usernames", username.toLowerCase()), { uid: user.uid });
+    await setDoc(doc(db, "users", user.uid), userData);
+
+    await window.showArcadiXAlert("Account created successfully!", "Success");
+    window.location.href = `./`;
+  } catch (error) {
+    window.showArcadiXAlert("Sign Up Error: " + error.message, "Error");
+  }
+};
 
     window.handleSignIn = async function() {
       const identifier = document.getElementById('auth-identifier').value.trim();
@@ -1423,36 +1424,41 @@
       }
     };
 
-    window.loadUserProfile = async function(userId) {
-      const q = query(collection(db, "users"), where("userId", "==", parseInt(userId)));
-      const querySnapshot = await getDocs(q);
+window.loadUserProfile = async function(userId) {
+  const q = query(collection(db, "users"), where("userId", "==", parseInt(userId)));
+  const querySnapshot = await getDocs(q);
 
-      if (querySnapshot.empty) {
-        container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">User not found.</p></div>`;
-        return;
-      }
+  if (querySnapshot.empty) {
+    container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">User not found.</p></div>`;
+    return;
+  }
 
-      const profileData = querySnapshot.docs[0].data();
-      const pfp = profileData.photoURL || DEFAULT_AVATAR;
-      const imgTag = pfp ? `<img src="${pfp}" class="profile-avatar-large" alt="">` : '';
+  const profileData = querySnapshot.docs[0].data();
+  const pfp = profileData.photoURL || DEFAULT_AVATAR;
+  const imgTag = pfp ? `<img src="${pfp}" class="profile-avatar-large" alt="">` : '';
 
-      container.innerHTML = `
-        <div class="page-scroll-container">
-          <div class="profile-card">
-            <div class="profile-header">
-              ${imgTag}
-              <div>
-                <h2>${profileData.username}</h2>
-                <span class="user-id-badge">ID: #${profileData.userId}</span>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Bio</label>
-              <p style="line-height:1.6; color:#ddd;">${profileData.bio || 'No bio available.'}</p>
-            </div>
+  // Format join date with fallback
+  const rawDate = profileData.createdAt || (auth.currentUser?.uid === profileData.uid ? auth.currentUser.metadata.creationTime : null);
+  const formattedJoinedDate = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'Unknown';
+
+  container.innerHTML = `
+    <div class="page-scroll-container">
+      <div class="profile-card">
+        <div class="profile-header">
+          ${imgTag}
+          <div>
+            <h2>${profileData.username}</h2>
+            <span class="user-id-badge">ID: #${profileData.userId}</span>
+            <p style="color:#aaa; font-size: 0.85rem; margin-top: 4px;">Joined: ${formattedJoinedDate}</p>
           </div>
-        </div>`;
-    };
+        </div>
+        <div class="form-group">
+          <label>Bio</label>
+          <p style="line-height:1.6; color:#ddd;">${profileData.bio || 'No bio available.'}</p>
+        </div>
+      </div>
+    </div>`;
+};
 
     window.renderSettingsPage = function() {
       if (!auth.currentUser || !currentUserData) return;
