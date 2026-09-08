@@ -1731,7 +1731,6 @@ window.handleSignIn = async function() {
 
 window.loadUserProfile = async function(displayUserId) {
   try {
-    // 1. Query users collection where custom userId == "3" (or target string)
     const usersRef = collection(db, "users");
     const q = query(usersRef, where("userId", "==", displayUserId.toString()));
     const querySnapshot = await getDocs(q);
@@ -1741,26 +1740,25 @@ window.loadUserProfile = async function(displayUserId) {
       return;
     }
 
-    // 2. Extract user data
     const userDoc = querySnapshot.docs[0];
     const userData = userDoc.data();
 
-    // 3. Get badges directly from array on user doc (no extra subcollection needed!)
+    // Read badges straight from user data array
     const rawBadges = userData.badges || [];
-    
-    const formattedBadges = rawBadges.map(badge => {
-      // If badge is stored as a string key like 'betatester'
+    const userBadges = rawBadges.map(badge => {
       if (typeof badge === 'string') {
         return { id: badge, ...(BADGES_REGISTRY[badge] || {}) };
       }
-      return badge; // Already an object
+      return badge;
     });
 
-    // 4. Render UI
-    renderBadgesToPage(formattedBadges);
+    // Call your function to display badges on profile page
+    if (typeof renderBadgesUI === 'function') {
+      renderBadgesUI(userBadges);
+    }
 
   } catch (error) {
-    console.error("Could not load dynamic badges", error);
+    console.error("Could not load user profile:", error);
   }
 };
 
