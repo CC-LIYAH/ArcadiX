@@ -1774,6 +1774,12 @@ window.loadUserProfile = async function(displayUserId) {
   const rawDate = profileData.createdAt || (auth.currentUser?.uid === profileData.uid ? auth.currentUser.metadata.creationTime : null);
   const formattedJoinedDate = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'Unknown';
 
+ // 1. Define the button HTML outside the main template literal
+  const editButtonHTML = isSelf 
+    ? '<button onclick="window.openBadgeCustomizer()" class="action-btn" style="margin-top: 1rem;">Customize Displayed Badges</button>' 
+    : '';
+
+  // 2. Render container.innerHTML cleanly
   container.innerHTML = `
     <div class="page-scroll-container">
       <div class="profile-card">
@@ -1792,9 +1798,7 @@ window.loadUserProfile = async function(displayUserId) {
           <label>Bio</label>
           <p style="line-height:1.6; color:#ddd;">${profileData.bio || 'No bio available.'}</p>
         </div>
-        ${isSelf ? `
-          <button onclick="window.openBadgeCustomizer()" class="action-btn" style="margin-top: 1rem;">Customize Displayed Badges</button>
-        ` : ''}
+        ${editButtonHTML}
       </div>
     </div>`;
 };
