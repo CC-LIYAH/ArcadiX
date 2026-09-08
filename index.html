@@ -1729,27 +1729,40 @@ window.handleSignIn = async function() {
       }
     };
 
-window.loadUserProfile = async function(userId) {
-  const q = query(collection(db, "users"), where("userId", "==", parseInt(userId)));
-  const querySnapshot = await getDocs(q);
-
-  if (querySnapshot.empty) {
-    container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">User not found.</p></div>`;
-    return;
-  }
-
-  const profileData = querySnapshot.docs[0].data();
-  const pfp = profileData.photoURL || DEFAULT_AVATAR;
-  const imgTag = pfp ? `<img src="${pfp}" class="profile-avatar-large" alt="">` : '';
-
-  // Fetch dynamic custom badges from Firestore
-  let dynamicBadges = {};
+window.loadUserProfile = async function(displayUserId) {
   try {
-    const badgeSnaps = await getDocs(collection(db, "custom_badges"));
-    badgeSnaps.forEach(docSnap => dynamicBadges[docSnap.id] = docSnap.data());
-  } catch (e) {
-    console.warn("Could not load dynamic badges", e);
+    // 1. Query users collection where custom userId == "3" (or target string)
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("userId", "==", displayUserId.toString()));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      console.warn("User not found with ID:", displayUserId);
+      return;
+    }
+
+    // 2. Extract user data
+    const userDoc = querySnapshot.docs[0];
+    const userData = userDoc.data();
+
+    // 3. Get badges directly from array on user doc (no extra subcollection needed!)
+    const rawBadges = userData.badges || [];
+    
+    const formattedBadges = rawBadges.map(badge => {
+      // If badge is stored as a string key like 'betatester'
+      if (typeof badge === 'string') {
+        return { id: badge, ...(BADGES_REGISTRY[badge] || {}) };
+      }
+      return badge; // Already an object
+    });
+
+    // 4. Render UI
+    renderBadgesToPage(formattedBadges);
+
+  } catch (error) {
+    console.error("Could not load dynamic badges", error);
   }
+};
 
   const badgesHTML = window.renderBadgesHTML(
     profileData.displayedBadges || profileData.ownedBadges || [],
