@@ -1292,16 +1292,6 @@
       }
     };
 
-    const betaCutoffDate = new Date("2026-10-01T12:00:00-04:00").getTime();
-  const initialBadges = [];
-
-  if (Date.now() <= betaCutoffDate && BADGES_REGISTRY['betatester']) {
-    initialBadges.push({
-      id: 'betatester',
-      ...BADGES_REGISTRY['betatester'],
-      grantedAt: new Date().toISOString()
-    });
-  }
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
