@@ -1266,7 +1266,7 @@
       },
       'gun-mayhem': {
         title: 'Gun Mayhem',
-        icon: '/Games/GameIcons/gunmayhemicon.jpg',
+        icon: 'Games/GameIcons/gunmayhemicon.jpg',
         path: './Games/gun-mayhem-main/gun-mayhem-main/index.html'
       }
     };
@@ -1283,8 +1283,25 @@
         description: 'Given to those who discovered & reported vulnerabilities or issues within Planet ArcadiX.',
         recolorable: true,
         icon: '/ArcadiX/PAXIcons/BugHunterIcon.png'
+      },
+      'betatester': {
+        name: 'Beta Tester',
+        description: 'This badge was given out to those who made a Planet ArcadiX account during the Beta Stage!',
+        recolorable: true,
+        icon: '/ArcadiX/PAXIcons/BetaTesterIcon.png'
       }
     };
+
+    const betaCutoffDate = new Date("2026-10-01T12:00:00-04:00").getTime();
+  const initialBadges = [];
+
+  if (Date.now() <= betaCutoffDate && BADGES_REGISTRY['betatester']) {
+    initialBadges.push({
+      id: 'betatester',
+      ...BADGES_REGISTRY['betatester'],
+      grantedAt: new Date().toISOString()
+    });
+  }
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
