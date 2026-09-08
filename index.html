@@ -1294,6 +1294,24 @@
         description: 'This badge was given out to those who made a Planet ArcadiX account during the Beta Stage!',
         recolorable: true,
         icon: '/ArcadiX/PAXIcons/BetaTesterIcon.png'
+      },
+      'dev': {
+        name: 'Developer',
+        description: 'This badge is given to official Planet ArcadiX Developers! They help build the Planet ArcadiX experience and enhance your playing experience day-by-day! Anyone who claims to be a Developer without this badge is an impersonator.',
+        recolorable: true,
+        icon: '/ArcadiX/PAXIcons/PlanetArcadiXDeveloper.png'
+      },
+      'admin': {
+        name: 'Administrator',
+        description: 'This badge is given to official Planet ArcadiX Administrators, anyone who claims to be an Administrator without holding this badge is an impersonator.',
+        recolorable: true,
+        icon: '/ArcadiX/PAXIcons/PAXIcons/PlanetArcadiXAdministrator.png'
+      },
+    'contributor': {
+        name: 'Contributor',
+        description: 'This badge is given to those who contributed to Planet ArcadiX!',
+        recolorable: true,
+        icon: '/ArcadiX/PAXIcons/PlanetArcadiXContributor.png'
       }
     };
 
@@ -3161,9 +3179,9 @@ window.loadUserProfile = async function(userId) {
 
       container.innerHTML = `
         <div class="page-scroll-container">
-          <h1 class="hero-title">Welcome to Planet ArcadiX</h1>
-          <p class="hero-description">Explore our premier suite of custom web games, personalized user profiles, and active community features.</p>
-          <div class="section-header-box">Featured Arcade Games</div>
+          <h1 class="hero-title">Welcome to Planet ArcadiX!</h1>
+          <p class="hero-description">Welcome to Planet ArcadiX! You can explore our ever-growing library of games in the All Games tab!</p>
+          <div class="section-header-box">Featured Games</div>
           <div class="games-grid">${gamesHTML}</div>
         </div>`;
     }
@@ -3171,7 +3189,7 @@ window.loadUserProfile = async function(userId) {
     window.renderAllGamesPage = async function() {
       let gamesHTML = '';
 
-      Object.entries(GAMES_REGISTRY).forEach(([key, game]) => {
+      Object.entries(GAMES_REGISTRY).slice(0,4).forEach(([key, game]) => {
         gamesHTML += `
           <a href="?game=${key}" class="game-card">
             <img src="${game.icon}" class="game-icon-img" alt="${game.title}">
