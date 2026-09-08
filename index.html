@@ -1731,6 +1731,7 @@ window.handleSignIn = async function() {
 
 window.loadUserProfile = async function(displayUserId) {
   try {
+    // 1. Query users collection where custom userId == "3" (or target string)
     const usersRef = collection(db, "users");
     const q = query(usersRef, where("userId", "==", displayUserId.toString()));
     const querySnapshot = await getDocs(q);
@@ -1740,25 +1741,26 @@ window.loadUserProfile = async function(displayUserId) {
       return;
     }
 
+    // 2. Extract user data
     const userDoc = querySnapshot.docs[0];
     const userData = userDoc.data();
 
-    // Read badges straight from user data array
+    // 3. Get badges directly from array on user doc (no extra subcollection needed!)
     const rawBadges = userData.badges || [];
-    const userBadges = rawBadges.map(badge => {
+    
+    const formattedBadges = rawBadges.map(badge => {
+      // If badge is stored as a string key like 'betatester'
       if (typeof badge === 'string') {
         return { id: badge, ...(BADGES_REGISTRY[badge] || {}) };
       }
-      return badge;
+      return badge; // Already an object
     });
 
-    // Call your function to display badges on profile page
-    if (typeof renderBadgesUI === 'function') {
-      renderBadgesUI(userBadges);
-    }
+    // 4. Render UI
+    renderBadgesToPage(formattedBadges);
 
   } catch (error) {
-    console.error("Could not load user profile:", error);
+    console.error("Could not load dynamic badges", error);
   }
 };
 
@@ -1774,12 +1776,6 @@ window.loadUserProfile = async function(displayUserId) {
   const rawDate = profileData.createdAt || (auth.currentUser?.uid === profileData.uid ? auth.currentUser.metadata.creationTime : null);
   const formattedJoinedDate = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'Unknown';
 
- // 1. Define the button HTML outside the main template literal
-  const editButtonHTML = isSelf 
-    ? '<button onclick="window.openBadgeCustomizer()" class="action-btn" style="margin-top: 1rem;">Customize Displayed Badges</button>' 
-    : '';
-
-  // 2. Render container.innerHTML cleanly
   container.innerHTML = `
     <div class="page-scroll-container">
       <div class="profile-card">
@@ -1798,7 +1794,9 @@ window.loadUserProfile = async function(displayUserId) {
           <label>Bio</label>
           <p style="line-height:1.6; color:#ddd;">${profileData.bio || 'No bio available.'}</p>
         </div>
-        ${editButtonHTML}
+        ${isSelf ? `
+          <button onclick="window.openBadgeCustomizer()" class="action-btn" style="margin-top: 1rem;">Customize Displayed Badges</button>
+        ` : ''}
       </div>
     </div>`;
 };
