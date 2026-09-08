@@ -943,6 +943,8 @@
   </style>
 </head>
 <body>
+  
+  <a href="messages.html">Direct Messages</a>
 
   <header id="site-header" style="display: none;">
     <a href="./" class="header-brand">
@@ -953,12 +955,13 @@
   <a href="./">Home</a>
   <a href="?page=allgames">All Games</a>
   <a href="?page=updates">Updates</a>
+  <a href="?page=messages">Messages</a>
   <a href="?page=admin" id="admin-nav-link" style="display: none;">Admin</a>
   <span id="auth-nav-slot">
     <a href="?page=login">Login</a>
   </span>
 </nav>
-  </header>
+</header>
 
   <main class="main-content" id="container">
     <!-- Dynamic Viewport Content -->
@@ -3198,6 +3201,42 @@ window.loadUserProfile = async function(userId) {
           </a>`;
       });
 
+  window.renderMessagesPage = async function(container) {
+  if (!window.currentUser) {
+    window.location.href = '?page=login';
+    return;
+  }
+    
+  container.innerHTML = `
+    <div class="messenger-container" style="display: flex; height: 80vh; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; overflow: hidden;">
+      <!-- Users List Sidebar -->
+      <div class="sidebar" style="width: 280px; border-right: 1px solid var(--card-border); display: flex; flex-direction: column;">
+        <div style="padding: 16px; font-weight: bold; border-bottom: 1px solid var(--card-border);">Conversations</div>
+        <div class="chat-list" id="users-list" style="flex: 1; overflow-y: auto;">
+          <div style="padding: 16px; font-size: 12px; color: var(--text-muted);">Loading users...</div>
+        </div>
+      </div>
+
+      <!-- Active Chat Area -->
+      <div class="chat-viewport" style="flex: 1; display: flex; flex-direction: column; background: var(--bg-color);">
+        <div id="active-chat-header" style="padding: 16px; border-bottom: 1px solid var(--card-border); font-weight: bold;">Select a conversation</div>
+        <div id="messages-container" style="flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+          <div style="margin: auto; color: var(--text-muted);">Choose a user to start messaging.</div>
+        </div>
+        <form id="message-form" style="display: none; padding: 16px; border-top: 1px solid var(--card-border); gap: 10px;">
+          <input type="text" id="message-input" class="arcadix-input" placeholder="Type a message..." required style="flex: 1;">
+          <button type="submit" class="arcadix-btn">Send</button>
+        </form>
+      </div>
+    </div>
+  `;
+
+  // Trigger Firestore user fetching and chat initialization logic here
+  if (typeof window.initChatSystem === 'function') {
+    window.initChatSystem();
+  }
+}
+
       try {
         const customSnaps = await getDocs(collection(db, "custom_games"));
         customSnaps.forEach(docSnap => {
@@ -3253,29 +3292,31 @@ window.loadUserProfile = async function(userId) {
     }
 
     // Main App Routing Controller
-    function initializeRouter() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const page = urlParams.get('page');
-      const profileUid = urlParams.get('uid');
+function initializeRouter() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const page = urlParams.get('page');
+  const profileUid = urlParams.get('uid');
 
-      if (gameIdParam) {
-        handleGamePageRouting();
-      } else if (page === 'admin') {
-        if (typeof window.renderAdminDashboard === 'function') window.renderAdminDashboard();
-      } else if (page === 'login') {
-        renderAuthForm(true);
-      } else if (page === 'signup') {
-        renderAuthForm(false);
-      } else if (page === 'updates') {
-        window.renderPublicUpdates();
-      } else if (page === 'games') {
-        window.renderAllGamesPage();
-      } else if (page === 'profile' && profileUid) {
-        window.renderUserProfilePage(profileUid);
-      } else {
-        renderHomePageGames();
-      }
-    }
+  if (gameIdParam) {
+    handleGamePageRouting();
+  } else if (page === 'admin') {
+    if (typeof window.renderAdminDashboard === 'function') window.renderAdminDashboard();
+  } else if (page === 'login') {
+    renderAuthForm(true);
+  } else if (page === 'signup') {
+    renderAuthForm(false);
+  } else if (page === 'updates') {
+    window.renderPublicUpdates();
+  } else if (page === 'games') {
+    window.renderAllGamesPage();
+  } else if (page === 'messages') {
+    if (typeof window.renderMessagesPage === 'function') window.renderMessagesPage();
+  } else if (page === 'profile' && profileUid) {
+    window.renderUserProfilePage(profileUid);
+  } else {
+    renderHomePageGames();
+  }
+}
 
     // Initialize application on load
     initializeRouter();
