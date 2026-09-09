@@ -3447,12 +3447,11 @@ function initializeRouter() {
     window.renderAllGamesPage();
 } else if (page === 'messages') {
   if (typeof window.renderMessagesPage === 'function') window.renderMessagesPage(mainContainer);
+} else if (page === 'profile' && profileUid) {
+  window.renderUserProfilePage(profileUid);
+} else {
+  renderHomePageGames();
 }
-  } else if (page === 'profile' && profileUid) {
-    window.renderUserProfilePage(profileUid);
-  } else {
-    renderHomePageGames();
-  }
 }
 
     // Initialize application on load
