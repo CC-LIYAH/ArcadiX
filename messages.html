@@ -128,7 +128,7 @@
       <form class="chat-input-row" id="message-form" style="display: none;">
         <input type="file" id="file-input" accept="image/*,video/*" style="display: none;">
         <button type="button" class="attachment-btn" id="attachment-btn">
-          <img src="/PAXIcons/AddAnAttachment.png" alt="Attach">
+          <img src="ArcadiX/PAXIcons/AddAnAttachment.png" alt="Attach">
         </button>
         <input type="text" id="message-input" class="chat-input" placeholder="Type your message..." autocomplete="off">
         <button type="submit" class="send-btn">Send</button>
@@ -301,7 +301,7 @@
         item.innerHTML = `
           <img src="${uData.photoURL || defaultAvatar}" class="member-avatar">
           <span class="member-name">${uData.username || 'Player'}</span>
-          ${isOwner ? `<img src="/PAXIcons/GroupOwnerIcon.png" class="owner-icon" title="Owner">` : ''}
+          ${isOwner ? `<img src="ArcadiX/PAXIcons/GroupOwnerIcon.png" class="owner-icon" title="Owner">` : ''}
           ${canKick ? `<button class="kick-btn" data-uid="${uid}">✕</button>` : ''}
         `;
 
