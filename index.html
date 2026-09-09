@@ -3446,7 +3446,7 @@ function initializeRouter() {
   } else if (page === 'games') {
     window.renderAllGamesPage();
   } else if (page === 'messages') {
-  if (typeof window.renderMessagesPage === 'function') {
+  if (typeof window.renderMessagesPage === 'function')
     window.renderMessagesPage(mainContainer);
   } else if (page === 'profile' && profileUid) {
     window.renderUserProfilePage(profileUid);
