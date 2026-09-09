@@ -12,16 +12,16 @@
 
   <style>
     :root {
-      --bg-color: #050508;
-      --card-bg: #110e1b;
-      --card-border: #261f3b;
+      --bg-color: #030108;
+      --card-bg: #0c0618;
+      --card-border: #2d174d;
       --accent-color: #a855f7;
-      --accent-glow: rgba(168, 85, 247, 0.5);
+      --accent-glow: rgba(168, 85, 247, 0.4);
       --gold: #ffd700;
       --silver: #c0c0c0;
       --bronze: #cd7f32;
       --text-color: #ffffff;
-      --text-muted: #9ca3af;
+      --text-muted: #8b80a2;
     }
 
     * {
@@ -40,52 +40,121 @@
       font-weight: 700;
     }
 
-    /* 1:1 Site Header Styling */
+    /* Site Header */
     header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 40px;
-      background: rgba(5, 5, 8, 0.95);
-      backdrop-filter: blur(8px);
+      padding: 14px 40px;
+      background: rgba(3, 1, 8, 0.95);
+      backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--card-border);
       position: sticky;
       top: 0;
       z-index: 100;
     }
 
-    .logo-btn {
-      border: 1px solid var(--card-border);
-      background: rgba(255, 255, 255, 0.03);
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-weight: 800;
-      font-size: 11px;
-      letter-spacing: 1.5px;
-      color: #fff;
+    .brand-logo {
+      display: flex;
+      align-items: center;
       text-decoration: none;
-      text-transform: uppercase;
-      transition: all 0.2s;
     }
-    .logo-btn:hover { border-color: var(--accent-color); box-shadow: 0 0 10px var(--accent-glow); }
 
-    .nav-links { display: flex; align-items: center; gap: 24px; }
-    .nav-links a { color: var(--text-color); text-decoration: none; font-weight: 700; font-size: 13px; opacity: 0.8; transition: opacity 0.2s; }
-    .nav-links a:hover, .nav-links a.active { opacity: 1; text-shadow: 0 0 8px var(--accent-glow); }
+    .brand-logo img {
+      height: 36px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links a { 
+      color: var(--text-color); 
+      text-decoration: none; 
+      font-weight: 700; 
+      font-size: 13px; 
+      opacity: 0.85; 
+      transition: all 0.2s; 
+    }
+    .nav-links a:hover, .nav-links a.active { 
+      opacity: 1; 
+      color: #fff;
+      text-shadow: 0 0 10px var(--accent-glow); 
+    }
+
+    /* Profile Pill & Dropdown */
+    .user-pill-wrapper {
+      position: relative;
+    }
 
     .user-pill {
       display: flex;
       align-items: center;
       gap: 10px;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 4px 14px 4px 6px;
-      border-radius: 20px;
-      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.02);
+      padding: 5px 16px 5px 6px;
+      border-radius: 30px;
+      border: 1px solid var(--accent-color);
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
       font-weight: 800;
-      font-size: 12px;
+      font-size: 13px;
       letter-spacing: 0.5px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
     }
-    .user-pill img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+
+    .user-pill:hover {
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    .user-pill img { 
+      width: 28px; 
+      height: 28px; 
+      border-radius: 50%; 
+      object-fit: cover; 
+    }
+
+    .profile-dropdown {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      width: 180px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 12px rgba(168, 85, 247, 0.15);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 200;
+    }
+
+    .profile-dropdown.show {
+      display: flex;
+    }
+
+    .profile-dropdown a, .profile-dropdown button {
+      padding: 12px 18px;
+      color: var(--text-color);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--card-border);
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .profile-dropdown a:last-child, .profile-dropdown button:last-child {
+      border-bottom: none;
+    }
+
+    .profile-dropdown a:hover, .profile-dropdown button:hover {
+      background: rgba(168, 85, 247, 0.15);
+      color: #fff;
+    }
 
     /* Main Container */
     main {
@@ -115,8 +184,7 @@
       letter-spacing: 0.5px;
     }
 
-    /* Category Bar 1 */
-    .primary-bar {
+    .section-banner {
       width: 100%;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -124,53 +192,62 @@
       padding: 12px;
       display: flex;
       justify-content: center;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
+
     .category-badge {
-      background: var(--accent-color);
+      background: linear-gradient(135deg, #a855f7, #7e22ce);
       color: #fff;
-      padding: 10px 28px;
+      padding: 10px 32px;
       border-radius: 8px;
       font-weight: 800;
       font-size: 13px;
-      box-shadow: 0 0 12px var(--accent-glow);
+      box-shadow: 0 0 15px var(--accent-glow);
       letter-spacing: 0.5px;
     }
 
-    /* Category Bar 2: Per-Game Selectors */
+    /* Game Selector Bar */
     .game-selector-bar {
       width: 100%;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 12px;
-      padding: 10px 16px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 12px;
       flex-wrap: wrap;
       margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
+
     .game-tab {
       background: transparent;
       border: 1px solid transparent;
       color: var(--text-muted);
-      padding: 8px 16px;
+      padding: 8px 18px;
       border-radius: 8px;
       font-weight: 700;
       font-size: 11px;
       cursor: pointer;
       transition: all 0.2s;
     }
-    .game-tab:hover { color: #fff; border-color: rgba(255,255,255,0.1); }
+
+    .game-tab:hover { 
+      color: #fff; 
+      border-color: rgba(168, 85, 247, 0.3); 
+    }
+
     .game-tab.active {
       background: rgba(168, 85, 247, 0.15);
       color: #fff;
-      border-color: var(--accent-color);
+      border: 1px solid var(--accent-color);
       box-shadow: 0 0 10px var(--accent-glow);
     }
 
-    /* Leaderboard Table Structure */
+    /* Leaderboard Table */
     .leaderboard-card {
       width: 100%;
       background: var(--card-bg);
@@ -200,7 +277,7 @@
       grid-template-columns: 80px 1fr 140px;
       align-items: center;
       padding: 16px 28px;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--card-border);
       transition: background 0.2s;
     }
     .row:hover { background: rgba(168, 85, 247, 0.06); }
@@ -245,19 +322,32 @@
 </head>
 <body>
 
-  <!-- Site Navigation Header (1:1 with ?page= routing) -->
+  <!-- Site Navigation Header -->
   <header>
-    <a href="index.html" class="logo-btn">Planet ArcadiX</a>
+    <a href="./" class="brand-logo">
+      <img src="/ArcadiX/PAXIcons/LogoV2.png" alt="Planet ArcadiX" onerror="this.src='LogoV2.png';">
+    </a>
+
     <nav class="nav-links">
-      <a href="index.html">Home</a>
-      <a href="index.html?page=all-games">All Games</a>
-      <a href="index.html?page=leaderboards" class="active">Leaderboards</a>
-      <a href="index.html?page=updates">Updates</a>
+      <a href="./">Home</a>
+      <a href="?page=all-games">All Games</a>
+      <a href="?page=leaderboards" class="active">Leaderboards</a>
+      <a href="?page=updates">Updates</a>
       <a href="messages.html">Messages</a>
-      <a href="index.html?page=admin">Admin</a>
-      <div class="user-pill" id="nav-user-pill">
-        <img id="nav-user-avatar" src="/ArcadiX/PAXIcons/PlaceholderPFP.png" alt="Profile">
-        <span id="nav-user-name">Loading...</span>
+      <a href="?page=admin">Admin</a>
+
+      <!-- Profile Pill & Dropdown -->
+      <div class="user-pill-wrapper">
+        <div class="user-pill" id="user-pill-btn">
+          <img id="nav-user-avatar" src="/ArcadiX/PAXIcons/PlaceholderPFP.png" alt="Profile">
+          <span id="nav-user-name">...</span>
+        </div>
+
+        <div class="profile-dropdown" id="profile-dropdown">
+          <a href="?page=profile">Profile</a>
+          <a href="?page=settings">Settings</a>
+          <button id="logout-btn">Logout</button>
+        </div>
       </div>
     </nav>
   </header>
@@ -267,11 +357,11 @@
     <p class="page-subtitle">Track top player rankings by playtime across Planet ArcadiX games!</p>
 
     <!-- Top Bar 1: Primary Category -->
-    <div class="primary-bar">
+    <div class="section-banner">
       <div class="category-badge">Total Playtime</div>
     </div>
 
-    <!-- Top Bar 2: Per-Game Selector -->
+    <!-- Top Bar 2: Per-Game Selectors -->
     <div class="game-selector-bar">
       <button class="game-tab active" data-game="global">All Games (Global)</button>
       <button class="game-tab" data-game="getaway-shootout">Getaway Shootout</button>
@@ -300,7 +390,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -318,7 +408,27 @@
 
     const defaultAvatar = "/ArcadiX/PAXIcons/PlaceholderPFP.png";
 
-    // Dynamic Header User Data Sync (Checks auth + Firestore users collection)
+    // Toggle Dropdown Menu
+    const userPillBtn = document.getElementById('user-pill-btn');
+    const profileDropdown = document.getElementById('profile-dropdown');
+
+    userPillBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      profileDropdown.classList.toggle('show');
+    });
+
+    document.addEventListener('click', () => {
+      profileDropdown.classList.remove('show');
+    });
+
+    // Logout Action
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      signOut(auth).then(() => {
+        window.location.href = "./";
+      });
+    });
+
+    // Dynamic Header User Data Sync
     onAuthStateChanged(auth, async (user) => {
       const nameElem = document.getElementById('nav-user-name');
       const avatarElem = document.getElementById('nav-user-avatar');
