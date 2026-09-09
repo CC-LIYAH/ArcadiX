@@ -1,8 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 1. Initialize Firebase Configuration
+// 1. Initialize Firebase Configuration safely
 const firebaseConfig = {
   apiKey: "AIzaSyBIvUkO_paPfmMlbo5jNaXoteZL0fkZYa4",
   authDomain: "arcadix-7fc11.firebaseapp.com",
@@ -12,7 +12,8 @@ const firebaseConfig = {
   appId: "1:1024578621730:web:27adc1e3b5cdb802f1557b"
 };
 
-const app = initializeApp(firebaseConfig);
+// Check if an app is already initialized before creating a new one
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 
