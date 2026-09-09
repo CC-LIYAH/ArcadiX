@@ -26,6 +26,13 @@
     /* Conversations Sidebar */
     .sidebar { width: 300px; border-right: 1px solid var(--card-border); background: var(--card-bg); display: flex; flex-direction: column; }
     .sidebar-header { padding: 16px; border-bottom: 1px solid var(--card-border); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+    
+    /* New Search Controls */
+    .search-box-container { padding: 12px 16px; border-bottom: 1px solid var(--card-border); display: flex; gap: 8px; }
+    .search-input { flex: 1; background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 6px; padding: 8px 12px; color: var(--text-color); font-size: 13px; outline: none; }
+    .search-input:focus { border-color: var(--accent-color); }
+    .search-btn { background: var(--accent-color); color: #fff; border: none; border-radius: 6px; padding: 0 12px; font-weight: bold; cursor: pointer; font-size: 13px; }
+
     .chat-list { flex: 1; overflow-y: auto; }
     .chat-user-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
     .chat-user-item:hover, .chat-user-item.active { background: rgba(168, 85, 247, 0.15); }
@@ -62,19 +69,23 @@
   </header>
 
   <div class="messenger-container">
-    <!-- Sidebar: Registered Users List -->
+    <!-- Sidebar: Active Conversations + User Search -->
     <div class="sidebar">
       <div class="sidebar-header">Conversations</div>
+      <form class="search-box-container" id="user-search-form">
+        <input type="text" id="search-username" class="search-input" placeholder="Type username..." required autocomplete="off">
+        <button type="submit" class="search-btn">Chat</button>
+      </form>
       <div class="chat-list" id="users-list">
-        <div style="padding:16px; font-size:12px; color:var(--text-muted);">Loading members...</div>
+        <div style="padding:16px; font-size:12px; color:var(--text-muted);">Loading conversations...</div>
       </div>
     </div>
 
     <!-- Main Active Chat Area -->
     <div class="chat-viewport">
-      <div class="chat-header" id="active-chat-header">Select a conversation</div>
+      <div class="chat-header" id="active-chat-header">Select or start a conversation</div>
       <div class="messages-body" id="messages-container">
-        <div class="empty-state">Choose a user from the left menu to start messaging.</div>
+        <div class="empty-state">Search a username or select an active conversation on the left.</div>
       </div>
       <form class="chat-input-row" id="message-form" style="display: none;">
         <input type="text" id="message-input" class="chat-input" placeholder="Type your message..." autocomplete="off" required>
@@ -88,10 +99,9 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { 
-      getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, getDocs 
+      getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, getDocs, doc, getDoc 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Insert your Firebase Project Config here
     const firebaseConfig = {
       apiKey: "AIzaSyBIvUkO_paPfmMlbo5jNaXoteZL0fkZYa4",
       authDomain: "arcadix-7fc11.firebaseapp.com",
@@ -108,63 +118,127 @@
     let currentUser = null;
     let activeRecipient = null;
     let activeUnsubscribe = null;
+    let activeConversations = new Map();
 
-    // Helper: Generate a unique conversation key between two UIDs
     function getChatRoomId(uid1, uid2) {
       return [uid1, uid2].sort().join('_');
     }
 
-    // Check Authentication
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
         window.location.href = 'index.html?page=login';
         return;
       }
       currentUser = user;
-      loadUsersList();
+      loadRecentConversations();
     });
 
-    // Load available users to chat with
-    async function loadUsersList() {
+    // Load only users that current user has an active chat history with
+    async function loadRecentConversations() {
       const usersListEl = document.getElementById('users-list');
-      usersListEl.innerHTML = '';
-
+      
       try {
-        const querySnapshot = await getDocs(collection(db, "users"));
-        querySnapshot.forEach((docSnap) => {
-          const userData = docSnap.data();
-          const uid = docSnap.id;
+        const sentQuery = query(collection(db, "messages"), where("senderId", "==", currentUser.uid));
+        const recvQuery = query(collection(db, "messages"), where("recipientId", "==", currentUser.uid));
 
-          // Skip rendering self
-          if (uid === currentUser.uid) return;
+        const [sentSnap, recvSnap] = await Promise.all([getDocs(sentQuery), getDocs(recvQuery)]);
+        
+        const partnerUids = new Set();
+        sentSnap.forEach(d => partnerUids.add(d.data().recipientId));
+        recvSnap.forEach(d => partnerUids.add(d.data().senderId));
 
-          const userItem = document.createElement('div');
-          userItem.className = 'chat-user-item';
-          userItem.dataset.uid = uid;
-          userItem.innerHTML = `
-            <img src="${userData.photoURL || 'https://via.placeholder.com/40'}" class="avatar" alt="Avatar">
-            <div class="user-info">
-              <div class="name">${userData.username || userData.email?.split('@')[0] || 'Player'}</div>
-              <div class="subtext">Click to message</div>
-            </div>
-          `;
+        if (partnerUids.size === 0) {
+          usersListEl.innerHTML = '<div style="padding:16px; font-size:12px; color:var(--text-muted);">No active chats. Search a user to start chatting!</div>';
+          return;
+        }
 
-          userItem.addEventListener('click', () => selectUser(uid, userData));
-          usersListEl.appendChild(userItem);
-        });
+        activeConversations.clear();
+        for (const uid of partnerUids) {
+          if (uid === currentUser.uid) continue;
+          const userDoc = await getDoc(doc(db, "users", uid));
+          if (userDoc.exists()) {
+            activeConversations.set(uid, userDoc.data());
+          }
+        }
+
+        renderSidebarList();
       } catch (err) {
-        usersListEl.innerHTML = `<div style="padding:16px; color:red; font-size:12px;">Failed to load users: ${err.message}</div>`;
+        usersListEl.innerHTML = `<div style="padding:16px; color:red; font-size:12px;">Error loading chats: ${err.message}</div>`;
       }
     }
 
-    // Select target chat user
+    function renderSidebarList() {
+      const usersListEl = document.getElementById('users-list');
+      usersListEl.innerHTML = '';
+
+      if (activeConversations.size === 0) {
+        usersListEl.innerHTML = '<div style="padding:16px; font-size:12px; color:var(--text-muted);">No active chats.</div>';
+        return;
+      }
+
+      activeConversations.forEach((userData, uid) => {
+        const userItem = document.createElement('div');
+        userItem.className = 'chat-user-item';
+        userItem.dataset.uid = uid;
+        if (activeRecipient && activeRecipient.uid === uid) userItem.classList.add('active');
+
+        userItem.innerHTML = `
+          <img src="${userData.photoURL || 'https://via.placeholder.com/40'}" class="avatar" alt="Avatar">
+          <div class="user-info">
+            <div class="name">${userData.username || userData.email?.split('@')[0] || 'Player'}</div>
+            <div class="subtext">Click to message</div>
+          </div>
+        `;
+
+        userItem.addEventListener('click', () => selectUser(uid, userData));
+        usersListEl.appendChild(userItem);
+      });
+    }
+
+    // Search username and start a chat
+    document.getElementById('user-search-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const searchInput = document.getElementById('search-username');
+      const targetUsername = searchInput.value.trim();
+
+      if (!targetUsername) return;
+
+      try {
+        const q = query(collection(db, "users"), where("username", "==", targetUsername));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          alert(`User "${targetUsername}" not found.`);
+          return;
+        }
+
+        let foundUid = null;
+        let foundData = null;
+
+        querySnapshot.forEach((docSnap) => {
+          foundUid = docSnap.id;
+          foundData = docSnap.data();
+        });
+
+        if (foundUid === currentUser.uid) {
+          alert("You cannot message yourself.");
+          return;
+        }
+
+        searchInput.value = '';
+        selectUser(foundUid, foundData);
+      } catch (err) {
+        alert("Search failed: " + err.message);
+      }
+    });
+
     function selectUser(targetUid, targetData) {
       activeRecipient = { uid: targetUid, ...targetData };
 
-      // Update UI active states
-      document.querySelectorAll('.chat-user-item').forEach(el => el.classList.remove('active'));
-      const activeEl = document.querySelector(`.chat-user-item[data-uid="${targetUid}"]`);
-      if (activeEl) activeEl.classList.add('active');
+      if (!activeConversations.has(targetUid)) {
+        activeConversations.set(targetUid, targetData);
+      }
+      renderSidebarList();
 
       document.getElementById('active-chat-header').textContent = `Chat with ${targetData.username || 'Player'}`;
       document.getElementById('message-form').style.display = 'flex';
@@ -172,9 +246,8 @@
       listenForMessages();
     }
 
-    // Real-Time Firestore Messages Listener
     function listenForMessages() {
-      if (activeUnsubscribe) activeUnsubscribe(); // Stop listening to previous chat
+      if (activeUnsubscribe) activeUnsubscribe();
 
       const roomId = getChatRoomId(currentUser.uid, activeRecipient.uid);
       const messagesContainer = document.getElementById('messages-container');
@@ -209,12 +282,10 @@
           messagesContainer.appendChild(msgBubble);
         });
 
-        // Auto-scroll to bottom of chat
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
       });
     }
 
-    // Send Message Event
     document.getElementById('message-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const inputEl = document.getElementById('message-input');
@@ -233,6 +304,11 @@
           text: text,
           timestamp: Date.now()
         });
+
+        if (!activeConversations.has(activeRecipient.uid)) {
+          activeConversations.set(activeRecipient.uid, activeRecipient);
+          renderSidebarList();
+        }
       } catch (err) {
         alert("Failed to send message: " + err.message);
       }
