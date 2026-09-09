@@ -2908,9 +2908,9 @@ window.loadUserProfile = async function(userId) {
 
       container.innerHTML = `
         <div class="page-scroll-container">
-          <h1 class="hero-title">WELCOME TO PLANET ARCADIX</h1>
-          <p class="hero-description">Experience high-performance web gaming directly from your browser canvas.</p>
-          <div class="section-header-box">Featured Titles</div>
+          <h1 class="hero-title">Welcome to Planet ArcadiX</h1>
+          <p class="hero-description">Welcome to Planet ArcadiX! You can explore our ever-growing library of games in the All Games tab!</p>
+          <div class="section-header-box">Featured Games</div>
           <div class="games-grid">${gamesCardsHTML}</div>
         </div>`;
     }
@@ -2947,7 +2947,7 @@ window.loadUserProfile = async function(userId) {
 
       container.innerHTML = `
         <div class="page-scroll-container">
-          <div class="section-header-box" style="margin-top:0;">Games Directory</div>
+          <div class="section-header-box" style="margin-top:0;">All Games</div>
           <div class="games-grid">
             ${registeredCardsHTML}
             ${customCardsHTML}
@@ -2959,7 +2959,7 @@ window.loadUserProfile = async function(userId) {
       headerGameTitle.style.display = 'none';
       titleEl.innerText = "Updates - Planet ArcadiX";
 
-      container.innerHTML = `<div class="page-scroll-container"><div style="text-align:center; color:#888;">Loading Patch Notes...</div></div>`;
+      container.innerHTML = `<div class="page-scroll-container"><div style="text-align:center; color:#888;">Loading Updates...</div></div>`;
 
       try {
         const q = query(collection(db, "updates"), orderBy("createdAt", "desc"));
@@ -2968,7 +2968,7 @@ window.loadUserProfile = async function(userId) {
         if (querySnapshot.empty) {
           container.innerHTML = `
             <div class="page-scroll-container">
-              <div class="section-header-box" style="margin-top:0;">System Patch Notes</div>
+              <div class="section-header-box" style="margin-top:0;">Site Updates & Patch Notes</div>
               <p style="text-align:center; color:#aaa;">No announcements published yet.</p>
             </div>`;
           return;
