@@ -954,7 +954,7 @@
   <a href="./">Home</a>
   <a href="?page=allgames">All Games</a>
   <a href="?page=updates">Updates</a>
-  <a href="?messages.html">Messages</a>
+  <a href="messages.html">Messages</a>
   <a href="?page=admin" id="admin-nav-link" style="display: none;">Admin</a>
   <span id="auth-nav-slot">
     <a href="?page=login">Login</a>
@@ -3205,7 +3205,10 @@ window.renderMessagesPage = async function(container) {
     return;
   }
 
-  container.innerHTML = `
+  // Fallback if container is omitted by router
+  const targetContainer = container || document.getElementById('app') || document.body;
+
+  targetContainer.innerHTML = `
     <div class="messenger-container" style="display: flex; height: 80vh; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; overflow: hidden;">
       
       <!-- Sidebar with Conversations and + Button -->
@@ -3217,7 +3220,7 @@ window.renderMessagesPage = async function(container) {
         
         <!-- Active Conversations List -->
         <div class="chat-list" id="conversations-list" style="flex: 1; overflow-y: auto;">
-          <div style="padding: 16px; font-size: 12px; color: var(--text-muted);">No active conversations yet.</div>
+          <div style="padding: 16px; font-size: 12px; color: var(--text-muted);">Loading conversations...</div>
         </div>
       </div>
 
@@ -3249,9 +3252,10 @@ window.renderMessagesPage = async function(container) {
   `;
 
   setupMessagingEvents();
+  loadActiveConversations();
+};
 
-
-  function setupMessagingEvents() {
+function setupMessagingEvents() {
   const modal = document.getElementById('new-chat-modal');
   const newChatBtn = document.getElementById('new-chat-btn');
   const cancelBtn = document.getElementById('cancel-new-chat');
@@ -3265,7 +3269,6 @@ window.renderMessagesPage = async function(container) {
     const targetUsername = usernameInput.value.trim().toLowerCase();
     if (!targetUsername) return;
 
-    // Look up recipient by username in your usernames collection
     const usernameDoc = await db.collection('usernames').doc(targetUsername).get();
     
     if (!usernameDoc.exists) {
@@ -3277,14 +3280,94 @@ window.renderMessagesPage = async function(container) {
     modal.style.display = 'none';
     usernameInput.value = '';
 
-    // Open active chat viewport directly
-    if (typeof window.openChatWithUser === 'function') {
-      window.openChatWithUser(recipientUid, targetUsername);
-    }
+    window.openChatWithUser(recipientUid, targetUsername);
   };
 }
 
-  // Trigger Firestore user fetching and chat initialization logic here
+// Fetch active conversations for sidebar
+function loadActiveConversations() {
+  db.collection('conversations')
+    .where('participants', 'array-contains', window.currentUser.uid)
+    .onSnapshot(snapshot => {
+      const listContainer = document.getElementById('conversations-list');
+      if (!listContainer) return;
+      listContainer.innerHTML = '';
+
+      if (snapshot.empty) {
+        listContainer.innerHTML = '<div style="padding: 16px; font-size: 12px; color: var(--text-muted);">No active conversations yet.</div>';
+        return;
+      }
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const otherUsername = data.participantUsernames ? data.participantUsernames.find(u => u !== window.currentUser.username) : 'Chat';
+        const otherUid = data.participants.find(id => id !== window.currentUser.uid);
+
+        const item = document.createElement('div');
+        item.style.cssText = 'padding: 12px 16px; border-bottom: 1px solid var(--card-border); cursor: pointer;';
+        item.innerHTML = `<strong>${otherUsername}</strong>`;
+        item.onclick = () => window.openChatWithUser(otherUid, otherUsername);
+        listContainer.appendChild(item);
+      });
+    });
+}
+
+// Global helper to open a chat and start sending messages
+window.openChatWithUser = function(recipientUid, recipientUsername) {
+  const header = document.getElementById('active-chat-header');
+  const form = document.getElementById('message-form');
+  const messagesContainer = document.getElementById('messages-container');
+
+  header.textContent = `Chat with @${recipientUsername}`;
+  form.style.display = 'flex';
+
+  const roomId = [window.currentUser.uid, recipientUid].sort().join('_');
+
+  // Load live messages for room
+  db.collection('messages')
+    .where('roomId', '==', roomId)
+    .orderBy('timestamp', 'asc')
+    .onSnapshot(snapshot => {
+      messagesContainer.innerHTML = '';
+      snapshot.forEach(doc => {
+        const msg = doc.data();
+        const msgDiv = document.createElement('div');
+        const isSelf = msg.senderId === window.currentUser.uid;
+        msgDiv.style.cssText = `padding: 8px 12px; border-radius: 6px; max-width: 70%; align-self: ${isSelf ? 'flex-end' : 'flex-start'}; background: ${isSelf ? 'var(--accent-color, #6b21a8)' : 'var(--card-bg)'};`;
+        msgDiv.textContent = msg.text;
+        messagesContainer.appendChild(msgDiv);
+      });
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+
+  // Handle message submit
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('message-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+
+    // 1. Add message document
+    await db.collection('messages').add({
+      roomId: roomId,
+      senderId: window.currentUser.uid,
+      recipientId: recipientUid,
+      text: text,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // 2. Ensure active conversation record exists in sidebar list
+    await db.collection('conversations').doc(roomId).set({
+      participants: [window.currentUser.uid, recipientUid],
+      participantUsernames: [window.currentUser.username, recipientUsername],
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  };
+};
+
+  // Trigger Firestore user fetching and chat initialization
   if (typeof window.initChatSystem === 'function') {
     window.initChatSystem();
   }
@@ -3363,7 +3446,8 @@ function initializeRouter() {
   } else if (page === 'games') {
     window.renderAllGamesPage();
   } else if (page === 'messages') {
-    if (typeof window.renderMessagesPage === 'function') window.renderMessagesPage();
+  if (typeof window.renderMessagesPage === 'function') {
+    window.renderMessagesPage(mainContainer);
   } else if (page === 'profile' && profileUid) {
     window.renderUserProfilePage(profileUid);
   } else {
