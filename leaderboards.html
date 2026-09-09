@@ -24,7 +24,6 @@
       --text-muted: #9ca3af;
     }
 
-    /* Global Font & Reset */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -41,7 +40,7 @@
       font-weight: 700;
     }
 
-    /* Header Container & Navigation Styles */
+    /* 1:1 Site Header Styling */
     header {
       display: flex;
       align-items: center;
@@ -116,7 +115,7 @@
       letter-spacing: 0.5px;
     }
 
-    /* Top Bar 1: Primary Category */
+    /* Category Bar 1 */
     .primary-bar {
       width: 100%;
       background: var(--card-bg);
@@ -138,7 +137,7 @@
       letter-spacing: 0.5px;
     }
 
-    /* Top Bar 2: Per-Game Selector Bar */
+    /* Category Bar 2: Per-Game Selectors */
     .game-selector-bar {
       width: 100%;
       background: var(--card-bg);
@@ -171,7 +170,7 @@
       box-shadow: 0 0 10px var(--accent-glow);
     }
 
-    /* Leaderboard Card Table */
+    /* Leaderboard Table Structure */
     .leaderboard-card {
       width: 100%;
       background: var(--card-bg);
@@ -246,19 +245,19 @@
 </head>
 <body>
 
-  <!-- Site Navigation Header -->
+  <!-- Site Navigation Header (1:1 with ?page= routing) -->
   <header>
     <a href="index.html" class="logo-btn">Planet ArcadiX</a>
     <nav class="nav-links">
       <a href="index.html">Home</a>
-      <a href="all-games.html">All Games</a>
-      <a href="leaderboards.html" class="active">Leaderboards</a>
-      <a href="updates.html">Updates</a>
+      <a href="index.html?page=all-games">All Games</a>
+      <a href="index.html?page=leaderboards" class="active">Leaderboards</a>
+      <a href="index.html?page=updates">Updates</a>
       <a href="messages.html">Messages</a>
-      <a href="admin.html">Admin</a>
+      <a href="index.html?page=admin">Admin</a>
       <div class="user-pill" id="nav-user-pill">
         <img id="nav-user-avatar" src="/ArcadiX/PAXIcons/PlaceholderPFP.png" alt="Profile">
-        <span id="nav-user-name">SLASH</span>
+        <span id="nav-user-name">Loading...</span>
       </div>
     </nav>
   </header>
@@ -267,12 +266,12 @@
     <h1 class="page-title">Global Leaderboards</h1>
     <p class="page-subtitle">Track top player rankings by playtime across Planet ArcadiX games!</p>
 
-    <!-- Top Bar 1: Primary Category Header -->
+    <!-- Top Bar 1: Primary Category -->
     <div class="primary-bar">
       <div class="category-badge">Total Playtime</div>
     </div>
 
-    <!-- Top Bar 2: Per-Game Selector Bar -->
+    <!-- Top Bar 2: Per-Game Selector -->
     <div class="game-selector-bar">
       <button class="game-tab active" data-game="global">All Games (Global)</button>
       <button class="game-tab" data-game="getaway-shootout">Getaway Shootout</button>
@@ -302,7 +301,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBIvUkO_paPfmMlbo5jNaXoteZL0fkZYa4",
@@ -319,11 +318,28 @@
 
     const defaultAvatar = "/ArcadiX/PAXIcons/PlaceholderPFP.png";
 
-    // Keep active logged-in user in top header
-    onAuthStateChanged(auth, (user) => {
+    // Dynamic Header User Data Sync (Checks auth + Firestore users collection)
+    onAuthStateChanged(auth, async (user) => {
+      const nameElem = document.getElementById('nav-user-name');
+      const avatarElem = document.getElementById('nav-user-avatar');
+
       if (user) {
-        document.getElementById('nav-user-name').textContent = user.displayName || user.email?.split('@')[0] || 'Player';
-        if (user.photoURL) document.getElementById('nav-user-avatar').src = user.photoURL;
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            nameElem.textContent = userData.username || userData.displayName || user.displayName || user.email?.split('@')[0] || 'Player';
+            if (userData.photoURL) avatarElem.src = userData.photoURL;
+            else if (user.photoURL) avatarElem.src = user.photoURL;
+          } else {
+            nameElem.textContent = user.displayName || user.email?.split('@')[0] || 'Player';
+            if (user.photoURL) avatarElem.src = user.photoURL;
+          }
+        } catch (e) {
+          nameElem.textContent = user.displayName || user.email?.split('@')[0] || 'Player';
+        }
+      } else {
+        nameElem.textContent = "Guest";
       }
     });
 
@@ -374,7 +390,7 @@
             <div class="rank ${rankClass}">#${rank}</div>
             <div class="player-info">
               <img class="player-avatar" src="${data.photoURL || defaultAvatar}" alt="Avatar">
-              <div class="player-name">${data.username || data.email?.split('@')[0] || 'Player'}</div>
+              <div class="player-name">${data.username || data.displayName || data.email?.split('@')[0] || 'Player'}</div>
             </div>
             <div class="stat-value">${formattedValue}</div>
           `;
@@ -389,7 +405,7 @@
       }
     }
 
-    // Attach listener events to game filter tabs
+    // Attach tab click events
     document.querySelectorAll('.game-tab').forEach(button => {
       button.addEventListener('click', (e) => {
         document.querySelectorAll('.game-tab').forEach(b => b.classList.remove('active'));
