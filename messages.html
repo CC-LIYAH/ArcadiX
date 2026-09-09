@@ -99,7 +99,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { 
-      getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, getDocs, doc, getDoc 
+      getFirestore, collection, addDoc, query, where, onSnapshot, getDocs, doc, getDoc 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -248,51 +248,77 @@
     }
 
     function listenForMessages() {
-  if (activeUnsubscribe) activeUnsubscribe();
+      if (activeUnsubscribe) activeUnsubscribe();
 
-  const roomId = getChatRoomId(currentUser.uid, activeRecipient.uid);
-  const messagesContainer = document.getElementById('messages-container');
+      const roomId = getChatRoomId(currentUser.uid, activeRecipient.uid);
+      const messagesContainer = document.getElementById('messages-container');
 
-  // Query strictly for messages in this room
-  const q = query(
-    collection(db, "messages"),
-    where("roomId", "==", roomId)
-  );
+      // Query for messages where sender or recipient is current user in this specific roomId
+      const qSent = query(
+        collection(db, "messages"),
+        where("roomId", "==", roomId),
+        where("senderId", "==", currentUser.uid)
+      );
 
-  activeUnsubscribe = onSnapshot(q, (snapshot) => {
-    messagesContainer.innerHTML = '';
+      const qRecv = query(
+        collection(db, "messages"),
+        where("roomId", "==", roomId),
+        where("recipientId", "==", currentUser.uid)
+      );
 
-    if (snapshot.empty) {
-      messagesContainer.innerHTML = '<div class="empty-state">No messages yet. Say hi!</div>';
-      return;
+      let sentMessages = [];
+      let recvMessages = [];
+
+      function updateUI() {
+        messagesContainer.innerHTML = '';
+        const allMessages = [...sentMessages, ...recvMessages];
+
+        if (allMessages.length === 0) {
+          messagesContainer.innerHTML = '<div class="empty-state">No messages yet. Say hi!</div>';
+          return;
+        }
+
+        // Sort messages by timestamp ascending
+        allMessages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+        allMessages.forEach((msg) => {
+          const isSentObj = msg.senderId === currentUser.uid;
+
+          const msgBubble = document.createElement('div');
+          msgBubble.className = `message ${isSentObj ? 'sent' : 'received'}`;
+          
+          const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+          
+          msgBubble.innerHTML = `
+            <div>${msg.text}</div>
+            <div class="message-time">${timeStr}</div>
+          `;
+          messagesContainer.appendChild(msgBubble);
+        });
+
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      const unsubSent = onSnapshot(qSent, (snapshot) => {
+        sentMessages = snapshot.docs.map(d => d.data());
+        updateUI();
+      }, (err) => {
+        console.error("Sent messages error:", err);
+        messagesContainer.innerHTML = `<div style="color:red; font-size:12px; margin:auto;">Error loading messages: ${err.message}</div>`;
+      });
+
+      const unsubRecv = onSnapshot(qRecv, (snapshot) => {
+        recvMessages = snapshot.docs.map(d => d.data());
+        updateUI();
+      }, (err) => {
+        console.error("Received messages error:", err);
+      });
+
+      activeUnsubscribe = () => {
+        unsubSent();
+        unsubRecv();
+      };
     }
-
-    // Sort in memory to avoid query constraint errors
-    const docs = [];
-    snapshot.forEach(docSnap => docs.push(docSnap.data()));
-    docs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-
-    docs.forEach((msg) => {
-      const isSentObj = msg.senderId === currentUser.uid;
-
-      const msgBubble = document.createElement('div');
-      msgBubble.className = `message ${isSentObj ? 'sent' : 'received'}`;
-      
-      const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-      
-      msgBubble.innerHTML = `
-        <div>${msg.text}</div>
-        <div class="message-time">${timeStr}</div>
-      `;
-      messagesContainer.appendChild(msgBubble);
-    });
-
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }, (err) => {
-    console.error("Snapshot error:", err);
-    messagesContainer.innerHTML = `<div style="color:red; font-size:12px; margin:auto;">Error loading messages: ${err.message}</div>`;
-  });
-}
 
     document.getElementById('message-form').addEventListener('submit', async (e) => {
       e.preventDefault();
