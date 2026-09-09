@@ -171,7 +171,7 @@
     import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { 
-      getFirestore, collection, addDoc, query, where, onSnapshot, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove, orderBy 
+      getFirestore, collection, addDoc, query, where, onSnapshot, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
@@ -320,9 +320,9 @@
 
       let q;
       if (isGroup) {
-        q = query(collection(db, "chats", chatId, "messages"), orderBy("timestamp", "asc"));
+        q = query(collection(db, "chats", chatId, "messages"));
       } else {
-        q = query(collection(db, "messages"), where("roomId", "==", chatId), orderBy("timestamp", "asc"));
+        q = query(collection(db, "messages"), where("roomId", "==", chatId));
       }
 
       activeUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -332,8 +332,11 @@
           return;
         }
 
-        snapshot.forEach((docSnap) => {
-          const msg = docSnap.data();
+        // Collect documents and sort in memory by timestamp ascending
+        const docs = snapshot.docs.map(doc => doc.data());
+        docs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+        docs.forEach((msg) => {
           const isSent = msg.senderId === currentUser.uid;
           const bubble = document.createElement('div');
           bubble.className = `message ${isSent ? 'sent' : 'received'}`;
@@ -359,6 +362,8 @@
         });
 
         container.scrollTop = container.scrollHeight;
+      }, (err) => {
+        console.error("Error loading messages:", err);
       });
     }
 
