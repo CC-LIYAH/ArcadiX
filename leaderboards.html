@@ -344,7 +344,7 @@
         </div>
 
         <div class="profile-dropdown" id="profile-dropdown">
-          <a href="./?page=profile">Profile</a>
+          <a href="./?page=profile" id="dropdown-profile-link">Profile</a>
           <a href="./?page=settings">Settings</a>
           <button id="logout-btn">Logout</button>
         </div>
@@ -432,8 +432,12 @@
     onAuthStateChanged(auth, async (user) => {
       const nameElem = document.getElementById('nav-user-name');
       const avatarElem = document.getElementById('nav-user-avatar');
+      const profileLink = document.getElementById('dropdown-profile-link');
 
       if (user) {
+        // Set dynamic user ID profile link
+        profileLink.href = `./?user=${user.uid}`;
+
         try {
           const userDoc = await getDoc(doc(db, "users", user.uid));
           if (userDoc.exists()) {
@@ -450,6 +454,7 @@
         }
       } else {
         nameElem.textContent = "Guest";
+        profileLink.href = "./?page=login";
       }
     });
 
