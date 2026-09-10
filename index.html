@@ -1686,7 +1686,7 @@ function applySiteTheme(theme = {}) {
     await updateProfile(user, { displayName: username, photoURL: DEFAULT_AVATAR });
 
     const isSuperAdmin = newUserId === 1;
-    const initialBadges = ['verified', 'early_founder'];
+    const initialBadges = ['verified', 'betatester'];
     if (isSuperAdmin) initialBadges.push('admin');
 
     const userData = {
