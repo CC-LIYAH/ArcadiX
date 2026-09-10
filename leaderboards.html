@@ -428,29 +428,36 @@
       });
     });
 
-    // Dynamic Header User Data Sync (Uses strictly UID for profile link)
+    // Dynamic Header User Data Sync
     onAuthStateChanged(auth, async (user) => {
       const nameElem = document.getElementById('nav-user-name');
       const avatarElem = document.getElementById('nav-user-avatar');
       const profileLink = document.getElementById('dropdown-profile-link');
 
       if (user) {
-        // Always link strictly by UID
-        profileLink.href = `./?user=${user.uid}`;
-
         try {
           const userDoc = await getDoc(doc(db, "users", user.uid));
+
           if (userDoc.exists()) {
             const userData = userDoc.data();
+
+            // Checks common numeric ID fields stored on the user document (e.g. userId, id, userNum, numericId)
+            const numericId = userData.userId || userData.id || userData.userNum || userData.numericId || "1";
+
             nameElem.textContent = userData.username || userData.displayName || user.displayName || user.email?.split('@')[0] || 'Player';
             if (userData.photoURL) avatarElem.src = userData.photoURL;
             else if (user.photoURL) avatarElem.src = user.photoURL;
+
+            profileLink.href = `./?user=${numericId}`;
           } else {
             nameElem.textContent = user.displayName || user.email?.split('@')[0] || 'Player';
             if (user.photoURL) avatarElem.src = user.photoURL;
+
+            profileLink.href = `./?user=1`;
           }
         } catch (e) {
           nameElem.textContent = user.displayName || user.email?.split('@')[0] || 'Player';
+          profileLink.href = `./?user=1`;
         }
       } else {
         nameElem.textContent = "Guest";
