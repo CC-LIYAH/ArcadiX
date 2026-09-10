@@ -440,24 +440,24 @@
 
           if (userDoc.exists()) {
             const userData = userDoc.data();
-
-            // Checks common numeric ID fields stored on the user document (e.g. userId, id, userNum, numericId)
-            const numericId = userData.userId || userData.id || userData.userNum || userData.numericId || "1";
+            
+            // Reads the exact 'userId' sequential number field from the document
+            const sequentialId = userData.userId !== undefined ? userData.userId : user.uid;
 
             nameElem.textContent = userData.username || userData.displayName || user.displayName || user.email?.split('@')[0] || 'Player';
             if (userData.photoURL) avatarElem.src = userData.photoURL;
             else if (user.photoURL) avatarElem.src = user.photoURL;
 
-            profileLink.href = `./?user=${numericId}`;
+            profileLink.href = `./?user=${sequentialId}`;
           } else {
             nameElem.textContent = user.displayName || user.email?.split('@')[0] || 'Player';
             if (user.photoURL) avatarElem.src = user.photoURL;
 
-            profileLink.href = `./?user=1`;
+            profileLink.href = `./?user=${user.uid}`;
           }
         } catch (e) {
           nameElem.textContent = user.displayName || user.email?.split('@')[0] || 'Player';
-          profileLink.href = `./?user=1`;
+          profileLink.href = `./?user=${user.uid}`;
         }
       } else {
         nameElem.textContent = "Guest";
@@ -496,6 +496,9 @@
         let rank = 1;
 
         snapshot.forEach((docSnap) => {
+          // Ignore the special counter document if its ID is "1"
+          if (docSnap.id === "1") return;
+
           const data = docSnap.data();
           const rawValue = data[sortField] || 0;
           const formattedValue = formatPlaytime(rawValue);
