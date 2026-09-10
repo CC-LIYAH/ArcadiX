@@ -435,13 +435,14 @@
       const profileLink = document.getElementById('dropdown-profile-link');
 
       if (user) {
-        // Set dynamic user ID profile link
-        profileLink.href = `./?user=${user.uid}`;
-
         try {
           const userDoc = await getDoc(doc(db, "users", user.uid));
+          let userIdentifier = user.uid;
+
           if (userDoc.exists()) {
             const userData = userDoc.data();
+            userIdentifier = userData.username || user.uid;
+
             nameElem.textContent = userData.username || userData.displayName || user.displayName || user.email?.split('@')[0] || 'Player';
             if (userData.photoURL) avatarElem.src = userData.photoURL;
             else if (user.photoURL) avatarElem.src = user.photoURL;
@@ -449,8 +450,12 @@
             nameElem.textContent = user.displayName || user.email?.split('@')[0] || 'Player';
             if (user.photoURL) avatarElem.src = user.photoURL;
           }
+
+          // Format as ./?user=username
+          profileLink.href = `./?user=${userIdentifier}`;
         } catch (e) {
           nameElem.textContent = user.displayName || user.email?.split('@')[0] || 'Player';
+          profileLink.href = `./?user=${user.uid}`;
         }
       } else {
         nameElem.textContent = "Guest";
