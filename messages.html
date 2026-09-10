@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Direct Messages | Planet ArcadiX</title>
   
-  <!-- Favicon -->
   <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
 
   <style>
@@ -25,8 +24,17 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-    header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: var(--card-bg); border-bottom: 1px solid var(--card-border); }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: var(--card-bg); border-bottom: 1px solid var(--card-border); z-index: 10; }
     header a { color: var(--text-color); text-decoration: none; font-weight: bold; }
+
+    /* Notification Toggle Switch */
+    .notif-toggle-container { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+    .switch { position: relative; display: inline-block; width: 38px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background-color: var(--card-border); transition: .3s; border-radius: 22px; }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--accent-color); }
+    input:checked + .slider:before { transform: translateX(16px); }
 
     .messenger-container { display: flex; flex: 1; overflow: hidden; }
 
@@ -43,21 +51,23 @@
     .search-btn { background: var(--accent-color); color: #fff; border: none; border-radius: 6px; padding: 0 12px; font-weight: bold; cursor: pointer; font-size: 13px; }
 
     .chat-list { flex: 1; overflow-y: auto; }
-    .chat-user-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; position: relative; }
+    .chat-user-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; position: relative; }
     .chat-user-item:hover, .chat-user-item.active { background: rgba(168, 85, 247, 0.15); }
-    .avatar-wrapper { position: relative; width: 40px; height: 40px; }
+    
+    .avatar-wrapper { position: relative; width: 40px; height: 40px; cursor: pointer; flex-shrink: 0; }
+    .avatar-wrapper:hover { transform: scale(1.05); }
     .avatar { width: 100%; height: 100%; border-radius: 50%; background: var(--card-border); object-fit: cover; }
     .status-indicator { position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--card-bg); }
     .status-indicator.online { background: var(--status-online); }
     .status-indicator.offline { background: var(--status-offline); }
 
-    .user-info { flex: 1; min-width: 0; }
-    .user-info .name-row { display: flex; align-items: center; gap: 6px; }
+    .user-info { flex: 1; min-width: 0; cursor: pointer; }
+    .user-info .name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .user-info .name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .user-info .subtext { font-size: 12px; color: var(--text-muted); }
 
-    /* Badge Styles */
-    .user-badge-icon { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; }
+    /* Badges Display */
+    .user-badge-icon { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; display: inline-block; }
     .badge-pill { background: rgba(168, 85, 247, 0.2); border: 1px solid var(--accent-color); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; }
 
     /* Main Chat Viewport */
@@ -77,11 +87,11 @@
     .message { max-width: 65%; padding: 10px 16px; border-radius: 12px; font-size: 14px; line-height: 1.4; word-break: break-word; }
     .message.sent { align-self: flex-end; background: var(--accent-color); color: #fff; border-bottom-right-radius: 2px; box-shadow: 0 0 10px var(--accent-glow); }
     .message.received { align-self: flex-start; background: var(--card-bg); border: 1px solid var(--card-border); border-bottom-left-radius: 2px; }
-    .message-author { font-size: 11px; opacity: 0.9; font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .message-author { font-size: 11px; opacity: 0.9; font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .message-time { font-size: 10px; opacity: 0.7; margin-top: 4px; text-align: right; }
     .message-media { max-width: 100%; max-height: 300px; border-radius: 8px; margin-top: 6px; display: block; object-fit: contain; }
 
-    /* Message Input Box */
+    /* Input Controls */
     .chat-input-row { padding: 16px 24px; background: var(--card-bg); border-top: 1px solid var(--card-border); display: flex; gap: 12px; align-items: center; }
     .attachment-btn { background: transparent; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; }
     .attachment-btn img { width: 24px; height: 24px; object-fit: contain; }
@@ -114,7 +124,7 @@
 
     .empty-state { margin: auto; color: var(--text-muted); text-align: center; }
 
-    /* User Profile Card / Widget Modal */
+    /* Profile Card Widget */
     .profile-card { background: #161626; border: 1px solid var(--card-border); border-radius: 12px; width: 320px; overflow: hidden; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
     .profile-banner { height: 80px; background: linear-gradient(135deg, var(--accent-color), #4c1d95); }
     .profile-card-header { padding: 0 16px; position: relative; margin-top: -36px; display: flex; justify-content: space-between; align-items: flex-end; }
@@ -128,7 +138,7 @@
     .profile-username { font-size: 18px; font-weight: bold; color: #fff; }
     .profile-handle { font-size: 12px; color: var(--text-muted); }
     
-    .profile-badges-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .profile-badges-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
     .profile-bio-box { background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; font-size: 12px; color: #d1d5db; line-height: 1.4; }
     
     .profile-activity-card { background: #0e0e18; border: 1px solid var(--card-border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -143,11 +153,18 @@
 
   <header>
     <a href="index.html">&larr; Return to Planet ArcadiX</a>
-    <div>Direct Messages</div>
+    <div style="font-size: 16px; font-weight: bold;">Direct Messages</div>
+    
+    <div class="notif-toggle-container">
+      <span>Notifications</span>
+      <label class="switch">
+        <input type="checkbox" id="notif-toggle">
+        <span class="slider"></span>
+      </label>
+    </div>
   </header>
 
   <div class="messenger-container">
-    <!-- Sidebar -->
     <div class="sidebar">
       <div class="sidebar-header">
         <span>Conversations</span>
@@ -162,7 +179,6 @@
       </div>
     </div>
 
-    <!-- Main Active Chat Area -->
     <div class="chat-viewport" id="chat-viewport">
       <div class="drag-overlay" id="drag-overlay">Drop image or video here (Max 800KB)</div>
       <div class="chat-header">
@@ -185,14 +201,13 @@
       </form>
     </div>
 
-    <!-- Right Sidebar for Group Members -->
     <div class="members-sidebar" id="members-sidebar">
       <div class="members-title" id="members-count">Members—0</div>
       <div id="members-list"></div>
     </div>
   </div>
 
-  <!-- Create Group Modal -->
+  <!-- Modals -->
   <div class="modal" id="group-modal">
     <div class="modal-box">
       <h3>Create Group Chat</h3>
@@ -204,7 +219,6 @@
     </div>
   </div>
 
-  <!-- Edit Group Settings Modal (Owner Only) -->
   <div class="modal" id="edit-group-modal">
     <div class="modal-box">
       <h3>Edit Group Settings</h3>
@@ -225,7 +239,6 @@
     </div>
   </div>
 
-  <!-- Add Member Modal -->
   <div class="modal" id="add-member-modal">
     <div class="modal-box">
       <h3>Add Member (Max 10)</h3>
@@ -237,7 +250,6 @@
     </div>
   </div>
 
-  <!-- Profile Widget Modal -->
   <div class="modal" id="profile-widget-modal">
     <div class="profile-card">
       <div class="profile-banner"></div>
@@ -276,7 +288,6 @@
     </div>
   </div>
 
-  <!-- Firebase Modular SDK Scripts -->
   <script type="module">
     import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -302,9 +313,48 @@
     let activeChatData = null;
     let activeUnsubscribe = null;
     let selectedGroupIconBase64 = null;
-    let userCache = {}; // Cache user profile details (badges, bio, game status)
+    let userCache = {}; 
     let playTimerInterval = null;
+    let notificationsEnabled = localStorage.getItem('notifications_enabled') === 'true';
+    let initialLoadComplete = false;
     const defaultAvatar = "/ArcadiX/PAXIcons/PlaceholderPFP.png";
+
+    // Toggle setup
+    const notifToggle = document.getElementById('notif-toggle');
+    notifToggle.checked = notificationsEnabled;
+
+    notifToggle.addEventListener('change', async (e) => {
+      if (e.target.checked) {
+        if ("Notification" in window) {
+          const permission = await Notification.requestPermission();
+          if (permission === "granted") {
+            notificationsEnabled = true;
+            localStorage.setItem('notifications_enabled', 'true');
+          } else {
+            alert("Notification permission denied in browser settings.");
+            e.target.checked = false;
+            notificationsEnabled = false;
+            localStorage.setItem('notifications_enabled', 'false');
+          }
+        } else {
+          alert("Push notifications are not supported by this browser.");
+          e.target.checked = false;
+        }
+      } else {
+        notificationsEnabled = false;
+        localStorage.setItem('notifications_enabled', 'false');
+      }
+    });
+
+    function triggerPushNotification(senderName, text, mediaUrl) {
+      if (!notificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
+      
+      const bodyText = text || (mediaUrl ? "[Attachment Sent]" : "Sent you a message.");
+      new Notification(`New Message from ${senderName}`, {
+        body: bodyText,
+        icon: defaultAvatar
+      });
+    }
 
     function getChatRoomId(uid1, uid2) {
       return [uid1, uid2].sort().join('_');
@@ -319,24 +369,32 @@
       });
     }
 
-    // Helper to format badge HTML
-    function renderBadgeHTML(badge) {
-      if (!badge) return '';
-      if (typeof badge === 'object' && badge.icon) {
-        return `<img src="${badge.icon}" class="user-badge-icon" title="${badge.name || 'Badge'}">`;
+    // Comprehensive Badge Renderer
+    function renderBadgeHTML(badgeInput) {
+      if (!badgeInput) return '';
+      
+      const renderItem = (badge) => {
+        if (!badge) return '';
+        if (typeof badge === 'object') {
+          if (badge.icon) return `<img src="${badge.icon}" class="user-badge-icon" title="${badge.name || 'Badge'}">`;
+          if (badge.url) return `<img src="${badge.url}" class="user-badge-icon" title="${badge.title || 'Badge'}">`;
+          if (badge.name) return `<span class="badge-pill">${badge.name}</span>`;
+        }
+        if (typeof badge === 'string') {
+          if (badge.startsWith('http') || badge.startsWith('/') || badge.startsWith('./')) {
+            return `<img src="${badge}" class="user-badge-icon" title="Badge">`;
+          }
+          return `<span class="badge-pill">${badge}</span>`;
+        }
+        return '';
+      };
+
+      if (Array.isArray(badgeInput)) {
+        return badgeInput.map(renderItem).join(' ');
       }
-      return `<span class="badge-pill">${badge}</span>`;
+      return renderItem(badgeInput);
     }
 
-    // Returns the top/highest badge from user array or string
-    function getHighestBadge(badges) {
-      if (!badges) return null;
-      if (Array.isArray(badges) && badges.length > 0) return badges[0];
-      if (typeof badges === 'string') return badges;
-      return null;
-    }
-
-    // Format seconds into HH:MM:SS
     function formatDuration(seconds) {
       const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
       const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
@@ -353,18 +411,19 @@
       loadChats();
     });
 
-    // Fetch user details or use cached data
     async function fetchUserData(uid) {
-      if (userCache[uid]) return userCache[uid];
-      const userDoc = await getDoc(doc(db, "users", uid));
-      if (userDoc.exists()) {
-        userCache[uid] = userDoc.data();
-        return userCache[uid];
+      try {
+        const userDoc = await getDoc(doc(db, "users", uid));
+        if (userDoc.exists()) {
+          userCache[uid] = userDoc.data();
+          return userCache[uid];
+        }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
       }
-      return null;
+      return userCache[uid] || null;
     }
 
-    // Load active direct chats & group chats
     function loadChats() {
       const usersListEl = document.getElementById('users-list');
       const qGroups = query(collection(db, "chats"), where("members", "array-contains", currentUser.uid));
@@ -393,11 +452,13 @@
               <div class="subtext">Group Chat</div>
             </div>
           `;
-          item.onclick = () => selectChat(docSnap.id, gData, true);
+
+          item.querySelector('.avatar-wrapper').onclick = () => selectChat(docSnap.id, gData, true);
+          item.querySelector('.user-info').onclick = () => selectChat(docSnap.id, gData, true);
+
           usersListEl.appendChild(item);
         });
 
-        // Load 1-on-1 chats
         const sentQuery = query(collection(db, "messages"), where("senderId", "==", currentUser.uid));
         const recvQuery = query(collection(db, "messages"), where("recipientId", "==", currentUser.uid));
         const [sentSnap, recvSnap] = await Promise.all([getDocs(sentQuery), getDocs(recvQuery)]);
@@ -411,43 +472,47 @@
           const uData = await fetchUserData(uid);
           if (uData) {
             const roomId = getChatRoomId(currentUser.uid, uid);
-            const highestBadge = getHighestBadge(uData.badges || uData.badge);
-            const badgeHTML = renderBadgeHTML(highestBadge);
+            const badgesList = uData.badges || uData.badge;
+            const badgeHTML = renderBadgeHTML(badgesList);
             const isOnline = uData.isOnline || uData.status === 'online';
 
             const item = document.createElement('div');
             item.className = `chat-user-item ${activeChatId === roomId ? 'active' : ''}`;
             item.innerHTML = `
               <div class="avatar-wrapper">
-                <img src="${uData.photoURL || defaultAvatar}" class="avatar" alt="Avatar">
+                <img src="${uData.photoURL || uData.pfp || defaultAvatar}" class="avatar" alt="Avatar">
                 <div class="status-indicator ${isOnline ? 'online' : 'offline'}"></div>
               </div>
               <div class="user-info">
                 <div class="name-row">
-                  <span class="name">${uData.username || 'Player'}</span>
+                  <span class="name">${uData.username || uData.displayName || 'Player'}</span>
                   ${badgeHTML}
                 </div>
                 <div class="subtext">Direct Message</div>
               </div>
             `;
             
-            // Clicking sidebar direct user opens their profile widget
-            item.onclick = (e) => {
-              selectChat(roomId, { uid, ...uData }, false);
+            // Decoupled click actions
+            item.querySelector('.avatar-wrapper').onclick = (e) => {
+              e.stopPropagation();
               openProfileWidget(uid, uData);
             };
+
+            item.querySelector('.user-info').onclick = () => {
+              selectChat(roomId, { uid, ...uData }, false);
+            };
+
             usersListEl.appendChild(item);
           }
         }
       });
     }
 
-    // Select active chat room
     function selectChat(chatId, chatData, isGroup) {
       activeChatId = chatId;
       activeChatData = { ...chatData, isGroup };
 
-      document.getElementById('active-chat-header').textContent = isGroup ? chatData.name : (chatData.username || 'Player');
+      document.getElementById('active-chat-header').textContent = isGroup ? chatData.name : (chatData.username || chatData.displayName || 'Player');
       document.getElementById('message-form').style.display = 'flex';
       document.getElementById('open-add-member').style.display = isGroup ? 'block' : 'none';
 
@@ -464,41 +529,47 @@
       listenForMessages(chatId, isGroup);
     }
 
-    // Open Profile Widget Modal
     async function openProfileWidget(uid, fallbackData = null) {
       const uData = fallbackData || await fetchUserData(uid) || {};
 
-      document.getElementById('pw-avatar').src = uData.photoURL || defaultAvatar;
+      document.getElementById('pw-avatar').src = uData.photoURL || uData.pfp || defaultAvatar;
       document.getElementById('pw-username').textContent = uData.displayName || uData.username || 'Player';
       document.getElementById('pw-handle').textContent = `@${uData.username || 'player'}`;
-      document.getElementById('pw-bio').textContent = uData.bio || 'No bio provided.';
+      document.getElementById('pw-bio').textContent = uData.bio || uData.about || 'No bio provided.';
 
       const isOnline = uData.isOnline || uData.status === 'online';
       const statusBadge = document.getElementById('pw-status-badge');
       statusBadge.className = `profile-status-badge ${isOnline ? 'online' : 'offline'}`;
 
-      // Render Badges Row
+      // Render Badges
       const badgesContainer = document.getElementById('pw-badges');
-      badgesContainer.innerHTML = '';
-      const badgesList = Array.isArray(uData.badges) ? uData.badges : (uData.badge ? [uData.badge] : []);
-      
-      badgesList.forEach(badge => {
-        badgesContainer.innerHTML += renderBadgeHTML(badge);
-      });
+      const badgesList = uData.badges || uData.badge;
+      badgesContainer.innerHTML = renderBadgeHTML(badgesList);
 
-      // Game / Activity Status
+      // Presence and Game Activity Detection with Local Storage Sync
       const gameTitle = document.getElementById('pw-game-title');
       const gameTimer = document.getElementById('pw-game-timer');
       const elapsedTimeEl = document.getElementById('pw-elapsed-time');
 
       if (playTimerInterval) clearInterval(playTimerInterval);
 
-      if (uData.currentGame || uData.playing) {
-        const game = uData.currentGame || uData.playing;
-        gameTitle.textContent = typeof game === 'string' ? game : (game.title || 'In-Game');
+      let currentGame = uData.currentGame || uData.playing || uData.activity || uData.game;
+
+      if (!currentGame && uid === currentUser.uid) {
+        const localGame = localStorage.getItem('pax_current_game');
+        if (localGame) {
+          try { currentGame = JSON.parse(localGame); } catch (e) { currentGame = localGame; }
+        }
+      }
+
+      if (currentGame) {
+        const gameName = typeof currentGame === 'string' ? currentGame : (currentGame.title || currentGame.name || 'In-Game');
+        gameTitle.textContent = gameName;
         gameTimer.style.display = 'flex';
 
-        const startTime = uData.gameStartTime || (game.startTime ? new Date(game.startTime).getTime() : Date.now());
+        const startTime = (typeof currentGame === 'object' && currentGame.startTime) 
+          ? new Date(currentGame.startTime).getTime() 
+          : (uData.gameStartTime || Date.now());
         
         const updateTimer = () => {
           const elapsedSecs = Math.floor((Date.now() - startTime) / 1000);
@@ -519,7 +590,6 @@
       if (playTimerInterval) clearInterval(playTimerInterval);
     };
 
-    // Render Group Members List
     async function renderMembersSidebar(data) {
       const container = document.getElementById('members-list');
       const countEl = document.getElementById('members-count');
@@ -532,15 +602,14 @@
         const uData = await fetchUserData(uid) || { username: 'User' };
         const isOwner = data.ownerId === uid;
         const canKick = data.ownerId === currentUser.uid && uid !== currentUser.uid;
-        const highestBadge = getHighestBadge(uData.badges || uData.badge);
-        const badgeHTML = renderBadgeHTML(highestBadge);
+        const badgeHTML = renderBadgeHTML(uData.badges || uData.badge);
 
         const item = document.createElement('div');
         item.className = 'member-item';
         item.innerHTML = `
-          <img src="${uData.photoURL || defaultAvatar}" class="member-avatar">
+          <img src="${uData.photoURL || uData.pfp || defaultAvatar}" class="member-avatar">
           <span class="member-name">
-            ${uData.username || 'Player'}
+            ${uData.username || uData.displayName || 'Player'}
             ${badgeHTML}
           </span>
           ${isOwner ? `<img src="./PAXIcons/GroupOwnerIcon.png" class="owner-icon" title="Owner">` : ''}
@@ -563,10 +632,10 @@
       }
     }
 
-    // Listen for incoming/outgoing messages
     function listenForMessages(chatId, isGroup) {
       if (activeUnsubscribe) activeUnsubscribe();
       const container = document.getElementById('messages-container');
+      initialLoadComplete = false;
 
       let q;
       if (isGroup) {
@@ -579,17 +648,26 @@
         container.innerHTML = '';
         if (snapshot.empty) {
           container.innerHTML = '<div class="empty-state">No messages yet. Say hi!</div>';
+          initialLoadComplete = true;
           return;
         }
 
         const docs = snapshot.docs.map(doc => doc.data());
         docs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
+        if (initialLoadComplete && docs.length > 0) {
+          const latestMsg = docs[docs.length - 1];
+          if (latestMsg.senderId !== currentUser.uid) {
+            const senderData = await fetchUserData(latestMsg.senderId) || {};
+            triggerPushNotification(latestMsg.senderName || senderData.username || 'Player', latestMsg.text, latestMsg.mediaUrl);
+          }
+        }
+
         for (const msg of docs) {
           const isSent = msg.senderId === currentUser.uid;
           const senderData = await fetchUserData(msg.senderId) || {};
-          const highestBadge = getHighestBadge(senderData.badges || senderData.badge || msg.badge);
-          const badgeHTML = renderBadgeHTML(highestBadge);
+          const badgesList = senderData.badges || senderData.badge || msg.badge || msg.badges;
+          const badgeHTML = renderBadgeHTML(badgesList);
 
           const bubble = document.createElement('div');
           bubble.className = `message ${isSent ? 'sent' : 'received'}`;
@@ -618,12 +696,12 @@
         }
 
         container.scrollTop = container.scrollHeight;
+        initialLoadComplete = true;
       }, (err) => {
         console.error("Error loading messages:", err);
       });
     }
 
-    // Send Message / Embed Media as Data URL
     async function sendMessage(text = '', file = null) {
       if (!activeChatId) return;
       if (!text && !file) return;
@@ -633,7 +711,7 @@
 
       if (file) {
         if (file.size > 800 * 1024) {
-          alert("File size exceeds 800KB. Please choose a smaller image or video for embedded sharing.");
+          alert("File size exceeds 800KB. Please choose a smaller file.");
           return;
         }
         mediaUrl = await fileToBase64(file);
@@ -641,12 +719,11 @@
       }
 
       const userProfile = await fetchUserData(currentUser.uid) || {};
-      const highestBadge = getHighestBadge(userProfile.badges || userProfile.badge);
 
       const payload = {
         senderId: currentUser.uid,
         senderName: currentUser.displayName || userProfile.username || 'Player',
-        badge: highestBadge,
+        badges: userProfile.badges || userProfile.badge || null,
         text: text,
         mediaUrl: mediaUrl,
         mediaType: mediaType,
@@ -662,7 +739,6 @@
       }
     }
 
-    // Form submission
     document.getElementById('message-form').onsubmit = async (e) => {
       e.preventDefault();
       const input = document.getElementById('message-input');
@@ -671,7 +747,6 @@
       await sendMessage(text, null);
     };
 
-    // File input handling
     const fileInput = document.getElementById('file-input');
     document.getElementById('attachment-btn').onclick = () => fileInput.click();
     fileInput.onchange = async () => {
@@ -681,7 +756,6 @@
       }
     };
 
-    // Drag and Drop Attachment Handling
     const viewport = document.getElementById('chat-viewport');
     const dragOverlay = document.getElementById('drag-overlay');
 
@@ -695,7 +769,6 @@
       }
     });
 
-    // Direct User Search Form
     document.getElementById('user-search-form').onsubmit = async (e) => {
       e.preventDefault();
       const input = document.getElementById('search-username');
@@ -722,7 +795,6 @@
       selectChat(roomId, { uid: targetUid, ...targetData }, false);
     };
 
-    // Group Modal Controls
     document.getElementById('open-group-modal').onclick = () => document.getElementById('group-modal').style.display = 'flex';
     document.getElementById('close-group-modal').onclick = () => document.getElementById('group-modal').style.display = 'none';
     
@@ -742,7 +814,6 @@
       document.getElementById('group-name-input').value = '';
     };
 
-    // Edit Group Modal Controls (Owner Only)
     const editGroupModal = document.getElementById('edit-group-modal');
     const editGroupNameInput = document.getElementById('edit-group-name-input');
     const editGroupIconPreview = document.getElementById('edit-group-icon-preview');
@@ -797,7 +868,6 @@
       editGroupModal.style.display = 'none';
     };
 
-    // Member Management (Max 10)
     document.getElementById('open-add-member').onclick = () => document.getElementById('add-member-modal').style.display = 'flex';
     document.getElementById('close-add-member').onclick = () => document.getElementById('add-member-modal').style.display = 'none';
 
