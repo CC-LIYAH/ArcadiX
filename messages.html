@@ -318,20 +318,22 @@
     let initialLoadComplete = false;
     const defaultAvatar = "./PAXIcons/PlaceholderPFP.png";
 
+    // List of excluded badge keys
+    const EXCLUDED_BADGES = ["verified", "early_founder"];
+
     // Dynamic Registry fetched from window.parent or Firestore fallback
     let badgesRegistry = window.parent && window.parent.badges_registry 
       ? window.parent.badges_registry 
       : {
-          owner: { icon: "./PAXIcons/PlanetArcadiXOwner.png", title: "Owner", recolorable: false },
-          dev: { icon: "./PAXIcons/PlanetArcadiXDeveloper.png", title: "Developer", recolorable: false },
-          admin: { icon: "./PAXIcons/PlanetArcadiXAdministrator.png", title: "Administrator", recolorable: false },
-          contributor: { icon: "./PAXIcons/PlanetArcadiXContributor.png", title: "Contributor", recolorable: false },
-          tester: { icon: "./PAXIcons/PlanetArcadiXTesterIcon.PNG", title: "Tester", recolorable: false },
-          bughunter: { icon: "./PAXIcons/BugHunterIcon.png", title: "Bug Hunter", recolorable: true },
-          betatester: { icon: "./PAXIcons/BetaTesterIcon.png", title: "Beta Tester", recolorable: true }
+          owner: { icon: "./PAXIcons/OwnerBadge.png", title: "Owner", recolorable: true },
+          dev: { icon: "./PAXIcons/DevBadge.png", title: "Developer", recolorable: false },
+          admin: { icon: "./PAXIcons/AdminBadge.png", title: "Admin", recolorable: false },
+          contributor: { icon: "./PAXIcons/ContributorBadge.png", title: "Contributor", recolorable: false },
+          tester: { icon: "./PAXIcons/TesterBadge.png", title: "Tester", recolorable: false },
+          bughunter: { icon: "./PAXIcons/BugHunterBadge.png", title: "Bug Hunter", recolorable: false },
+          betatester: { icon: "./PAXIcons/BetaTesterBadge.png", title: "Beta Tester", recolorable: false }
         };
 
-    // Load registry from Firestore if available
     async function loadBadgesRegistry() {
       try {
         const regDoc = await getDoc(doc(db, "badges_registry", "registry"));
@@ -394,7 +396,9 @@
     }
 
     // Badge Rendering supporting badgeOrder & Theme-based Recoloring
-    function renderBadgeHTML(uData) {
+    // singleBadgeOnly: true = only display the first non-excluded badge (for chat views)
+    // singleBadgeOnly: false = display all valid non-excluded badges (for profile widget)
+    function renderBadgeHTML(uData, singleBadgeOnly = false) {
       if (!uData) return '';
       
       const rawBadges = uData.badgeOrder || uData.badges || uData.badge;
@@ -403,7 +407,18 @@
       const badgeList = Array.isArray(rawBadges) ? rawBadges : [rawBadges];
       const userThemeColor = uData.themeColor || uData.accentColor || getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
 
-      return badgeList.map((badgeKey) => {
+      // Filter out excluded badges ("verified", "early_founder")
+      const filteredBadges = badgeList.filter(b => {
+        const key = typeof b === 'string' ? b.toLowerCase().trim() : (b && b.key ? b.key.toLowerCase().trim() : '');
+        return !EXCLUDED_BADGES.includes(key);
+      });
+
+      if (filteredBadges.length === 0) return '';
+
+      // If singleBadgeOnly is true, only pick the primary (first) valid badge
+      const badgesToRender = singleBadgeOnly ? [filteredBadges[0]] : filteredBadges;
+
+      return badgesToRender.map((badgeKey) => {
         if (!badgeKey) return '';
 
         let badgeObj = null;
@@ -541,7 +556,7 @@
           const uData = await fetchUserData(uid);
           if (uData) {
             const roomId = getChatRoomId(currentUser.uid, uid);
-            const badgeHTML = renderBadgeHTML(uData);
+            const badgeHTML = renderBadgeHTML(uData, true); // Only show first badge in chat list
             const isOnline = uData.isOnline || uData.status === 'online';
 
             const item = document.createElement('div');
@@ -608,7 +623,8 @@
       const statusBadge = document.getElementById('pw-status-badge');
       statusBadge.className = `profile-status-badge ${isOnline ? 'online' : 'offline'}`;
 
-      document.getElementById('pw-badges').innerHTML = renderBadgeHTML(uData);
+      // Show all allowed badges in profile widget
+      document.getElementById('pw-badges').innerHTML = renderBadgeHTML(uData, false);
 
       const gameTitle = document.getElementById('pw-game-title');
       const gameTimer = document.getElementById('pw-game-timer');
@@ -665,7 +681,7 @@
         const uData = await fetchUserData(uid) || { username: 'User' };
         const isOwner = data.ownerId === uid;
         const canKick = data.ownerId === currentUser.uid && uid !== currentUser.uid;
-        const badgeHTML = renderBadgeHTML(uData);
+        const badgeHTML = renderBadgeHTML(uData, true); // Only show first badge in members list
 
         const item = document.createElement('div');
         item.className = 'member-item';
@@ -729,7 +745,7 @@
         for (const msg of docs) {
           const isSent = msg.senderId === currentUser.uid;
           const senderData = await fetchUserData(msg.senderId) || {};
-          const badgeHTML = renderBadgeHTML(senderData);
+          const badgeHTML = renderBadgeHTML(senderData, true); // Only show first badge next to sender name
 
           const bubble = document.createElement('div');
           bubble.className = `message ${isSent ? 'sent' : 'received'}`;
