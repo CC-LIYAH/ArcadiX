@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Direct Messages | Planet ArcadiX</title>
+  
+  <!-- Favicon -->
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+
   <style>
     :root {
       --bg-color: #0b0b12;
@@ -14,6 +18,8 @@
       --text-color: #ffffff;
       --text-muted: #8e8ea0;
       --danger: #ef4444;
+      --status-online: #22c55e;
+      --status-offline: #6b7280;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -37,15 +43,27 @@
     .search-btn { background: var(--accent-color); color: #fff; border: none; border-radius: 6px; padding: 0 12px; font-weight: bold; cursor: pointer; font-size: 13px; }
 
     .chat-list { flex: 1; overflow-y: auto; }
-    .chat-user-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; }
+    .chat-user-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s; position: relative; }
     .chat-user-item:hover, .chat-user-item.active { background: rgba(168, 85, 247, 0.15); }
-    .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--card-border); object-fit: cover; }
-    .user-info .name { font-weight: 600; font-size: 14px; }
+    .avatar-wrapper { position: relative; width: 40px; height: 40px; }
+    .avatar { width: 100%; height: 100%; border-radius: 50%; background: var(--card-border); object-fit: cover; }
+    .status-indicator { position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--card-bg); }
+    .status-indicator.online { background: var(--status-online); }
+    .status-indicator.offline { background: var(--status-offline); }
+
+    .user-info { flex: 1; min-width: 0; }
+    .user-info .name-row { display: flex; align-items: center; gap: 6px; }
+    .user-info .name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .user-info .subtext { font-size: 12px; color: var(--text-muted); }
+
+    /* Badge Styles */
+    .user-badge-icon { width: 16px; height: 16px; object-fit: contain; vertical-align: middle; }
+    .badge-pill { background: rgba(168, 85, 247, 0.2); border: 1px solid var(--accent-color); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; }
 
     /* Main Chat Viewport */
     .chat-viewport { flex: 1; display: flex; flex-direction: column; background: var(--bg-color); position: relative; }
     .chat-header { padding: 16px 24px; border-bottom: 1px solid var(--card-border); background: var(--card-bg); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    .header-controls { display: flex; gap: 8px; align-items: center; }
     .messages-body { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
 
     /* Drag & Drop Overlay */
@@ -59,6 +77,7 @@
     .message { max-width: 65%; padding: 10px 16px; border-radius: 12px; font-size: 14px; line-height: 1.4; word-break: break-word; }
     .message.sent { align-self: flex-end; background: var(--accent-color); color: #fff; border-bottom-right-radius: 2px; box-shadow: 0 0 10px var(--accent-glow); }
     .message.received { align-self: flex-start; background: var(--card-bg); border: 1px solid var(--card-border); border-bottom-left-radius: 2px; }
+    .message-author { font-size: 11px; opacity: 0.9; font-weight: bold; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
     .message-time { font-size: 10px; opacity: 0.7; margin-top: 4px; text-align: right; }
     .message-media { max-width: 100%; max-height: 300px; border-radius: 8px; margin-top: 6px; display: block; object-fit: contain; }
 
@@ -74,22 +93,50 @@
     /* Members Sidebar */
     .members-sidebar { width: 240px; background: var(--card-bg); border-left: 1px solid var(--card-border); padding: 16px; display: none; flex-direction: column; gap: 12px; overflow-y: auto; }
     .members-title { font-size: 12px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; }
-    .member-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+    .member-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; }
     .member-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
-    .member-name { font-size: 13px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .member-name { font-size: 13px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
     .owner-icon { width: 16px; height: 16px; object-fit: contain; }
     .kick-btn { color: var(--danger); background: transparent; border: none; cursor: pointer; font-weight: bold; font-size: 12px; margin-left: auto; }
 
     /* Modals */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 100; }
-    .modal-box { background: var(--card-bg); border: 1px solid var(--card-border); padding: 20px; border-radius: 8px; width: 320px; display: flex; flex-direction: column; gap: 12px; }
+    .modal-box { background: var(--card-bg); border: 1px solid var(--card-border); padding: 20px; border-radius: 8px; width: 340px; display: flex; flex-direction: column; gap: 12px; }
     .modal-box h3 { font-size: 16px; text-align: center; }
-    .modal-box input { background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 6px; padding: 8px 12px; color: #fff; outline: none; }
+    .modal-box input[type="text"] { background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 6px; padding: 8px 12px; color: #fff; outline: none; }
     .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
     .btn-cancel { background: transparent; color: var(--text-muted); border: 1px solid var(--card-border); padding: 6px 12px; border-radius: 4px; cursor: pointer; }
     .btn-confirm { background: var(--accent-color); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
 
+    .icon-upload-preview { display: flex; align-items: center; gap: 12px; margin: 4px 0; }
+    .icon-preview-img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 1px solid var(--card-border); }
+    .file-select-btn { background: var(--card-border); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: bold; }
+
     .empty-state { margin: auto; color: var(--text-muted); text-align: center; }
+
+    /* User Profile Card / Widget Modal */
+    .profile-card { background: #161626; border: 1px solid var(--card-border); border-radius: 12px; width: 320px; overflow: hidden; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    .profile-banner { height: 80px; background: linear-gradient(135deg, var(--accent-color), #4c1d95); }
+    .profile-card-header { padding: 0 16px; position: relative; margin-top: -36px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .profile-pfp-container { position: relative; width: 72px; height: 72px; }
+    .profile-pfp { width: 100%; height: 100%; border-radius: 50%; border: 4px solid #161626; object-fit: cover; background: var(--card-bg); }
+    .profile-status-badge { position: absolute; bottom: 4px; right: 4px; width: 14px; height: 14px; border-radius: 50%; border: 3px solid #161626; }
+    .profile-status-badge.online { background: var(--status-online); }
+    .profile-status-badge.offline { background: var(--status-offline); }
+
+    .profile-details { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .profile-username { font-size: 18px; font-weight: bold; color: #fff; }
+    .profile-handle { font-size: 12px; color: var(--text-muted); }
+    
+    .profile-badges-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .profile-bio-box { background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; font-size: 12px; color: #d1d5db; line-height: 1.4; }
+    
+    .profile-activity-card { background: #0e0e18; border: 1px solid var(--card-border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .activity-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: bold; }
+    .activity-main { display: flex; align-items: center; gap: 10px; }
+    .activity-icon { width: 36px; height: 36px; border-radius: 6px; background: var(--card-border); object-fit: cover; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .activity-details { font-size: 13px; font-weight: 600; }
+    .activity-timer { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
   </style>
 </head>
 <body>
@@ -120,7 +167,10 @@
       <div class="drag-overlay" id="drag-overlay">Drop image or video here (Max 800KB)</div>
       <div class="chat-header">
         <span id="active-chat-header">Select or start a conversation</span>
-        <button class="create-group-btn" id="open-add-member" style="display: none;">+ Add Member</button>
+        <div class="header-controls">
+          <button class="create-group-btn" id="open-edit-group" style="display: none; background: #3b82f6;">Edit Group</button>
+          <button class="create-group-btn" id="open-add-member" style="display: none;">+ Add Member</button>
+        </div>
       </div>
       <div class="messages-body" id="messages-container">
         <div class="empty-state">Search a username or select an active conversation on the left.</div>
@@ -154,6 +204,27 @@
     </div>
   </div>
 
+  <!-- Edit Group Settings Modal (Owner Only) -->
+  <div class="modal" id="edit-group-modal">
+    <div class="modal-box">
+      <h3>Edit Group Settings</h3>
+      <label style="font-size: 12px; color: var(--text-muted);">Group Name</label>
+      <input type="text" id="edit-group-name-input" placeholder="Enter group name">
+      
+      <label style="font-size: 12px; color: var(--text-muted);">Group Icon</label>
+      <div class="icon-upload-preview">
+        <img id="edit-group-icon-preview" class="icon-preview-img" src="/ArcadiX/PAXIcons/PlaceholderPFP.png" alt="Icon Preview">
+        <input type="file" id="edit-group-icon-file" accept="image/*" style="display: none;">
+        <button type="button" class="file-select-btn" id="select-icon-btn">Choose Image</button>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-cancel" id="close-edit-group">Cancel</button>
+        <button class="btn-confirm" id="confirm-edit-group">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Add Member Modal -->
   <div class="modal" id="add-member-modal">
     <div class="modal-box">
@@ -162,6 +233,45 @@
       <div class="modal-actions">
         <button class="btn-cancel" id="close-add-member">Cancel</button>
         <button class="btn-confirm" id="confirm-add-member">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Widget Modal -->
+  <div class="modal" id="profile-widget-modal">
+    <div class="profile-card">
+      <div class="profile-banner"></div>
+      <div class="profile-card-header">
+        <div class="profile-pfp-container">
+          <img id="pw-avatar" class="profile-pfp" src="/ArcadiX/PAXIcons/PlaceholderPFP.png" alt="Profile Picture">
+          <div id="pw-status-badge" class="profile-status-badge offline"></div>
+        </div>
+        <button class="btn-cancel" id="close-profile-widget" style="padding:4px 8px; font-size:12px;">Close</button>
+      </div>
+      <div class="profile-details">
+        <div>
+          <div id="pw-username" class="profile-username">Player</div>
+          <div id="pw-handle" class="profile-handle">@player</div>
+          <div id="pw-badges" class="profile-badges-row"></div>
+        </div>
+
+        <div class="profile-bio-box">
+          <div style="font-weight:bold; margin-bottom:4px; font-size:11px; color:var(--text-muted);">ABOUT ME</div>
+          <div id="pw-bio">No bio provided.</div>
+        </div>
+
+        <div class="profile-activity-card">
+          <div class="activity-label">Playing a Game</div>
+          <div class="activity-main">
+            <div class="activity-icon" id="pw-game-icon">🎮</div>
+            <div>
+              <div class="activity-details" id="pw-game-title">Not currently in-game</div>
+              <div class="activity-timer" id="pw-game-timer" style="display:none;">
+                ⏱️ <span id="pw-elapsed-time">00:00:00</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -191,13 +301,15 @@
     let activeChatId = null;
     let activeChatData = null;
     let activeUnsubscribe = null;
+    let selectedGroupIconBase64 = null;
+    let userCache = {}; // Cache user profile details (badges, bio, game status)
+    let playTimerInterval = null;
     const defaultAvatar = "/ArcadiX/PAXIcons/PlaceholderPFP.png";
 
     function getChatRoomId(uid1, uid2) {
       return [uid1, uid2].sort().join('_');
     }
 
-    // Convert file attachment to an inline Data URL string
     function fileToBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -205,6 +317,31 @@
         reader.onload = () => resolve(reader.result);
         reader.onerror = (err) => reject(err);
       });
+    }
+
+    // Helper to format badge HTML
+    function renderBadgeHTML(badge) {
+      if (!badge) return '';
+      if (typeof badge === 'object' && badge.icon) {
+        return `<img src="${badge.icon}" class="user-badge-icon" title="${badge.name || 'Badge'}">`;
+      }
+      return `<span class="badge-pill">${badge}</span>`;
+    }
+
+    // Returns the top/highest badge from user array or string
+    function getHighestBadge(badges) {
+      if (!badges) return null;
+      if (Array.isArray(badges) && badges.length > 0) return badges[0];
+      if (typeof badges === 'string') return badges;
+      return null;
+    }
+
+    // Format seconds into HH:MM:SS
+    function formatDuration(seconds) {
+      const hrs = Math.floor(seconds / 3600).toString().padStart(2, '0');
+      const mins = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+      const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${hrs}:${mins}:${secs}`;
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -216,6 +353,17 @@
       loadChats();
     });
 
+    // Fetch user details or use cached data
+    async function fetchUserData(uid) {
+      if (userCache[uid]) return userCache[uid];
+      const userDoc = await getDoc(doc(db, "users", uid));
+      if (userDoc.exists()) {
+        userCache[uid] = userDoc.data();
+        return userCache[uid];
+      }
+      return null;
+    }
+
     // Load active direct chats & group chats
     function loadChats() {
       const usersListEl = document.getElementById('users-list');
@@ -226,12 +374,22 @@
         
         groupSnap.forEach((docSnap) => {
           const gData = docSnap.data();
+          
+          if (activeChatId === docSnap.id) {
+            activeChatData = { ...gData, isGroup: true };
+            document.getElementById('active-chat-header').textContent = gData.name || 'Group Chat';
+          }
+
           const item = document.createElement('div');
           item.className = `chat-user-item ${activeChatId === docSnap.id ? 'active' : ''}`;
           item.innerHTML = `
-            <img src="${gData.icon || defaultAvatar}" class="avatar" alt="Avatar">
+            <div class="avatar-wrapper">
+              <img src="${gData.icon || defaultAvatar}" class="avatar" alt="Avatar">
+            </div>
             <div class="user-info">
-              <div class="name">${gData.name || 'Group Chat'}</div>
+              <div class="name-row">
+                <span class="name">${gData.name || 'Group Chat'}</span>
+              </div>
               <div class="subtext">Group Chat</div>
             </div>
           `;
@@ -250,20 +408,34 @@
 
         for (const uid of partnerUids) {
           if (!uid || uid === currentUser.uid) continue;
-          const userDoc = await getDoc(doc(db, "users", uid));
-          if (userDoc.exists()) {
-            const uData = userDoc.data();
+          const uData = await fetchUserData(uid);
+          if (uData) {
             const roomId = getChatRoomId(currentUser.uid, uid);
+            const highestBadge = getHighestBadge(uData.badges || uData.badge);
+            const badgeHTML = renderBadgeHTML(highestBadge);
+            const isOnline = uData.isOnline || uData.status === 'online';
+
             const item = document.createElement('div');
             item.className = `chat-user-item ${activeChatId === roomId ? 'active' : ''}`;
             item.innerHTML = `
-              <img src="${uData.photoURL || defaultAvatar}" class="avatar" alt="Avatar">
+              <div class="avatar-wrapper">
+                <img src="${uData.photoURL || defaultAvatar}" class="avatar" alt="Avatar">
+                <div class="status-indicator ${isOnline ? 'online' : 'offline'}"></div>
+              </div>
               <div class="user-info">
-                <div class="name">${uData.username || 'Player'}</div>
+                <div class="name-row">
+                  <span class="name">${uData.username || 'Player'}</span>
+                  ${badgeHTML}
+                </div>
                 <div class="subtext">Direct Message</div>
               </div>
             `;
-            item.onclick = () => selectChat(roomId, { uid, ...uData }, false);
+            
+            // Clicking sidebar direct user opens their profile widget
+            item.onclick = (e) => {
+              selectChat(roomId, { uid, ...uData }, false);
+              openProfileWidget(uid, uData);
+            };
             usersListEl.appendChild(item);
           }
         }
@@ -279,6 +451,9 @@
       document.getElementById('message-form').style.display = 'flex';
       document.getElementById('open-add-member').style.display = isGroup ? 'block' : 'none';
 
+      const isOwner = isGroup && chatData.ownerId === currentUser.uid;
+      document.getElementById('open-edit-group').style.display = isOwner ? 'block' : 'none';
+
       if (isGroup) {
         document.getElementById('members-sidebar').style.display = 'flex';
         renderMembersSidebar(chatData);
@@ -288,6 +463,61 @@
 
       listenForMessages(chatId, isGroup);
     }
+
+    // Open Profile Widget Modal
+    async function openProfileWidget(uid, fallbackData = null) {
+      const uData = fallbackData || await fetchUserData(uid) || {};
+
+      document.getElementById('pw-avatar').src = uData.photoURL || defaultAvatar;
+      document.getElementById('pw-username').textContent = uData.displayName || uData.username || 'Player';
+      document.getElementById('pw-handle').textContent = `@${uData.username || 'player'}`;
+      document.getElementById('pw-bio').textContent = uData.bio || 'No bio provided.';
+
+      const isOnline = uData.isOnline || uData.status === 'online';
+      const statusBadge = document.getElementById('pw-status-badge');
+      statusBadge.className = `profile-status-badge ${isOnline ? 'online' : 'offline'}`;
+
+      // Render Badges Row
+      const badgesContainer = document.getElementById('pw-badges');
+      badgesContainer.innerHTML = '';
+      const badgesList = Array.isArray(uData.badges) ? uData.badges : (uData.badge ? [uData.badge] : []);
+      
+      badgesList.forEach(badge => {
+        badgesContainer.innerHTML += renderBadgeHTML(badge);
+      });
+
+      // Game / Activity Status
+      const gameTitle = document.getElementById('pw-game-title');
+      const gameTimer = document.getElementById('pw-game-timer');
+      const elapsedTimeEl = document.getElementById('pw-elapsed-time');
+
+      if (playTimerInterval) clearInterval(playTimerInterval);
+
+      if (uData.currentGame || uData.playing) {
+        const game = uData.currentGame || uData.playing;
+        gameTitle.textContent = typeof game === 'string' ? game : (game.title || 'In-Game');
+        gameTimer.style.display = 'flex';
+
+        const startTime = uData.gameStartTime || (game.startTime ? new Date(game.startTime).getTime() : Date.now());
+        
+        const updateTimer = () => {
+          const elapsedSecs = Math.floor((Date.now() - startTime) / 1000);
+          elapsedTimeEl.textContent = formatDuration(Math.max(0, elapsedSecs));
+        };
+        updateTimer();
+        playTimerInterval = setInterval(updateTimer, 1000);
+      } else {
+        gameTitle.textContent = 'Not currently in-game';
+        gameTimer.style.display = 'none';
+      }
+
+      document.getElementById('profile-widget-modal').style.display = 'flex';
+    }
+
+    document.getElementById('close-profile-widget').onclick = () => {
+      document.getElementById('profile-widget-modal').style.display = 'none';
+      if (playTimerInterval) clearInterval(playTimerInterval);
+    };
 
     // Render Group Members List
     async function renderMembersSidebar(data) {
@@ -299,22 +529,34 @@
       countEl.textContent = `Members—${data.members.length}`;
 
       for (const uid of data.members) {
-        const uDoc = await getDoc(doc(db, "users", uid));
-        const uData = uDoc.exists() ? uDoc.data() : { username: 'User' };
+        const uData = await fetchUserData(uid) || { username: 'User' };
         const isOwner = data.ownerId === uid;
         const canKick = data.ownerId === currentUser.uid && uid !== currentUser.uid;
+        const highestBadge = getHighestBadge(uData.badges || uData.badge);
+        const badgeHTML = renderBadgeHTML(highestBadge);
 
         const item = document.createElement('div');
         item.className = 'member-item';
         item.innerHTML = `
           <img src="${uData.photoURL || defaultAvatar}" class="member-avatar">
-          <span class="member-name">${uData.username || 'Player'}</span>
+          <span class="member-name">
+            ${uData.username || 'Player'}
+            ${badgeHTML}
+          </span>
           ${isOwner ? `<img src="./PAXIcons/GroupOwnerIcon.png" class="owner-icon" title="Owner">` : ''}
           ${canKick ? `<button class="kick-btn" data-uid="${uid}">✕</button>` : ''}
         `;
 
+        item.onclick = (e) => {
+          if (e.target.classList.contains('kick-btn')) return;
+          openProfileWidget(uid, uData);
+        };
+
         if (canKick) {
-          item.querySelector('.kick-btn').onclick = () => removeMember(uid);
+          item.querySelector('.kick-btn').onclick = (e) => {
+            e.stopPropagation();
+            removeMember(uid);
+          };
         }
 
         container.appendChild(item);
@@ -333,19 +575,22 @@
         q = query(collection(db, "messages"), where("roomId", "==", chatId));
       }
 
-      activeUnsubscribe = onSnapshot(q, (snapshot) => {
+      activeUnsubscribe = onSnapshot(q, async (snapshot) => {
         container.innerHTML = '';
         if (snapshot.empty) {
           container.innerHTML = '<div class="empty-state">No messages yet. Say hi!</div>';
           return;
         }
 
-        // Collect documents and sort in memory by timestamp ascending
         const docs = snapshot.docs.map(doc => doc.data());
         docs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-        docs.forEach((msg) => {
+        for (const msg of docs) {
           const isSent = msg.senderId === currentUser.uid;
+          const senderData = await fetchUserData(msg.senderId) || {};
+          const highestBadge = getHighestBadge(senderData.badges || senderData.badge || msg.badge);
+          const badgeHTML = renderBadgeHTML(highestBadge);
+
           const bubble = document.createElement('div');
           bubble.className = `message ${isSent ? 'sent' : 'received'}`;
           
@@ -361,13 +606,16 @@
           const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
           bubble.innerHTML = `
-            ${isGroup && !isSent ? `<div style="font-size:10px; opacity:0.8; font-weight:bold;">${msg.senderName || 'User'}</div>` : ''}
+            <div class="message-author">
+              <span>${msg.senderName || senderData.username || 'Player'}</span>
+              ${badgeHTML}
+            </div>
             ${msg.text ? `<div>${msg.text}</div>` : ''}
             ${mediaHtml}
             <div class="message-time">${timeStr}</div>
           `;
           container.appendChild(bubble);
-        });
+        }
 
         container.scrollTop = container.scrollHeight;
       }, (err) => {
@@ -384,20 +632,21 @@
       let mediaType = null;
 
       if (file) {
-        // Enforce 800KB limit for inline Base64 storage in Firestore
         if (file.size > 800 * 1024) {
           alert("File size exceeds 800KB. Please choose a smaller image or video for embedded sharing.");
           return;
         }
-
-        // Generate inline data URL link replacing raw attachment
         mediaUrl = await fileToBase64(file);
         mediaType = file.type;
       }
 
+      const userProfile = await fetchUserData(currentUser.uid) || {};
+      const highestBadge = getHighestBadge(userProfile.badges || userProfile.badge);
+
       const payload = {
         senderId: currentUser.uid,
-        senderName: currentUser.displayName || 'Player',
+        senderName: currentUser.displayName || userProfile.username || 'Player',
+        badge: highestBadge,
         text: text,
         mediaUrl: mediaUrl,
         mediaType: mediaType,
@@ -491,6 +740,61 @@
 
       document.getElementById('group-modal').style.display = 'none';
       document.getElementById('group-name-input').value = '';
+    };
+
+    // Edit Group Modal Controls (Owner Only)
+    const editGroupModal = document.getElementById('edit-group-modal');
+    const editGroupNameInput = document.getElementById('edit-group-name-input');
+    const editGroupIconPreview = document.getElementById('edit-group-icon-preview');
+    const editGroupIconFile = document.getElementById('edit-group-icon-file');
+
+    document.getElementById('open-edit-group').onclick = () => {
+      if (!activeChatData || !activeChatData.isGroup) return;
+      editGroupNameInput.value = activeChatData.name || '';
+      editGroupIconPreview.src = activeChatData.icon || defaultAvatar;
+      selectedGroupIconBase64 = null;
+      editGroupModal.style.display = 'flex';
+    };
+
+    document.getElementById('close-edit-group').onclick = () => {
+      editGroupModal.style.display = 'none';
+    };
+
+    document.getElementById('select-icon-btn').onclick = () => editGroupIconFile.click();
+
+    editGroupIconFile.onchange = async () => {
+      if (editGroupIconFile.files.length > 0) {
+        const file = editGroupIconFile.files[0];
+        if (file.size > 800 * 1024) {
+          alert("Image size exceeds 800KB. Please choose a smaller icon.");
+          return;
+        }
+        selectedGroupIconBase64 = await fileToBase64(file);
+        editGroupIconPreview.src = selectedGroupIconBase64;
+      }
+    };
+
+    document.getElementById('confirm-edit-group').onclick = async () => {
+      if (!activeChatId || !activeChatData.isGroup) return;
+
+      const newName = editGroupNameInput.value.trim();
+      if (!newName) {
+        alert("Group name cannot be empty.");
+        return;
+      }
+
+      const updates = { name: newName };
+      if (selectedGroupIconBase64) {
+        updates.icon = selectedGroupIconBase64;
+      }
+
+      await updateDoc(doc(db, "chats", activeChatId), updates);
+
+      activeChatData.name = newName;
+      if (selectedGroupIconBase64) activeChatData.icon = selectedGroupIconBase64;
+
+      document.getElementById('active-chat-header').textContent = newName;
+      editGroupModal.style.display = 'none';
     };
 
     // Member Management (Max 10)
