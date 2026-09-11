@@ -1919,7 +1919,7 @@ window.openFrameCustomizer = function(currentFrame) {
     <div class="page-scroll-container">
       <div class="profile-card">
         <div class="profile-header">
-          ${imgTag}
+          ${avatarHTML}
           <div>
             <div style="display:flex; align-items:center; flex-wrap:wrap;">
               <h2 style="display:inline-block;">${profileData.username}</h2>
@@ -1934,7 +1934,10 @@ window.openFrameCustomizer = function(currentFrame) {
           <p style="line-height:1.6; color:#ddd;">${profileData.bio || 'No bio available.'}</p>
         </div>
         ${isSelf ? `
-          <button onclick="window.openBadgeCustomizer()" class="action-btn" style="margin-top: 1rem;">Customize Displayed Badges</button>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
+            <button onclick="window.openBadgeCustomizer()" class="action-btn">Customize Displayed Badges</button>
+            <button onclick="window.openFrameCustomizer('${frameUrl}')" class="action-btn">Select Avatar Frame</button>
+          </div>
         ` : ''}
       </div>
     </div>`;
