@@ -1961,42 +1961,29 @@ window.openBadgeCustomizer = async function() {
 
   const overlay = document.getElementById('badge-customizer-overlay');
   if (overlay) overlay.classList.add('active');
-};
 
-      window.moveBadgeOrder = (idx, direction) => {
-        const targetIdx = idx + direction;
-        if (targetIdx < 0 || targetIdx >= window.tempBadgeOrder.length) return;
-        const item = window.tempBadgeOrder.splice(idx, 1)[0];
-        window.tempBadgeOrder.splice(targetIdx, 0, item);
-        renderSelectionList();
-      };
+  const saveBtn = document.getElementById('save-badges-btn');
+  if (saveBtn) {
+    saveBtn.onclick = async () => {
+      const checkboxes = document.querySelectorAll('.badge-display-chk:checked');
+      const newDisplayed = Array.from(checkboxes).map(cb => cb.value);
 
-      const overlay = document.getElementById('badge-customizer-overlay');
-      overlay.classList.add('active');
-      renderSelectionList();
-
-      document.getElementById('badge-customizer-save-btn').onclick = async () => {
-        const checkboxes = document.querySelectorAll('.badge-display-chk');
-        const newDisplayed = [];
-        checkboxes.forEach(chk => {
-          if (chk.checked) newDisplayed.push(chk.value);
+      try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+          displayedBadges: newDisplayed,
+          badgeOrder: window.tempBadgeOrder
         });
-
-        try {
-          await updateDoc(doc(db, "users", auth.currentUser.uid), {
-            displayedBadges: newDisplayed,
-            badgeOrder: window.tempBadgeOrder
-          });
-          currentUserData.displayedBadges = newDisplayed;
-          currentUserData.badgeOrder = window.tempBadgeOrder;
-          overlay.classList.remove('active');
-          await window.showArcadiXAlert("Badge preferences saved!", "Success");
-          window.loadUserProfile(currentUserData.userId);
-        } catch (e) {
-          window.showArcadiXAlert("Error saving badge order: " + e.message, "Error");
-        }
-      };
-    };
+        currentUserData.displayedBadges = newDisplayed;
+        currentUserData.badgeOrder = window.tempBadgeOrder;
+        if (overlay) overlay.classList.remove('active');
+        await window.showArcadiXAlert("Badge preferences saved!", "Success");
+        window.loadUserProfile(currentUserData.userId);
+      } catch (e) {
+        window.showArcadiXAlert("Error saving badge order: " + e.message, "Error");
+      }
+    }; // Close saveBtn.onclick
+  }
+}; // Close window.openBadgeCustomizer
 
     window.renderSettingsPage = function() {
       if (!auth.currentUser || !currentUserData) return;
