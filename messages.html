@@ -143,7 +143,8 @@
     .profile-activity-card { background: #0e0e18; border: 1px solid var(--card-border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
     .activity-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 700; }
     .activity-main { display: flex; align-items: center; gap: 10px; }
-    .activity-icon { width: 36px; height: 36px; border-radius: 6px; background: var(--card-border); object-fit: cover; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .activity-icon { width: 36px; height: 36px; border-radius: 6px; background: var(--card-border); object-fit: cover; display: flex; align-items: center; justify-content: center; font-size: 18px; overflow: hidden; }
+    .activity-icon img { width: 100%; height: 100%; object-fit: cover; }
     .activity-details { font-size: 13px; font-weight: 700; }
     .activity-timer { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 4px; }
   </style>
@@ -320,10 +321,10 @@
     let lastHandledMsgId = null;
     const defaultAvatar = "./PAXIcons/PlaceholderPFP.png";
 
-    // List of excluded badge keys
+    // Excluded badge keys
     const EXCLUDED_BADGES = ["verified", "early_founder"];
 
-    // Dynamic Registry fetched from window.parent or Firestore fallback
+    // Badges Registry
     let badgesRegistry = window.parent && window.parent.badges_registry 
       ? window.parent.badges_registry 
       : {
@@ -336,17 +337,30 @@
           betatester: { icon: "./PAXIcons/BetaTesterIcon.png", title: "Beta Tester", recolorable: true }
         };
 
-    async function loadBadgesRegistry() {
+    // Games Registry (Fetched from parent window or default mapping)
+    let gamesRegistry = (window.parent && (window.parent.GAMES_REGISTRY || window.parent.games_registry)) 
+      ? (window.parent.GAMES_REGISTRY || window.parent.games_registry)
+      : {
+          "astrorace-io": { title: "AstroRace.io", icon: "./PAXIcons/Games/astrorace.png" },
+          "retro-bowl": { title: "Retro Bowl", icon: "./PAXIcons/Games/retrobowl.png" },
+          "cluster-rush": { title: "Cluster Rush", icon: "./PAXIcons/Games/clusterrush.png" },
+          "slope": { title: "Slope", icon: "./PAXIcons/Games/slope.png" },
+          "1v1-lol": { title: "1v1.LOL", icon: "./PAXIcons/Games/1v1lol.png" }
+        };
+
+    async function loadRegistries() {
       try {
-        const regDoc = await getDoc(doc(db, "badges_registry", "registry"));
-        if (regDoc.exists()) {
-          badgesRegistry = { ...badgesRegistry, ...regDoc.data() };
-        }
+        const [regDoc, gamesDoc] = await Promise.all([
+          getDoc(doc(db, "badges_registry", "registry")),
+          getDoc(doc(db, "games_registry", "registry"))
+        ]);
+        if (regDoc.exists()) badgesRegistry = { ...badgesRegistry, ...regDoc.data() };
+        if (gamesDoc.exists()) gamesRegistry = { ...gamesRegistry, ...gamesDoc.data() };
       } catch (err) {
-        console.warn("Could not load external badges registry from Firestore, using default:", err);
+        console.warn("Could not load external registries from Firestore:", err);
       }
     }
-    loadBadgesRegistry();
+    loadRegistries();
 
     // Toggle setup
     const notifToggle = document.getElementById('notif-toggle');
@@ -397,7 +411,6 @@
       });
     }
 
-    // Badge Rendering supporting badgeOrder & Theme-based Recoloring
     function renderBadgeHTML(uData, singleBadgeOnly = false) {
       if (!uData) return '';
       
@@ -631,27 +644,57 @@
         document.getElementById('pw-badges').innerHTML = renderBadgeHTML(uData, false);
 
         const gameTitle = document.getElementById('pw-game-title');
+        const gameIconContainer = document.getElementById('pw-game-icon');
         const gameTimer = document.getElementById('pw-game-timer');
         const elapsedTimeEl = document.getElementById('pw-elapsed-time');
 
         if (playTimerInterval) clearInterval(playTimerInterval);
 
-        let currentGame = uData.currentGame || uData.playing || uData.activity || uData.game || uData.gameName || uData.gameTitle || uData.inGame;
+        // Fetch raw game tracking data
+        let rawGame = uData.currentGame || uData.activeGame || uData.playing || uData.activity || uData.game || uData.gameName || uData.gameTitle || uData.inGame;
 
-        if (!currentGame && uid === currentUser.uid) {
+        if (!rawGame && uid === currentUser.uid) {
           const localGame = localStorage.getItem('pax_current_game');
           if (localGame) {
-            try { currentGame = JSON.parse(localGame); } catch (e) { currentGame = localGame; }
+            try { rawGame = JSON.parse(localGame); } catch (e) { rawGame = localGame; }
           }
         }
 
-        if (currentGame && currentGame !== "Not currently in-game") {
-          const gameName = typeof currentGame === 'string' ? currentGame : (currentGame.title || currentGame.name || 'In-Game');
+        let gameId = null;
+        let gameName = null;
+        let gameIcon = null;
+
+        if (rawGame && rawGame !== "Not currently in-game") {
+          if (typeof rawGame === 'string') {
+            gameId = rawGame.toLowerCase().trim();
+            gameName = rawGame;
+          } else if (typeof rawGame === 'object') {
+            gameId = (rawGame.id || rawGame.gameId || rawGame.name || rawGame.title || '').toLowerCase().trim();
+            gameName = rawGame.title || rawGame.name || gameId;
+            gameIcon = rawGame.icon || rawGame.thumbnail;
+          }
+        }
+
+        // Match against games registry for exact name & icon
+        if (gameId && gamesRegistry[gameId]) {
+          const regEntry = gamesRegistry[gameId];
+          gameName = regEntry.title || regEntry.name || gameName;
+          gameIcon = regEntry.icon || regEntry.thumbnail || gameIcon;
+        }
+
+        if (gameName && isOnline) {
           gameTitle.textContent = gameName;
+          
+          if (gameIcon) {
+            gameIconContainer.innerHTML = `<img src="${gameIcon}" alt="${gameName}">`;
+          } else {
+            gameIconContainer.innerHTML = '🎮';
+          }
+
           gameTimer.style.display = 'flex';
 
-          const startTime = (typeof currentGame === 'object' && currentGame.startTime) 
-            ? new Date(currentGame.startTime).getTime() 
+          const startTime = (typeof rawGame === 'object' && rawGame.startTime) 
+            ? new Date(rawGame.startTime).getTime() 
             : (uData.gameStartTime || Date.now());
           
           const updateTimer = () => {
@@ -662,6 +705,7 @@
           playTimerInterval = setInterval(updateTimer, 1000);
         } else {
           gameTitle.textContent = 'Not currently in-game';
+          gameIconContainer.innerHTML = '🎮';
           gameTimer.style.display = 'none';
         }
       };
