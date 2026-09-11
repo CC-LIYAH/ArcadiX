@@ -1934,22 +1934,24 @@ window.openBadgeCustomizer = async function() {
   });
 
   window.tempBadgeOrder = [...order];
+  
 
-const renderSelectionList = () => {
+window.renderSelectionList = () => {
   const listEl = document.getElementById('badge-selection-list');
-  if (!listEl) return;
+  if (!listEl) {
+    console.error("Target container '#badge-selection-list' was not found in the DOM!");
+    return;
+  }
 
-  // Preserve checked state so reordering doesn't uncheck items
+  const safeDisplayed = (typeof displayed !== 'undefined' && Array.isArray(displayed)) ? displayed : [];
   const currentChecked = Array.from(document.querySelectorAll('.badge-display-chk:checked')).map(c => c.value);
 
-  listEl.innerHTML = window.tempBadgeOrder.map((bId, index) => {
-    // Look up badge in window.mergedRegistry with fallbacks
+  listEl.innerHTML = (window.tempBadgeOrder || []).map((bId, index) => {
     const registry = window.mergedRegistry || (typeof BADGES_REGISTRY !== 'undefined' ? BADGES_REGISTRY : {});
     const badge = registry[bId];
-    
-    // Fallback to bId string if metadata object isn't present so items never fail to render
     const badgeName = badge ? badge.name : bId;
-    const isChecked = currentChecked.length > 0 ? currentChecked.includes(bId) : displayed.includes(bId);
+    
+    const isChecked = currentChecked.length > 0 ? currentChecked.includes(bId) : safeDisplayed.includes(bId);
 
     return `
       <div class="badge-order-item">
@@ -1965,19 +1967,19 @@ const renderSelectionList = () => {
   }).join('');
 };
 
+
 window.moveBadgeOrder = (index, dir) => {
   if (!window.tempBadgeOrder) return;
   const newIndex = index + dir;
   if (newIndex < 0 || newIndex >= window.tempBadgeOrder.length) return;
 
-  // Swap positions in temp array
   const temp = window.tempBadgeOrder[index];
   window.tempBadgeOrder[index] = window.tempBadgeOrder[newIndex];
   window.tempBadgeOrder[newIndex] = temp;
 
   // Re-render UI list
   window.tempBadgeOrder = [...order];
-  renderSelectionList();
+  window.renderSelectionList();
 };
 
   const overlay = document.getElementById('badge-customizer-overlay');
