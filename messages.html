@@ -311,11 +311,13 @@
     let activeChatId = null;
     let activeChatData = null;
     let activeUnsubscribe = null;
+    let profileUnsubscribe = null;
     let selectedGroupIconBase64 = null;
     let userCache = {}; 
     let playTimerInterval = null;
     let notificationsEnabled = localStorage.getItem('notifications_enabled') === 'true';
     let initialLoadComplete = false;
+    let lastHandledMsgId = null;
     const defaultAvatar = "./PAXIcons/PlaceholderPFP.png";
 
     // List of excluded badge keys
@@ -396,8 +398,6 @@
     }
 
     // Badge Rendering supporting badgeOrder & Theme-based Recoloring
-    // singleBadgeOnly: true = only display the first non-excluded badge (for chat views)
-    // singleBadgeOnly: false = display all valid non-excluded badges (for profile widget)
     function renderBadgeHTML(uData, singleBadgeOnly = false) {
       if (!uData) return '';
       
@@ -407,7 +407,6 @@
       const badgeList = Array.isArray(rawBadges) ? rawBadges : [rawBadges];
       const userThemeColor = uData.themeColor || uData.accentColor || getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
 
-      // Filter out excluded badges ("verified", "early_founder")
       const filteredBadges = badgeList.filter(b => {
         const key = typeof b === 'string' ? b.toLowerCase().trim() : (b && b.key ? b.key.toLowerCase().trim() : '');
         return !EXCLUDED_BADGES.includes(key);
@@ -415,7 +414,6 @@
 
       if (filteredBadges.length === 0) return '';
 
-      // If singleBadgeOnly is true, only pick the primary (first) valid badge
       const badgesToRender = singleBadgeOnly ? [filteredBadges[0]] : filteredBadges;
 
       return badgesToRender.map((badgeKey) => {
@@ -556,7 +554,7 @@
           const uData = await fetchUserData(uid);
           if (uData) {
             const roomId = getChatRoomId(currentUser.uid, uid);
-            const badgeHTML = renderBadgeHTML(uData, true); // Only show first badge in chat list
+            const badgeHTML = renderBadgeHTML(uData, true);
             const isOnline = uData.isOnline || uData.status === 'online';
 
             const item = document.createElement('div');
@@ -611,55 +609,72 @@
       listenForMessages(chatId, isGroup);
     }
 
-    async function openProfileWidget(uid, fallbackData = null) {
-      const uData = fallbackData || await fetchUserData(uid) || {};
+    function openProfileWidget(uid, fallbackData = null) {
+      if (profileUnsubscribe) {
+        profileUnsubscribe();
+        profileUnsubscribe = null;
+      }
 
-      document.getElementById('pw-avatar').src = uData.photoURL || uData.pfp || defaultAvatar;
-      document.getElementById('pw-username').textContent = uData.displayName || uData.username || 'Player';
-      document.getElementById('pw-handle').textContent = `@${uData.username || 'player'}`;
-      document.getElementById('pw-bio').textContent = uData.bio || uData.about || 'No bio provided.';
+      const updateWidget = (uData) => {
+        if (!uData) return;
+        userCache[uid] = uData;
 
-      const isOnline = uData.isOnline || uData.status === 'online';
-      const statusBadge = document.getElementById('pw-status-badge');
-      statusBadge.className = `profile-status-badge ${isOnline ? 'online' : 'offline'}`;
+        document.getElementById('pw-avatar').src = uData.photoURL || uData.pfp || defaultAvatar;
+        document.getElementById('pw-username').textContent = uData.displayName || uData.username || 'Player';
+        document.getElementById('pw-handle').textContent = `@${uData.username || 'player'}`;
+        document.getElementById('pw-bio').textContent = uData.bio || uData.about || 'No bio provided.';
 
-      // Show all allowed badges in profile widget
-      document.getElementById('pw-badges').innerHTML = renderBadgeHTML(uData, false);
+        const isOnline = uData.isOnline || uData.status === 'online';
+        const statusBadge = document.getElementById('pw-status-badge');
+        statusBadge.className = `profile-status-badge ${isOnline ? 'online' : 'offline'}`;
 
-      const gameTitle = document.getElementById('pw-game-title');
-      const gameTimer = document.getElementById('pw-game-timer');
-      const elapsedTimeEl = document.getElementById('pw-elapsed-time');
+        document.getElementById('pw-badges').innerHTML = renderBadgeHTML(uData, false);
 
-      if (playTimerInterval) clearInterval(playTimerInterval);
+        const gameTitle = document.getElementById('pw-game-title');
+        const gameTimer = document.getElementById('pw-game-timer');
+        const elapsedTimeEl = document.getElementById('pw-elapsed-time');
 
-      let currentGame = uData.currentGame || uData.playing || uData.activity || uData.game;
+        if (playTimerInterval) clearInterval(playTimerInterval);
 
-      if (!currentGame && uid === currentUser.uid) {
-        const localGame = localStorage.getItem('pax_current_game');
-        if (localGame) {
-          try { currentGame = JSON.parse(localGame); } catch (e) { currentGame = localGame; }
+        let currentGame = uData.currentGame || uData.playing || uData.activity || uData.game || uData.gameName || uData.gameTitle || uData.inGame;
+
+        if (!currentGame && uid === currentUser.uid) {
+          const localGame = localStorage.getItem('pax_current_game');
+          if (localGame) {
+            try { currentGame = JSON.parse(localGame); } catch (e) { currentGame = localGame; }
+          }
         }
+
+        if (currentGame && currentGame !== "Not currently in-game") {
+          const gameName = typeof currentGame === 'string' ? currentGame : (currentGame.title || currentGame.name || 'In-Game');
+          gameTitle.textContent = gameName;
+          gameTimer.style.display = 'flex';
+
+          const startTime = (typeof currentGame === 'object' && currentGame.startTime) 
+            ? new Date(currentGame.startTime).getTime() 
+            : (uData.gameStartTime || Date.now());
+          
+          const updateTimer = () => {
+            const elapsedSecs = Math.floor((Date.now() - startTime) / 1000);
+            elapsedTimeEl.textContent = formatDuration(Math.max(0, elapsedSecs));
+          };
+          updateTimer();
+          playTimerInterval = setInterval(updateTimer, 1000);
+        } else {
+          gameTitle.textContent = 'Not currently in-game';
+          gameTimer.style.display = 'none';
+        }
+      };
+
+      if (fallbackData) {
+        updateWidget(fallbackData);
       }
 
-      if (currentGame) {
-        const gameName = typeof currentGame === 'string' ? currentGame : (currentGame.title || currentGame.name || 'In-Game');
-        gameTitle.textContent = gameName;
-        gameTimer.style.display = 'flex';
-
-        const startTime = (typeof currentGame === 'object' && currentGame.startTime) 
-          ? new Date(currentGame.startTime).getTime() 
-          : (uData.gameStartTime || Date.now());
-        
-        const updateTimer = () => {
-          const elapsedSecs = Math.floor((Date.now() - startTime) / 1000);
-          elapsedTimeEl.textContent = formatDuration(Math.max(0, elapsedSecs));
-        };
-        updateTimer();
-        playTimerInterval = setInterval(updateTimer, 1000);
-      } else {
-        gameTitle.textContent = 'Not currently in-game';
-        gameTimer.style.display = 'none';
-      }
+      profileUnsubscribe = onSnapshot(doc(db, "users", uid), (snap) => {
+        if (snap.exists()) {
+          updateWidget(snap.data());
+        }
+      });
 
       document.getElementById('profile-widget-modal').style.display = 'flex';
     }
@@ -667,6 +682,10 @@
     document.getElementById('close-profile-widget').onclick = () => {
       document.getElementById('profile-widget-modal').style.display = 'none';
       if (playTimerInterval) clearInterval(playTimerInterval);
+      if (profileUnsubscribe) {
+        profileUnsubscribe();
+        profileUnsubscribe = null;
+      }
     };
 
     async function renderMembersSidebar(data) {
@@ -681,7 +700,7 @@
         const uData = await fetchUserData(uid) || { username: 'User' };
         const isOwner = data.ownerId === uid;
         const canKick = data.ownerId === currentUser.uid && uid !== currentUser.uid;
-        const badgeHTML = renderBadgeHTML(uData, true); // Only show first badge in members list
+        const badgeHTML = renderBadgeHTML(uData, true);
 
         const item = document.createElement('div');
         item.className = 'member-item';
@@ -731,21 +750,22 @@
           return;
         }
 
-        const docs = snapshot.docs.map(doc => doc.data());
-        docs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        const docsWithIds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        docsWithIds.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-        if (initialLoadComplete && docs.length > 0) {
-          const latestMsg = docs[docs.length - 1];
-          if (latestMsg.senderId !== currentUser.uid) {
+        if (initialLoadComplete && docsWithIds.length > 0) {
+          const latestMsg = docsWithIds[docsWithIds.length - 1];
+          if (latestMsg.senderId !== currentUser.uid && latestMsg.id !== lastHandledMsgId) {
+            lastHandledMsgId = latestMsg.id;
             const senderData = await fetchUserData(latestMsg.senderId) || {};
             triggerPushNotification(latestMsg.senderName || senderData.username || 'Player', latestMsg.text, latestMsg.mediaUrl);
           }
         }
 
-        for (const msg of docs) {
+        for (const msg of docsWithIds) {
           const isSent = msg.senderId === currentUser.uid;
           const senderData = await fetchUserData(msg.senderId) || {};
-          const badgeHTML = renderBadgeHTML(senderData, true); // Only show first badge next to sender name
+          const badgeHTML = renderBadgeHTML(senderData, true);
 
           const bubble = document.createElement('div');
           bubble.className = `message ${isSent ? 'sent' : 'received'}`;
