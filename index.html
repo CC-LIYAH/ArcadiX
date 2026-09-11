@@ -1924,7 +1924,7 @@ window.openBadgeCustomizer = async function() {
   } catch (e) {}
 
   const mergedRegistry = { ...BADGES_REGISTRY, ...dynamicBadges };
-  window.mergedRegistry = mergedRegistry; // <--- 1. EXPOSE GLOBALLY
+  window.mergedRegistry = mergedRegistry;
 
   const owned = currentUserData.ownedBadges || [];
   const displayed = currentUserData.displayedBadges || [...owned];
@@ -1937,7 +1937,6 @@ window.openBadgeCustomizer = async function() {
 
   window.tempBadgeOrder = [...order];
 
-  // 2. DEFINE RENDER FUNCTION
   window.renderSelectionList = () => {
     const listEl = document.getElementById('badge-selection-list');
 
@@ -1970,9 +1969,11 @@ window.openBadgeCustomizer = async function() {
     }).join('');
   };
 
-  // 3. SHOW MODAL & CALL RENDER FUNCTION
-  document.getElementById('badge-customizer-overlay').style.display = 'flex'; 
-  window.renderSelectionList(); 
+  // Show overlay and invoke renderer
+  const overlay = document.getElementById('badge-customizer-overlay');
+  if (overlay) overlay.style.display = 'flex';
+  
+  window.renderSelectionList();
 };
 
   const safeDisplayed = (typeof displayed !== 'undefined' && Array.isArray(displayed)) ? displayed : [];
