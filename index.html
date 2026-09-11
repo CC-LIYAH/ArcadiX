@@ -1844,8 +1844,7 @@ window.loadUserProfile = async function(userId) {
           ${avatarHTML}
           <div>
             <div style="display:flex; align-items:center; flex-wrap:wrap;">
-              <h2 style="display:inline-block;">${profileData.username}</h2>
-              ${badgesHTML}
+              <h2 style="display:inline-block;">${profileData.username}</h2>${badgesHTML}
             </div>
             <span class="user-id-badge">ID: #${profileData.userId}</span>
             <p style="color:#aaa; font-size: 0.85rem; margin-top: 4px;">Joined: ${formattedJoinedDate}</p>
