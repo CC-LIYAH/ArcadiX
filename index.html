@@ -1934,28 +1934,42 @@ window.openBadgeCustomizer = async function() {
 
   window.tempBadgeOrder = [...order];
 
-  const renderSelectionList = () => {
-    const listEl = document.getElementById('badge-selection-list');
-    if (!listEl) return;
+ const renderSelectionList = () => {
+  const listEl = document.getElementById('badge-selection-list');
+  if (!listEl) return;
 
-    listEl.innerHTML = window.tempBadgeOrder.map((bId, index) => {
-      const badge = mergedRegistry[bId];
-      if (!badge) return '';
-      const isChecked = displayed.includes(bId);
+  // Capture currently checked boxes so moving arrows doesn't wipe user selections
+  const currentChecked = Array.from(document.querySelectorAll('.badge-display-chk:checked')).map(c => c.value);
 
-      return `
-        <div class="badge-order-item">
-          <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;">
-            <input type="checkbox" class="badge-display-chk" value="${bId}" ${isChecked ? 'checked' : ''}>
-            <span>${badge.name}</span>
-          </label>
-          <div class="badge-order-controls">
-            <button class="action-btn" onclick="window.moveBadgeOrder(${index}, -1)">&uarr;</button>
-            <button class="action-btn" onclick="window.moveBadgeOrder(${index}, 1)">&darr;</button>
-          </div>
-        </div>`;
-    }).join('');
-  };
+  listEl.innerHTML = window.tempBadgeOrder.map((bId, index) => {
+    const badge = mergedRegistry[bId];
+    if (!badge) return '';
+    const isChecked = currentChecked.length > 0 ? currentChecked.includes(bId) : displayed.includes(bId);
+
+    return `
+      <div class="badge-order-item">
+        <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;">
+          <input type="checkbox" class="badge-display-chk" value="${bId}" ${isChecked ? 'checked' : ''}>
+          <span>${badge.name}</span>
+        </label>
+        <div class="badge-order-controls">
+          <button class="action-btn" onclick="window.moveBadgeOrder(${index}, -1)">&uarr;</button>
+          <button class="action-btn" onclick="window.moveBadgeOrder(${index}, 1)">&darr;</button>
+        </div>
+      </div>`;
+  }).join('');
+};
+  
+window.moveBadgeOrder = (index, dir) => {
+  if (!window.tempBadgeOrder) return;
+  const newIndex = index + dir;
+  if (newIndex < 0 || newIndex >= window.tempBadgeOrder.length) return;
+
+
+  const temp = window.tempBadgeOrder[index];
+  window.tempBadgeOrder[index] = window.tempBadgeOrder[newIndex];
+  window.tempBadgeOrder[newIndex] = temp;
+  
 
   renderSelectionList();
 
