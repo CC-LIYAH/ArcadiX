@@ -1943,17 +1943,19 @@ const renderSelectionList = () => {
   const currentChecked = Array.from(document.querySelectorAll('.badge-display-chk:checked')).map(c => c.value);
 
   listEl.innerHTML = window.tempBadgeOrder.map((bId, index) => {
-    // Look up badge in global window.mergedRegistry
-    const badge = window.mergedRegistry ? window.mergedRegistry[bId] : null;
-    if (!badge) return '';
+    // Look up badge in window.mergedRegistry with fallbacks
+    const registry = window.mergedRegistry || (typeof BADGES_REGISTRY !== 'undefined' ? BADGES_REGISTRY : {});
+    const badge = registry[bId];
     
+    // Fallback to bId string if metadata object isn't present so items never fail to render
+    const badgeName = badge ? badge.name : bId;
     const isChecked = currentChecked.length > 0 ? currentChecked.includes(bId) : displayed.includes(bId);
 
     return `
       <div class="badge-order-item">
         <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;">
           <input type="checkbox" class="badge-display-chk" value="${bId}" ${isChecked ? 'checked' : ''}>
-          <span>${badge.name}</span>
+          <span>${badgeName}</span>
         </label>
         <div class="badge-order-controls">
           <button class="action-btn" onclick="window.moveBadgeOrder(${index}, -1)">&uarr;</button>
