@@ -16,30 +16,52 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// 2. Automatic Game ID Detection
+// 2. Strict Game ID Detection (URL must have ?game=)
 function detectGameId() {
-  // Check URL query parameters first (?game=astrorace-io, ?page=astrorace-io, or ?id=astrorace-io)
   const urlParams = new URLSearchParams(window.location.search);
-  const paramId = urlParams.get('game') || urlParams.get('page') || urlParams.get('id');
-  if (paramId) return paramId.toLowerCase();
-
-  // Extract from path name (e.g., "/ArcadiX/games/astrorace-io.html" -> "astrorace-io")
-  const path = window.location.pathname;
-  const fileName = path.substring(path.lastIndexOf('/') + 1).replace('.html', '').toLowerCase();
-
-  // Exclude main site pages
-  const nonGamePages = ['index', 'leaderboards', 'messages', 'profile', 'settings', 'admin', 'updates', 'all-games', ''];
-  if (!nonGamePages.includes(fileName)) {
-    return fileName;
-  }
-
-  return null;
+  const gameParam = urlParams.get('game');
+  return gameParam ? gameParam.trim().toLowerCase() : null;
 }
 
-// 3. Playtime Tracking Logic
+// 3. AFK & Activity Detection
+const AFK_TIMEOUT = 60000; // 60 seconds of inactivity triggers AFK
+let isAfk = false;
+let lastActivityTime = Date.now();
+
+function resetAfkTimer() {
+  const now = Date.now();
+  
+  if (isAfk) {
+    // User returned from AFK: start new active session tracking
+    isAfk = false;
+    sessionStartTime = now;
+  }
+  
+  lastActivityTime = now;
+}
+
+// Listen for common user interactions to reset AFK timer
+['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(event => {
+  window.addEventListener(event, resetAfkTimer, { passive: true });
+});
+
+// Periodic check to flip status to AFK when user goes idle
+setInterval(() => {
+  if (!isAfk && (Date.now() - lastActivityTime >= AFK_TIMEOUT)) {
+    savePlaytime(); // Save accumulated active time before pausing session
+    isAfk = true;
+  }
+}, 5000);
+
+// 4. Playtime Tracking Logic
 let sessionStartTime = Date.now();
 
 async function savePlaytime() {
+  const currentGameId = detectGameId();
+  
+  // Strict condition: only track if user is logged in, URL has ?game=, and user is active
+  if (!currentGameId || isAfk) return;
+
   const user = auth.currentUser;
   if (!user) return;
 
@@ -53,16 +75,11 @@ async function savePlaytime() {
 
   try {
     const userRef = doc(db, "users", user.uid);
-    const currentGameId = detectGameId();
 
     const updates = {
-      playtime: increment(secondsPlayed)
+      playtime: increment(secondsPlayed),
+      [`playtime_${currentGameId}`]: increment(secondsPlayed)
     };
-
-    // Dynamically increment specific game field if detected
-    if (currentGameId) {
-      updates[`playtime_${currentGameId}`] = increment(secondsPlayed);
-    }
 
     await updateDoc(userRef, updates);
   } catch (err) {
@@ -80,7 +97,8 @@ window.addEventListener("beforeunload", savePlaytime);
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     savePlaytime();
+    isAfk = true; // Automatically mark AFK while hidden
   } else {
-    sessionStartTime = Date.now();
+    resetAfkTimer();
   }
 });
