@@ -578,8 +578,8 @@
     /* Profile Picture Frame Overlay Styling */
     .avatar-frame-container {
         position: relative;
-        width: 90px;
-        height: 90px;
+        width: 108px;
+        height: 108px;
         display: inline-block;
     }
     .avatar-frame-container .profile-avatar-large {
@@ -587,16 +587,15 @@
       height: 100%;
       border-radius: 50%;
       object-fit: cover;
-      display: block;
     }
     .avatar-frame-overlay {
       position: absolute;
-      top: -10%;
-      left: -10%;
-      width: 120%;
-      height: 120%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.92);
+      width: 110%;
+      height: 110%;
       pointer-events: none;
-      object-fit: contain;
     }
 
     /* Analytics Dashboard Cards */
