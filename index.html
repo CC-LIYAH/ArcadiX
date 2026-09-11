@@ -1934,11 +1934,10 @@ window.openBadgeCustomizer = async function() {
 
   window.tempBadgeOrder = [...order];
 
- const renderSelectionList = () => {
+const renderSelectionList = () => {
   const listEl = document.getElementById('badge-selection-list');
   if (!listEl) return;
 
-  // Capture currently checked boxes so moving arrows doesn't wipe user selections
   const currentChecked = Array.from(document.querySelectorAll('.badge-display-chk:checked')).map(c => c.value);
 
   listEl.innerHTML = window.tempBadgeOrder.map((bId, index) => {
@@ -1959,19 +1958,19 @@ window.openBadgeCustomizer = async function() {
       </div>`;
   }).join('');
 };
-  
+
 window.moveBadgeOrder = (index, dir) => {
   if (!window.tempBadgeOrder) return;
   const newIndex = index + dir;
   if (newIndex < 0 || newIndex >= window.tempBadgeOrder.length) return;
 
-
   const temp = window.tempBadgeOrder[index];
   window.tempBadgeOrder[index] = window.tempBadgeOrder[newIndex];
   window.tempBadgeOrder[newIndex] = temp;
-  
 
   renderSelectionList();
+  };
+};
 
   const overlay = document.getElementById('badge-customizer-overlay');
   if (overlay) overlay.classList.add('active');
