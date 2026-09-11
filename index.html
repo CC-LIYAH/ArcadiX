@@ -575,6 +575,30 @@
       white-space: pre-line;
     }
 
+    /* Profile Picture Frame Overlay Styling */
+    .avatar-frame-container {
+        position: relative;
+        width: 90px;
+        height: 90px;
+        display: inline-block;
+    }
+    .avatar-frame-container .profile-avatar-large {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+    }
+    .avatar-frame-overlay {
+      position: absolute;
+      top: -10%;
+      left: -10%;
+      width: 120%;
+      height: 120%;
+      pointer-events: none;
+      object-fit: contain;
+    }
+
     /* Analytics Dashboard Cards */
     .analytics-summary {
       display: grid;
@@ -1786,9 +1810,15 @@ window.loadUserProfile = async function(userId) {
 
   const profileData = querySnapshot.docs[0].data();
   const pfp = profileData.photoURL || DEFAULT_AVATAR;
-  const imgTag = pfp ? `<img src="${pfp}" class="profile-avatar-large" alt="">` : '';
+  const frameUrl = profileData.selectedFrame || '';
 
-  // Fetch dynamic custom badges from Firestore
+  // Frame Wrapper HTML
+  const avatarHTML = `
+    <div class="avatar-frame-container">
+      ${pfp ? `<img src="${pfp}" class="profile-avatar-large" alt="">` : ''}
+      ${frameUrl ? `<img src="${frameUrl}" class="avatar-frame-overlay" alt="Frame">` : ''}
+    </div>`;
+
   let dynamicBadges = {};
   try {
     const badgeSnaps = await getDocs(collection(db, "custom_badges"));
@@ -1802,6 +1832,83 @@ window.loadUserProfile = async function(userId) {
     profileData.badgeOrder || [],
     dynamicBadges
   );
+
+  const isSelf = currentUserData && currentUserData.userId === profileData.userId;
+  const rawDate = profileData.createdAt || (auth.currentUser?.uid === profileData.uid ? auth.currentUser.metadata.creationTime : null);
+  const formattedJoinedDate = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'Unknown';
+
+  container.innerHTML = `
+    <div class="page-scroll-container">
+      <div class="profile-card">
+        <div class="profile-header">
+          ${avatarHTML}
+          <div>
+            <div style="display:flex; align-items:center; flex-wrap:wrap;">
+              <h2 style="display:inline-block;">${profileData.username}</h2>
+              ${badgesHTML}
+            </div>
+            <span class="user-id-badge">ID: #${profileData.userId}</span>
+            <p style="color:#aaa; font-size: 0.85rem; margin-top: 4px;">Joined: ${formattedJoinedDate}</p>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Bio</label>
+          <p style="line-height:1.6; color:#ddd;">${profileData.bio || 'No bio available.'}</p>
+        </div>
+        ${isSelf ? `
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
+            <button onclick="window.openBadgeCustomizer()" class="action-btn">Customize Displayed Badges</button>
+            <button onclick="window.openFrameCustomizer('${frameUrl}')" class="action-btn">Select Avatar Frame</button>
+          </div>
+        ` : ''}
+      </div>
+    </div>`;
+};
+
+// Frame Customizer Modal Trigger & Persistence
+window.openFrameCustomizer = function(currentFrame) {
+  const overlay = document.getElementById('frame-customizer-overlay');
+  const dropdown = document.getElementById('frame-selection-dropdown');
+  const saveBtn = document.getElementById('save-frame-btn');
+
+  // Clear previous dynamic options and keep default
+  dropdown.innerHTML = `<option value="">None (Default)</option>`;
+
+  const userOwnedBadges = currentUserData?.ownedBadges || [];
+
+  // Frame definition list (badgeId required to unlock)
+  const availableFrames = [
+    { name: "Beta Tester Frame", url: "/PAXIcons/Frames/BTPF_PAX.png", badgeId: "betatester" },
+  ];
+
+  // Only append frames the user owns
+  availableFrames.forEach(frame => {
+    if (userOwnedBadges.includes(frame.badgeId)) {
+      const opt = document.createElement('option');
+      opt.value = frame.url;
+      opt.textContent = frame.name;
+      dropdown.appendChild(opt);
+    }
+  });
+
+  dropdown.value = currentFrame || '';
+  overlay.classList.add('active');
+
+  saveBtn.onclick = async () => {
+    const selectedFrame = dropdown.value;
+    try {
+      await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        selectedFrame: selectedFrame
+      });
+      if (currentUserData) currentUserData.selectedFrame = selectedFrame;
+      overlay.classList.remove('active');
+      await window.showArcadiXAlert("Profile picture frame updated!", "Success");
+      window.loadUserProfile(currentUserData.userId);
+    } catch (e) {
+      window.showArcadiXAlert("Error saving frame: " + e.message, "Error");
+    }
+  };
+};
 
   const isSelf = currentUserData && currentUserData.userId === profileData.userId;
 
@@ -3119,13 +3226,31 @@ window.loadUserProfile = async function(userId) {
       }
     }
   </script>
+<!-- Profile Picture Frame Customizer Modal -->
+<div class="custom-modal-overlay" id="frame-customizer-overlay">
+  <div class="custom-modal-box" style="max-width: 480px;">
+    <div class="custom-modal-title">Select Avatar Frame</div>
+    <div class="custom-modal-msg" style="font-size:0.85rem; color:#aaa; margin-bottom:1rem;">Choose an unlocked frame to overlay on your profile picture:</div>
+    
+    <div class="form-group">
+      <select id="frame-selection-dropdown" class="arcadix-select">
+        <option value="">None (Default)</option>
+      </select>
+    </div>
+
+    <div class="custom-modal-actions" style="margin-top:1.5rem;">
+      <button class="action-btn" style="padding: 0.6rem 1.2rem;" onclick="document.getElementById('frame-customizer-overlay').classList.remove('active')">Cancel</button>
+      <button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="save-frame-btn">Save Frame</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
 <!-- Supplementary Extended Planet ArcadiX Engine Extensions -->
 <script>
   window.ArcadiXEngine = {
     version: "1.5.0",
-    build: "2026.09.RELEASE",
+    build: "2026.09.10",
     capabilities: [
       "Dynamic Custom Badges",
       "Realtime Theme Syncing",
