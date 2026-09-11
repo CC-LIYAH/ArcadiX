@@ -1916,35 +1916,6 @@ window.openFrameCustomizer = function(currentFrame) {
 
 // --- COMPLETE BADGE CUSTOMIZER LOGIC ---
 
-window.openBadgeCustomizer = async function() {
-  if (!currentUserData) return;
-
-  let dynamicBadges = {};
-  try {
-    const badgeSnaps = await getDocs(collection(db, "custom_badges"));
-    badgeSnaps.forEach(docSnap => dynamicBadges[docSnap.id] = docSnap.data());
-  } catch (e) {}
-
-  const mergedRegistry = { ...BADGES_REGISTRY, ...dynamicBadges };
-  window.mergedRegistry = mergedRegistry;
-
-  const owned = currentUserData.ownedBadges || [];
-  const displayed = currentUserData.displayedBadges || [...owned];
-  let order = currentUserData.badgeOrder || [...displayed];
-
-  order = order.filter(bId => owned.includes(bId));
-  owned.forEach(bId => {
-    if (!order.includes(bId)) order.push(bId);
-  });
-
-  window.tempBadgeOrder = [...order];
-
-  const overlay = document.getElementById('badge-customizer-overlay');
-  if (overlay) overlay.style.display = 'flex';
-
-  window.renderSelectionList();
-};
-
 window.renderSelectionList = () => {
   const listEl = document.getElementById('badge-selection-list');
   if (!listEl) return;
@@ -1984,8 +1955,34 @@ window.moveBadgeOrder = (index, dir) => {
 
   window.renderSelectionList();
 };
-    const overlay = document.getElementById('badge-customizer-overlay');
+
+window.openBadgeCustomizer = async function() {
+  if (!currentUserData) return;
+
+  let dynamicBadges = {};
+  try {
+    const badgeSnaps = await getDocs(collection(db, "custom_badges"));
+    badgeSnaps.forEach(docSnap => dynamicBadges[docSnap.id] = docSnap.data());
+  } catch (e) {}
+
+  const mergedRegistry = { ...BADGES_REGISTRY, ...dynamicBadges };
+  window.mergedRegistry = mergedRegistry;
+
+  const owned = currentUserData.ownedBadges || [];
+  const displayed = currentUserData.displayedBadges || [...owned];
+  let order = currentUserData.badgeOrder || [...displayed];
+
+  order = order.filter(bId => owned.includes(bId));
+  owned.forEach(bId => {
+    if (!order.includes(bId)) order.push(bId);
+  });
+
+  window.tempBadgeOrder = [...order];
+
+  const overlay = document.getElementById('badge-customizer-overlay');
   if (overlay) overlay.classList.add('active');
+
+  window.renderSelectionList();
 
   const saveBtn = document.getElementById('save-badges-btn');
   if (saveBtn) {
@@ -2006,14 +2003,12 @@ window.moveBadgeOrder = (index, dir) => {
       } catch (e) {
         window.showArcadiXAlert("Error saving badge order: " + e.message, "Error");
       }
-    }; // Close saveBtn.onclick
+    };
   }
-}; // Close window.openBadgeCustomizer
+};
 
-    window.renderSettingsPage = function() {
-      if (!auth.currentUser || !currentUserData) return;
-
-      const activeId = localStorage.getItem('arcadix_active_theme_id') || fetchedThemesCache[0]?.id;
+window.renderSettingsPage = function() {
+  if (!auth.currentUser || !currentUserData) return;      const activeId = localStorage.getItem('arcadix_active_theme_id') || fetchedThemesCache[0]?.id;
       const themeOptions = fetchedThemesCache.map(t => `<option value="${t.id}" ${t.id === activeId ? 'selected' : ''}>${t.name}</option>`).join('');
 
       container.innerHTML = `
