@@ -1914,6 +1914,8 @@ window.openFrameCustomizer = function(currentFrame) {
 };
 
 
+// --- COMPLETE BADGE CUSTOMIZER LOGIC ---
+
 window.openBadgeCustomizer = async function() {
   if (!currentUserData) return;
 
@@ -1937,49 +1939,20 @@ window.openBadgeCustomizer = async function() {
 
   window.tempBadgeOrder = [...order];
 
-  window.renderSelectionList = () => {
-    const listEl = document.getElementById('badge-selection-list');
-
-    if (!listEl) {
-      console.error("Target container '#badge-selection-list' was not found in the DOM!");
-      return;
-    }
-
-    const safeDisplayed = (typeof displayed !== 'undefined' && Array.isArray(displayed)) ? displayed : [];
-    const currentChecked = Array.from(document.querySelectorAll('.badge-display-chk:checked')).map(c => c.value);
-
-    listEl.innerHTML = (window.tempBadgeOrder || []).map((bId, index) => {
-      const registry = window.mergedRegistry || (typeof BADGES_REGISTRY !== 'undefined' ? BADGES_REGISTRY : {});
-      const badge = registry[bId];
-      const badgeName = badge ? badge.name : bId;
-      
-      const isChecked = currentChecked.length > 0 ? currentChecked.includes(bId) : safeDisplayed.includes(bId);
-
-      return `
-        <div class="badge-order-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-          <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: #fff;">
-            <input type="checkbox" class="badge-display-chk" value="${bId}" ${isChecked ? 'checked' : ''}>
-            <span>${badgeName}</span>
-          </label>
-          <div class="badge-order-controls" style="display: flex; gap: 0.3rem;">
-            <button type="button" class="action-btn" onclick="window.moveBadgeOrder(${index}, -1)">&uarr;</button>
-            <button type="button" class="action-btn" onclick="window.moveBadgeOrder(${index}, 1)">&darr;</button>
-          </div>
-        </div>`;
-    }).join('');
-  };
-
-  // Show overlay and invoke renderer
   const overlay = document.getElementById('badge-customizer-overlay');
   if (overlay) overlay.style.display = 'flex';
-  
+
   window.renderSelectionList();
 };
+
+window.renderSelectionList = () => {
+  const listEl = document.getElementById('badge-selection-list');
+  if (!listEl) return;
 
   const safeDisplayed = (typeof displayed !== 'undefined' && Array.isArray(displayed)) ? displayed : [];
   const currentChecked = Array.from(document.querySelectorAll('.badge-display-chk:checked')).map(c => c.value);
 
-  const htmlOutput = (window.tempBadgeOrder || []).map((bId, index) => {
+  listEl.innerHTML = (window.tempBadgeOrder || []).map((bId, index) => {
     const registry = window.mergedRegistry || (typeof BADGES_REGISTRY !== 'undefined' ? BADGES_REGISTRY : {});
     const badge = registry[bId];
     const badgeName = badge ? badge.name : bId;
@@ -1998,10 +1971,7 @@ window.openBadgeCustomizer = async function() {
         </div>
       </div>`;
   }).join('');
-
-  console.log('3. Generated HTML Character Count:', htmlOutput.length);
-  listEl.innerHTML = htmlOutput;
-
+};
 
 window.moveBadgeOrder = (index, dir) => {
   if (!window.tempBadgeOrder) return;
@@ -2012,11 +1982,8 @@ window.moveBadgeOrder = (index, dir) => {
   window.tempBadgeOrder[index] = window.tempBadgeOrder[newIndex];
   window.tempBadgeOrder[newIndex] = temp;
 
-  // Re-render UI list
-  window.tempBadgeOrder = [...order];
   window.renderSelectionList();
 };
-
   const overlay = document.getElementById('badge-customizer-overlay');
   if (overlay) overlay.classList.add('active');
 
