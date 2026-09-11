@@ -1863,51 +1863,6 @@ window.loadUserProfile = async function(userId) {
     </div>`;
 };
 
-// Frame Customizer Modal Trigger & Persistence
-window.openFrameCustomizer = function(currentFrame) {
-  const overlay = document.getElementById('frame-customizer-overlay');
-  const dropdown = document.getElementById('frame-selection-dropdown');
-  const saveBtn = document.getElementById('save-frame-btn');
-
-  // Clear previous dynamic options and keep default
-  dropdown.innerHTML = `<option value="">None (Default)</option>`;
-
-  const userOwnedBadges = currentUserData?.ownedBadges || [];
-
-  // Frame definition list (badgeId required to unlock)
-  const availableFrames = [
-    { name: "Beta Tester Frame", url: "/ArcadiX/PAXIcons/Frames/BTPF_PAX.png", badgeId: "betatester" },
-  ];
-
-  // Only append frames the user owns
-  availableFrames.forEach(frame => {
-    if (userOwnedBadges.includes(frame.badgeId)) {
-      const opt = document.createElement('option');
-      opt.value = frame.url;
-      opt.textContent = frame.name;
-      dropdown.appendChild(opt);
-    }
-  });
-
-  dropdown.value = currentFrame || '';
-  overlay.classList.add('active');
-
-  saveBtn.onclick = async () => {
-    const selectedFrame = dropdown.value;
-    try {
-      await updateDoc(doc(db, "users", auth.currentUser.uid), {
-        selectedFrame: selectedFrame
-      });
-      if (currentUserData) currentUserData.selectedFrame = selectedFrame;
-      overlay.classList.remove('active');
-      await window.showArcadiXAlert("Profile picture frame updated!", "Success");
-      window.loadUserProfile(currentUserData.userId);
-    } catch (e) {
-      window.showArcadiXAlert("Error saving frame: " + e.message, "Error");
-    }
-  };
-};
-
   const isSelf = currentUserData && currentUserData.userId === profileData.userId;
 
   // Format join date with fallback
@@ -1940,50 +1895,99 @@ window.openFrameCustomizer = function(currentFrame) {
         ` : ''}
       </div>
     </div>`;
+}; 
+    
+window.openFrameCustomizer = function(currentFrame) {
+  const overlay = document.getElementById('frame-customizer-overlay');
+  const dropdown = document.getElementById('frame-selection-dropdown');
+  const saveBtn = document.getElementById('save-frame-btn');
 
-    window.openBadgeCustomizer = async function() {
-      if (!currentUserData) return;
+  dropdown.innerHTML = `<option value="">None (Default)</option>`;
 
-      let dynamicBadges = {};
-      try {
-        const badgeSnaps = await getDocs(collection(db, "custom_badges"));
-        badgeSnaps.forEach(docSnap => dynamicBadges[docSnap.id] = docSnap.data());
-      } catch (e) {}
+  const userOwnedBadges = currentUserData?.ownedBadges || [];
 
-      const mergedRegistry = { ...BADGES_REGISTRY, ...dynamicBadges };
-      const owned = currentUserData.ownedBadges || [];
-      const displayed = currentUserData.displayedBadges || [...owned];
-      let order = currentUserData.badgeOrder || [...displayed];
+  const availableFrames = [
+    { name: "Beta Tester Frame", url: "/ArcadiX/PAXIcons/Frames/BTPF_PAX.png", badgeId: "betatester" },
+  ];
 
-      order = order.filter(bId => owned.includes(bId));
-      owned.forEach(bId => {
-        if (!order.includes(bId)) order.push(bId);
+  availableFrames.forEach(frame => {
+    if (userOwnedBadges.includes(frame.badgeId)) {
+      const opt = document.createElement('option');
+      opt.value = frame.url;
+      opt.textContent = frame.name;
+      dropdown.appendChild(opt);
+    }
+  });
+
+  dropdown.value = currentFrame || '';
+  overlay.classList.add('active');
+
+  saveBtn.onclick = async () => {
+    const selectedFrame = dropdown.value;
+    try {
+      await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        selectedFrame: selectedFrame
       });
+      if (currentUserData) currentUserData.selectedFrame = selectedFrame;
+      overlay.classList.remove('active');
+      await window.showArcadiXAlert("Profile picture frame updated!", "Success");
+      window.loadUserProfile(currentUserData.userId);
+    } catch (e) {
+      window.showArcadiXAlert("Error saving frame: " + e.message, "Error");
+    }
+  };
+};
 
-      window.tempBadgeOrder = [...order];
 
-      const renderSelectionList = () => {
-        const listEl = document.getElementById('badge-selection-list');
-        if (!listEl) return;
+window.openBadgeCustomizer = async function() {
+  if (!currentUserData) return;
 
-        listEl.innerHTML = window.tempBadgeOrder.map((bId, index) => {
-          const badge = mergedRegistry[bId];
-          if (!badge) return '';
-          const isChecked = displayed.includes(bId);
+  let dynamicBadges = {};
+  try {
+    const badgeSnaps = await getDocs(collection(db, "custom_badges"));
+    badgeSnaps.forEach(docSnap => dynamicBadges[docSnap.id] = docSnap.data());
+  } catch (e) {}
 
-          return `
-            <div class="badge-order-item">
-              <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;">
-                <input type="checkbox" class="badge-display-chk" value="${bId}" ${isChecked ? 'checked' : ''}>
-                <span>${badge.name}</span>
-              </label>
-              <div class="badge-order-controls">
-                <button class="action-btn" onclick="window.moveBadgeOrder(${index}, -1)">&uarr;</button>
-                <button class="action-btn" onclick="window.moveBadgeOrder(${index}, 1)">&darr;</button>
-              </div>
-            </div>`;
-        }).join('');
-      };
+  const mergedRegistry = { ...BADGES_REGISTRY, ...dynamicBadges };
+  const owned = currentUserData.ownedBadges || [];
+  const displayed = currentUserData.displayedBadges || [...owned];
+  let order = currentUserData.badgeOrder || [...displayed];
+
+  order = order.filter(bId => owned.includes(bId));
+  owned.forEach(bId => {
+    if (!order.includes(bId)) order.push(bId);
+  });
+
+  window.tempBadgeOrder = [...order];
+
+  const renderSelectionList = () => {
+    const listEl = document.getElementById('badge-selection-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = window.tempBadgeOrder.map((bId, index) => {
+      const badge = mergedRegistry[bId];
+      if (!badge) return '';
+      const isChecked = displayed.includes(bId);
+
+      return `
+        <div class="badge-order-item">
+          <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;">
+            <input type="checkbox" class="badge-display-chk" value="${bId}" ${isChecked ? 'checked' : ''}>
+            <span>${badge.name}</span>
+          </label>
+          <div class="badge-order-controls">
+            <button class="action-btn" onclick="window.moveBadgeOrder(${index}, -1)">&uarr;</button>
+            <button class="action-btn" onclick="window.moveBadgeOrder(${index}, 1)">&darr;</button>
+          </div>
+        </div>`;
+    }).join('');
+  };
+
+  renderSelectionList();
+  
+  const overlay = document.getElementById('badge-customizer-overlay');
+  if (overlay) overlay.classList.add('active');
+};
 
       window.moveBadgeOrder = (idx, direction) => {
         const targetIdx = idx + direction;
