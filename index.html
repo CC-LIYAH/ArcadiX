@@ -1984,7 +1984,8 @@ window.openBadgeCustomizer = async function() {
 
   window.renderSelectionList();
 
-  const saveBtn = document.getElementById('save-badges-btn');
+  // Target the exact ID matching your HTML button
+  const saveBtn = document.getElementById('badge-customizer-save-btn');
   if (saveBtn) {
     saveBtn.onclick = async () => {
       const checkboxes = document.querySelectorAll('.badge-display-chk:checked');
@@ -1997,9 +1998,13 @@ window.openBadgeCustomizer = async function() {
         });
         currentUserData.displayedBadges = newDisplayed;
         currentUserData.badgeOrder = window.tempBadgeOrder;
+        
         if (overlay) overlay.classList.remove('active');
         await window.showArcadiXAlert("Badge preferences saved!", "Success");
-        window.loadUserProfile(currentUserData.userId);
+        
+        if (typeof window.loadUserProfile === 'function') {
+          window.loadUserProfile(currentUserData.userId);
+        }
       } catch (e) {
         window.showArcadiXAlert("Error saving badge order: " + e.message, "Error");
       }
