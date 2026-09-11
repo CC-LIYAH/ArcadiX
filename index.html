@@ -1396,6 +1396,7 @@
       if (!userBadges || userBadges.length === 0) return '';
       
       const mergedRegistry = { ...BADGES_REGISTRY, ...dynamicRegistry };
+      window.mergedRegistry = mergedRegistry;
       
       let badgesToRender = userBadges.filter(bId => mergedRegistry[bId]);
       if (badgeOrder && badgeOrder.length > 0) {
@@ -1938,11 +1939,14 @@ const renderSelectionList = () => {
   const listEl = document.getElementById('badge-selection-list');
   if (!listEl) return;
 
+  // Preserve checked state so reordering doesn't uncheck items
   const currentChecked = Array.from(document.querySelectorAll('.badge-display-chk:checked')).map(c => c.value);
 
   listEl.innerHTML = window.tempBadgeOrder.map((bId, index) => {
-    const badge = mergedRegistry[bId];
+    // Look up badge in global window.mergedRegistry
+    const badge = window.mergedRegistry ? window.mergedRegistry[bId] : null;
     if (!badge) return '';
+    
     const isChecked = currentChecked.length > 0 ? currentChecked.includes(bId) : displayed.includes(bId);
 
     return `
@@ -1964,12 +1968,15 @@ window.moveBadgeOrder = (index, dir) => {
   const newIndex = index + dir;
   if (newIndex < 0 || newIndex >= window.tempBadgeOrder.length) return;
 
+  // Swap positions in temp array
   const temp = window.tempBadgeOrder[index];
   window.tempBadgeOrder[index] = window.tempBadgeOrder[newIndex];
   window.tempBadgeOrder[newIndex] = temp;
 
+  // Re-render UI list
+  window.tempBadgeOrder = [...order];
   renderSelectionList();
-  };
+};
 
   const overlay = document.getElementById('badge-customizer-overlay');
   if (overlay) overlay.classList.add('active');
