@@ -1938,6 +1938,11 @@ window.openBadgeCustomizer = async function() {
 
 window.renderSelectionList = () => {
   const listEl = document.getElementById('badge-selection-list');
+  
+  // Debug logging
+  console.log('1. Target Container:', listEl);
+  console.log('2. Temp Badge Order Array:', window.tempBadgeOrder);
+
   if (!listEl) {
     console.error("Target container '#badge-selection-list' was not found in the DOM!");
     return;
@@ -1946,7 +1951,7 @@ window.renderSelectionList = () => {
   const safeDisplayed = (typeof displayed !== 'undefined' && Array.isArray(displayed)) ? displayed : [];
   const currentChecked = Array.from(document.querySelectorAll('.badge-display-chk:checked')).map(c => c.value);
 
-  listEl.innerHTML = (window.tempBadgeOrder || []).map((bId, index) => {
+  const htmlOutput = (window.tempBadgeOrder || []).map((bId, index) => {
     const registry = window.mergedRegistry || (typeof BADGES_REGISTRY !== 'undefined' ? BADGES_REGISTRY : {});
     const badge = registry[bId];
     const badgeName = badge ? badge.name : bId;
@@ -1954,17 +1959,20 @@ window.renderSelectionList = () => {
     const isChecked = currentChecked.length > 0 ? currentChecked.includes(bId) : safeDisplayed.includes(bId);
 
     return `
-      <div class="badge-order-item">
-        <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer;">
+      <div class="badge-order-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+        <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: #fff;">
           <input type="checkbox" class="badge-display-chk" value="${bId}" ${isChecked ? 'checked' : ''}>
           <span>${badgeName}</span>
         </label>
-        <div class="badge-order-controls">
-          <button class="action-btn" onclick="window.moveBadgeOrder(${index}, -1)">&uarr;</button>
-          <button class="action-btn" onclick="window.moveBadgeOrder(${index}, 1)">&darr;</button>
+        <div class="badge-order-controls" style="display: flex; gap: 0.3rem;">
+          <button type="button" class="action-btn" onclick="window.moveBadgeOrder(${index}, -1)">&uarr;</button>
+          <button type="button" class="action-btn" onclick="window.moveBadgeOrder(${index}, 1)">&darr;</button>
         </div>
       </div>`;
   }).join('');
+
+  console.log('3. Generated HTML Character Count:', htmlOutput.length);
+  listEl.innerHTML = htmlOutput;
 };
 
 
