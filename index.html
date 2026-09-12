@@ -977,6 +977,7 @@
   <a href="./">Home</a>
   <a href="?page=allgames">All Games</a>
   <a href="?page=updates">Updates</a>
+  <a href="?page=friends">Friends</a>
   <a href="messages.html">Messages</a>
   <a href="leaderboards.html">Leaderboards</a>
   <a href="?page=admin" id="admin-nav-link" style="display: none;">Admin</a>
@@ -1005,6 +1006,42 @@
       <div class="custom-modal-actions" id="modal-actions-container"></div>
     </div>
   </div>
+
+<!-- Friends Management View Page -->
+<div id="friends-page" class="page-view" style="display: none; padding: 2rem;">
+  <div class="section-header-box" style="margin-top: 0;">Friends & Social Hub</div>
+  
+  <!-- Add Friend Input Form -->
+  <div class="auth-box" style="max-width: 100%; margin-bottom: 1.5rem;">
+    <div class="form-group" style="margin-bottom: 0;">
+      <label>Send Friend Request (Enter Username or Player ID #)</label>
+      <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem;">
+        <input type="text" id="friend-search-input" class="arcadix-input" placeholder="e.g. GamerName or 12">
+        <button onclick="window.sendFriendRequest()" class="arcadix-btn" style="width: auto; padding: 0.8rem 1.5rem; flex-shrink: 0;">Send Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Incoming Requests -->
+  <div class="update-card" style="margin-bottom: 1.5rem;">
+    <div class="update-header">
+      <span class="update-title">Pending Incoming Requests</span>
+    </div>
+    <div id="incoming-requests-list" style="display: flex; flex-direction: column; gap: 0.8rem; margin-top: 0.5rem;">
+      <p style="color:#888; font-size:0.85rem;">No incoming requests.</p>
+    </div>
+  </div>
+
+  <!-- Active Friends List -->
+  <div class="update-card">
+    <div class="update-header">
+      <span class="update-title">Your Friends List</span>
+    </div>
+    <div id="friends-list" style="display: flex; flex-direction: column; gap: 0.8rem; margin-top: 0.5rem;">
+      <p style="color:#888; font-size:0.85rem;">You have not added any friends yet.</p>
+    </div>
+  </div>
+</div>
 
   <!-- Dedicated Ban Config Modal -->
   <div class="custom-modal-overlay" id="ban-modal-overlay">
@@ -1627,6 +1664,8 @@ function applySiteTheme(theme = {}) {
         window.loadUserProfile(userIdParam);
       } else if (pageIdParam === 'updates') {
         window.renderPublicUpdates();
+      } else if (pageIdParam === 'friends') {
+        window.renderFriendsPage();
       } else if (pageIdParam === 'settings') {
         window.renderSettingsPage();
       } else if (pageIdParam === 'admin') {
@@ -3109,8 +3148,8 @@ window.renderSettingsPage = function() {
 
       container.innerHTML = `
         <div class="page-scroll-container">
-          <h1 class="hero-title">WELCOME TO PLANET ARCADI X</h1>
-          <p class="hero-description">Your premier destination for unblocked web games, custom leaderboards, real-time messaging, and interactive community features.</p>
+          <h1 class="hero-title">Welcome to Planet ArcadiX!</h1>
+          <p class="hero-description">Welcome to Planet ArcadiX! You can explore our ever-growing library of games in the All Games tab!</p>
 
           <div class="section-header-box">Featured Games</div>
           <div class="games-grid">
