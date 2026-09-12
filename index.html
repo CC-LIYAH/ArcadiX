@@ -1527,6 +1527,16 @@
       }
     }
 
+// SHA-256 hash
+async function hashEmail(email) {
+  if (!email) return null;
+  const encoder = new TextEncoder();
+  const data = encoder.encode(email.trim().toLowerCase());
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
     // Apply Site Theme Settings Dynamically
 function applySiteTheme(theme = {}) {
   const root = document.documentElement.style;
@@ -1712,8 +1722,8 @@ function applySiteTheme(theme = {}) {
       const dropdown = document.getElementById('profile-dropdown');
       if (dropdown) dropdown.classList.toggle('active');
     };
-
- window.handleSignUp = async function() {
+window.handleSignUp = async function() {
+  const DEFAULT_AVATAR = "https://cc-liyah.github.io/ArcadiX/PAXIcons/PlaceholderPFP.png";
   const username = document.getElementById('auth-username').value.trim();
   const email = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value;
@@ -1746,6 +1756,8 @@ function applySiteTheme(theme = {}) {
       }
     });
 
+    const hashedEmail = await hashEmail(email);
+
     await updateProfile(user, { displayName: username, photoURL: DEFAULT_AVATAR });
 
     const isSuperAdmin = newUserId === 1;
@@ -1757,9 +1769,10 @@ function applySiteTheme(theme = {}) {
       userId: newUserId,
       username: username,
       email: email,
+      hashedEmail: hashedEmail,
       photoURL: DEFAULT_AVATAR,
       bio: "Welcome to my Planet ArcadiX profile!",
-      createdAt: new Date().toISOString(), // Added join date timestamp
+      createdAt: new Date().toISOString(),
       hasAdminAccess: isSuperAdmin,
       isBanned: false,
       banReason: "",
@@ -2680,10 +2693,9 @@ window.renderSettingsPage = function() {
                 ${banBadge}
                 ${deviceBanBadge}
               </div>
-              <span style="color:#aaa; font-size:0.8rem;">Click to Manage &blackdwn;</span>
+              <span style="color:#aaa; font-size:0.8rem;">Click to Manage &#9660;</span>
             </div>
             <div class="user-item-details" id="details-${user.uid}">
-              <p style="font-size:0.85rem; color:#ccc; margin-bottom:0.5rem;"><strong>Email:</strong> ${user.email}</p>
               <p style="font-size:0.85rem; color:#ccc; margin-bottom:0.8rem;"><strong>Registered Device ID:</strong> ${user.registeredDeviceId || 'None'}</p>
               <div class="user-actions">
                 ${canReset ? `<button class="action-btn" onclick="window.resetUserInfo('${user.uid}')">Reset Info</button>` : ''}
