@@ -2623,33 +2623,42 @@ window.renderSettingsPage = function() {
           if (user.banUntil === "PERMANENT" || !user.banUntil) {
             banExpiryBadgeText = '(PERMANENT)';
           } else {
-            banExpiryBadgeText = `(Until: ${new Date(user.banUntil).toLocaleDateString()})`;
+   banExpiryBadgeText = `(Until: ${new Date(user.banUntil).toLocaleDateString()})`;
           }
         }
 
+        const adminBadge = user.hasAdminAccess ? '<span class="user-badge admin">ADMIN</span>' : '';
+        const banBadge = user.isBanned ? `<span class="user-badge banned">BANNED ${banExpiryBadgeText}</span>` : '';
+        const deviceBanBadge = user.isDeviceBanned ? '<span class="user-badge device-banned">DEVICE BANNED</span>' : '';
+
         usersHTML += `
-          <div class="user-list-item">
-            <div class="user-item-header" onclick="toggleUserCard('${uniqueId}')">
+          <div class="user-list-item" id="${uniqueId}">
+            <div class="user-item-header" onclick="window.toggleUserAccordion('${user.uid}')">
               <div class="user-item-info">
                 <strong>${user.username}</strong>
-                <span class="user-badge">ID: #${user.userId}</span>
-                ${user.hasAdminAccess ? '<span class="user-badge admin">ADMIN</span>' : ''}
-                ${user.isBanned ? `<span class="user-badge banned">BANNED ${banExpiryBadgeText}</span>` : ''}
-                ${user.isDeviceBanned ? '<span class="user-badge device-banned">DEVICE BANNED</span>' : ''}
+                <span class="user-id-badge">ID: #${user.userId}</span>
+                ${adminBadge}
+                ${banBadge}
+                ${deviceBanBadge}
               </div>
-              <span style="color:var(--accent-color);">&#9660;</span>
+              <span style="color:#aaa; font-size:0.8rem;">Click to Manage &blackdwn;</span>
             </div>
-            <div class="user-item-details" id="${uniqueId}">
-              <p style="margin-bottom:0.5rem;"><strong>Bio:</strong> ${user.bio || 'User bio text not provided.'}</p>
-              <p style="margin-bottom:0.5rem; font-size:0.75rem; color:#aaa;"><strong>Device ID:</strong> ${user.registeredDeviceId || 'Not registered'}</p>
+            <div class="user-item-details" id="details-${user.uid}">
+              <p style="font-size:0.85rem; color:#ccc; margin-bottom:0.5rem;"><strong>Email:</strong> ${user.email}</p>
+              <p style="font-size:0.85rem; color:#ccc; margin-bottom:0.8rem;"><strong>Registered Device ID:</strong> ${user.registeredDeviceId || 'None'}</p>
               <div class="user-actions">
-                ${canReset ? `<button class="action-btn" onclick="adminResetUsername('${user.uid}', ${user.userId})">Reset Username</button>` : ''}
-                ${canReset ? `<button class="action-btn" onclick="adminResetBio('${user.uid}')">Reset Bio</button>` : ''}
-                ${canReset ? `<button class="action-btn" onclick="adminResetPassword('${user.uid}')">Reset Password</button>` : ''}
-                <button class="action-btn" onclick="adminToggleAdminAccess('${user.uid}', ${!user.hasAdminAccess})">${user.hasAdminAccess ? 'Revoke Admin' : 'Grant Admin'}</button>
-                <button class="action-btn" onclick="adminManagePermissions('${user.uid}')">Manage Permissions</button>
-                ${canBanUser ? `<button class="action-btn danger" onclick="openBanModal('${user.uid}', ${!user.isBanned})">${user.isBanned ? 'Unban Account' : 'Ban Account'}</button>` : ''}
-                ${canBanDev ? `<button class="action-btn danger" onclick="toggleDeviceBan('${user.uid}', '${user.registeredDeviceId || ''}', ${!user.isDeviceBanned})">${user.isDeviceBanned ? 'Unban Device' : 'Ban Device'}</button>` : ''}
+                ${canReset ? `<button class="action-btn" onclick="window.resetUserInfo('${user.uid}')">Reset Info</button>` : ''}
+                ${canBanUser ? `
+                  ${user.isBanned ? 
+                    `<button class="action-btn" onclick="window.unbanUser('${user.uid}')">Unban Account</button>` : 
+                    `<button class="action-btn danger" onclick="window.openBanModal('${user.uid}', '${user.username}')">Ban Account</button>`}
+                ` : ''}
+                ${canBanDev ? `
+                  ${user.isDeviceBanned ? 
+                    `<button class="action-btn" onclick="window.unbanDevice('${user.uid}', '${user.registeredDeviceId}')">Unban Device</button>` : 
+                    `<button class="action-btn danger" onclick="window.banDevice('${user.uid}', '${user.registeredDeviceId}')">Ban Device</button>`}
+                ` : ''}
+                ${isSuperAdmin ? `<button class="action-btn" onclick="window.openPermissionsModal('${user.uid}', '${user.username}')">Manage Permissions</button>` : ''}
               </div>
             </div>
           </div>`;
@@ -2658,329 +2667,121 @@ window.renderSettingsPage = function() {
       container.innerHTML = usersHTML;
     };
 
-    window.toggleUserCard = function(elementId) {
-      const card = document.getElementById(elementId);
-      if (card) card.classList.toggle('active');
+    window.toggleUserAccordion = function(uid) {
+      const details = document.getElementById(`details-${uid}`);
+      if (details) details.classList.toggle('active');
     };
 
-    window.openBanModal = async function(uid, shouldBan) {
-      if (!shouldBan) {
-        const confirmed = await window.showArcadiXConfirm("Are you sure you want to unban this user?", "Unban Player");
-        if (!confirmed) return;
+    window.openBanModal = function(uid, username) {
+      const overlay = document.getElementById('ban-modal-overlay');
+      const title = document.getElementById('ban-modal-title');
+      const submitBtn = document.getElementById('ban-modal-submit-btn');
 
+      if (title) title.innerText = `Ban Player: ${username}`;
+      if (overlay) overlay.classList.add('active');
+
+      if (submitBtn) {
+        submitBtn.onclick = async () => {
+          const reason = document.getElementById('ban-modal-reason').value.trim() || 'Violation of terms';
+          const durationVal = document.getElementById('ban-modal-duration').value;
+          
+          let banUntil = null;
+          if (durationVal === 'perm') {
+            banUntil = 'PERMANENT';
+          } else if (durationVal === 'custom') {
+            const hours = parseFloat(document.getElementById('ban-modal-custom-hours').value) || 1;
+            banUntil = Date.now() + hours * 60 * 60 * 1000;
+          } else {
+            const days = parseFloat(durationVal);
+            banUntil = Date.now() + days * 24 * 60 * 60 * 1000;
+          }
+
+          try {
+            await updateDoc(doc(db, "users", uid), {
+              isBanned: true,
+              banReason: reason,
+              banUntil: banUntil
+            });
+
+            if (overlay) overlay.classList.remove('active');
+            await window.showArcadiXAlert(`Account for ${username} has been banned.`, "Account Banned");
+            window.switchAdminTab('users');
+          } catch (e) {
+            window.showArcadiXAlert("Error banning account: " + e.message, "Error");
+          }
+        };
+      }
+    };
+
+    window.unbanUser = async function(uid) {
+      try {
         await updateDoc(doc(db, "users", uid), {
           isBanned: false,
           banReason: "",
           banUntil: null
         });
-        await window.showArcadiXAlert("User has been unbanned.", "Account Status");
+        await window.showArcadiXAlert("User account unbanned.", "Success");
         window.switchAdminTab('users');
-        return;
+      } catch (e) {
+        window.showArcadiXAlert("Error unbanning user: " + e.message, "Error");
       }
-
-      const overlay = document.getElementById('ban-modal-overlay');
-      const submitBtn = document.getElementById('ban-modal-submit-btn');
-      document.getElementById('ban-modal-reason').value = "Violation of terms";
-      document.getElementById('ban-modal-duration').value = "1";
-      document.getElementById('ban-custom-hours-group').style.display = "none";
-
-      overlay.classList.add('active');
-
-      submitBtn.onclick = async () => {
-        const reason = document.getElementById('ban-modal-reason').value.trim() || "Violation of rules";
-        const durationType = document.getElementById('ban-modal-duration').value;
-        let banUntil = null;
-
-        if (durationType === "perm") {
-          banUntil = "PERMANENT";
-        } else if (durationType === "custom") {
-          const customHours = parseFloat(document.getElementById('ban-modal-custom-hours').value);
-          if (isNaN(customHours) || customHours <= 0) {
-            return window.showArcadiXAlert("Please specify a valid amount of hours.", "Invalid Input");
-          }
-          banUntil = Date.now() + (customHours * 60 * 60 * 1000);
-        } else {
-          const days = parseInt(durationType);
-          banUntil = Date.now() + (days * 24 * 60 * 60 * 1000);
-        }
-
-        await updateDoc(doc(db, "users", uid), {
-          isBanned: true,
-          banReason: reason,
-          banUntil: banUntil
-        });
-
-        overlay.classList.remove('active');
-        await window.showArcadiXAlert("Account has been banned.", "Account Status");
-        window.switchAdminTab('users');
-      };
     };
 
-    window.toggleDeviceBan = async function(uid, deviceId, shouldBan) {
-      if (!deviceId) {
-        return window.showArcadiXAlert("This user does not have a registered device identifier yet.", "Action Failed");
-      }
+    window.banDevice = async function(uid, deviceId) {
+      if (!deviceId) return window.showArcadiXAlert("No device ID found for this user.", "Error");
+      const confirm = await window.showArcadiXConfirm("Are you sure you want to ban this device? All accounts accessing from this hardware will be blocked.", "Device Ban");
+      if (!confirm) return;
 
-      const confirmMsg = shouldBan 
-        ? `Are you sure you want to BAN this device (${deviceId})? This will block all logins/signups from this browser hardware.` 
-        : `Are you sure you want to UNBAN this device (${deviceId})?`;
-
-      const confirmed = await window.showArcadiXConfirm(confirmMsg, "Device Ban Toggle");
-      if (!confirmed) return;
-
-      if (shouldBan) {
-        const reason = await window.showArcadiXPrompt("Reason for Device Ban:", "Hardware / Multi-account rule breach", "Device Ban Reason") || "Hardware Ban";
-        
+      try {
         await setDoc(doc(db, "banned_devices", deviceId), {
-          deviceId: deviceId,
-          bannedAt: new Date().toISOString(),
-          reason: reason,
+          bannedAt: Date.now(),
           associatedUid: uid
         });
-
         await updateDoc(doc(db, "users", uid), { isDeviceBanned: true });
-        await window.showArcadiXAlert("Device has been permanently hardware banned.", "Device Banned");
-      } else {
+        await window.showArcadiXAlert("Device hardware banned successfully.", "Success");
+        window.switchAdminTab('users');
+      } catch (e) {
+        window.showArcadiXAlert("Error banning device: " + e.message, "Error");
+      }
+    };
+
+    window.unbanDevice = async function(uid, deviceId) {
+      if (!deviceId) return;
+      try {
         await deleteDoc(doc(db, "banned_devices", deviceId));
         await updateDoc(doc(db, "users", uid), { isDeviceBanned: false });
-        await window.showArcadiXAlert("Device ban has been removed.", "Device Unbanned");
+        await window.showArcadiXAlert("Device hardware unbanned.", "Success");
+        window.switchAdminTab('users');
+      } catch (e) {
+        window.showArcadiXAlert("Error unbanning device: " + e.message, "Error");
       }
-
-      window.switchAdminTab('users');
     };
-    async function renderAssetsTab(body) {
-      if (currentUserData && !currentUserData.permissions?.approveAssets && !currentUserData.permissions?.isSuperAdmin) {
-        body.innerHTML = `<p style="color:#ef4444; text-align:center;">You do not have permission to review asset approvals.</p>`;
-        return;
-      }
 
-      body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Pending Assets...</div>`;
+    window.resetUserInfo = async function(uid) {
+      const confirm = await window.showArcadiXConfirm("Reset profile information (Username, PFP, Bio) back to defaults?", "Reset Profile");
+      if (!confirm) return;
 
       try {
-        const querySnapshot = await getDocs(collection(db, "pending_assets"));
-        if (querySnapshot.empty) {
-          body.innerHTML = `
-            <div class="section-header-box" style="margin-top:0;">Asset Approval Queue</div>
-            <p style="text-align:center; color:#888;">No pending photo URLs for approval.</p>`;
-          return;
-        }
-
-        let assetsHTML = '';
-        querySnapshot.forEach((assetDoc) => {
-          const item = assetDoc.data();
-          assetsHTML += `
-            <div class="asset-card">
-              <img src="${item.photoURL}" class="asset-preview" alt="Preview">
-              <div><strong>${item.username}</strong></div>
-              <div class="user-actions">
-                <button class="action-btn" onclick="window.approveAsset('${assetDoc.id}', '${item.uid}', '${item.photoURL}')">Approve</button>
-                <button class="action-btn danger" onclick="window.rejectAsset('${assetDoc.id}')">Reject</button>
-              </div>
-            </div>`;
+        await updateDoc(doc(db, "users", uid), {
+          photoURL: DEFAULT_AVATAR,
+          bio: "Welcome to my Planet ArcadiX profile!"
         });
-
-        body.innerHTML = `
-          <div class="section-header-box" style="margin-top:0;">Asset Approval Queue</div>
-          <div class="asset-grid">${assetsHTML}</div>`;
-      } catch (err) {
-        body.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load pending assets: ${err.message}</p>`;
-      }
-    }
-
-    window.approveAsset = async function(assetDocId, uid, photoURL) {
-      try {
-        await updateDoc(doc(db, "users", uid), { photoURL: photoURL });
-        await deleteDoc(doc(db, "pending_assets", assetDocId));
-        await window.showArcadiXAlert("Photo approved and applied to player profile!", "Asset Approved");
-        window.switchAdminTab('assets');
-      } catch (err) {
-        window.showArcadiXAlert("Error approving asset: " + err.message, "Error");
-      }
-    };
-
-    window.rejectAsset = async function(assetDocId) {
-      try {
-        await deleteDoc(doc(db, "pending_assets", assetDocId));
-        await window.showArcadiXAlert("Photo submission rejected.", "Asset Rejected");
-        window.switchAdminTab('assets');
-      } catch (err) {
-        window.showArcadiXAlert("Error rejecting asset: " + err.message, "Error");
-      }
-    };
-
-    async function renderThemesTab(body) {
-      body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Dynamic Theme Engine...</div>`;
-
-      try {
-        const querySnapshot = await getDocs(collection(db, "themes"));
-        let themesHTML = '';
-
-        querySnapshot.forEach((themeDoc) => {
-          const theme = { id: themeDoc.id, ...themeDoc.data() };
-          themesHTML += `
-            <div class="theme-card">
-              <div class="theme-card-header">
-                <strong>${theme.name} ${theme.isDefault ? '<span style="color:var(--accent-color); font-size:0.75rem;">[DEFAULT]</span>' : ''}</strong>
-                <div class="theme-actions">
-                  <button class="action-btn" onclick="window.previewTheme('${theme.id}')">Preview Theme</button>
-                  ${!theme.isDefault ? `<button class="action-btn danger" onclick="window.deleteTheme('${theme.id}')">Delete Theme</button>` : ''}
-                </div>
-              </div>
-              <div style="display:flex; gap:0.5rem; margin-top:0.5rem; flex-wrap:wrap;">
-                <span style="background:${theme.bgColor}; padding:0.2rem 0.6rem; border-radius:4px; font-size:0.7rem; border:1px solid #444;">BG</span>
-                <span style="background:${theme.cardBg}; padding:0.2rem 0.6rem; border-radius:4px; font-size:0.7rem; border:1px solid #444;">Card</span>
-                <span style="background:${theme.accentColor}; color:#000; padding:0.2rem 0.6rem; border-radius:4px; font-size:0.7rem; font-weight:bold;">Accent</span>
-              </div>
-            </div>`;
-        });
-
-        body.innerHTML = `
-          <div class="section-header-box" style="margin-top:0;">Create Custom Theme</div>
-          <div class="color-picker-grid">
-            <div class="color-field">
-              <label>Theme Name</label>
-              <input type="text" id="theme-name-input" class="arcadix-input" placeholder="e.g. Cyberpunk Neon">
-            </div>
-            <div class="color-field">
-              <label>Accent Color</label>
-              <div class="color-picker-row">
-                <input type="color" id="theme-accent-input" value="#a855f7">
-                <span style="font-size:0.8rem; color:#aaa;">Primary Accent</span>
-              </div>
-            </div>
-            <div class="color-field">
-              <label>Background Solid Color</label>
-              <div class="color-picker-row">
-                <input type="color" id="theme-bg-input" value="#000000">
-                <span style="font-size:0.8rem; color:#aaa;">Main Page Canvas</span>
-              </div>
-            </div>
-            <div class="color-field">
-              <label>Card Background</label>
-              <div class="color-picker-row">
-                <input type="color" id="theme-cardbg-input" value="#120916">
-                <span style="font-size:0.8rem; color:#aaa;">Panel Modules</span>
-              </div>
-            </div>
-            <div class="color-field">
-              <label>Card Border</label>
-              <div class="color-picker-row">
-                <input type="color" id="theme-border-input" value="#331940">
-                <span style="font-size:0.8rem; color:#aaa;">Outlines</span>
-              </div>
-            </div>
-            <div class="color-field">
-              <label>Text Color</label>
-              <div class="color-picker-row">
-                <input type="color" id="theme-text-input" value="#ffffff">
-                <span style="font-size:0.8rem; color:#aaa;">Primary Typography</span>
-              </div>
-            </div>
-          </div>
-          <button onclick="window.createSiteTheme()" class="arcadix-btn" style="margin-bottom:2rem;">Register & Save Theme</button>
-
-          <div class="section-header-box">Available Site Themes</div>
-          ${themesHTML}`;
-
-      } catch (err) {
-        body.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load themes: ${err.message}</p>`;
-      }
-    }
-
-    window.createSiteTheme = async function() {
-      const name = document.getElementById('theme-name-input').value.trim();
-      const accent = document.getElementById('theme-accent-input').value;
-      const bg = document.getElementById('theme-bg-input').value;
-      const cardBg = document.getElementById('theme-cardbg-input').value;
-      const border = document.getElementById('theme-border-input').value;
-      const textColor = document.getElementById('theme-text-input').value;
-
-      if (!name) return window.showArcadiXAlert("Please specify a Theme Name.", "Error");
-
-      const themeId = 'theme-' + Date.now();
-      const newThemeData = {
-        name: name,
-        accentColor: accent,
-        bgColor: bg,
-        headerBg: `linear-gradient(180deg, ${cardBg} 0%, ${bg} 100%)`,
-        cardBg: cardBg,
-        cardBorder: border,
-        textColor: textColor,
-        isDefault: false
-      };
-
-      try {
-        await setDoc(doc(db, "themes", themeId), newThemeData);
-        await window.showArcadiXAlert(`Theme '${name}' saved successfully!`, "Theme Created");
-        window.switchAdminTab('themes');
-      } catch (err) {
-        window.showArcadiXAlert("Error saving theme: " + err.message, "Error");
-      }
-    };
-
-    window.previewTheme = function(themeId) {
-      const theme = fetchedThemesCache.find(t => t.id === themeId);
-      if (theme) {
-        applyTheme(theme);
-        localStorage.setItem('arcadix_active_theme_id', themeId);
-      }
-    };
-
-    window.deleteTheme = async function(themeId) {
-      const confirmed = await window.showArcadiXConfirm("Are you sure you want to delete this theme option?", "Delete Theme");
-      if (confirmed) {
-        try {
-          await deleteDoc(doc(db, "themes", themeId));
-          window.switchAdminTab('themes');
-        } catch (err) {
-          window.showArcadiXAlert("Error deleting theme: " + err.message, "Error");
-        }
-      }
-    };
-
-    window.adminResetUsername = async function(uid, oldId) {
-      const newUsername = await window.showArcadiXPrompt("Enter new username for player:", "", "Reset Username");
-      if (!newUsername) return;
-
-      try {
-        await updateDoc(doc(db, "users", uid), { username: newUsername });
-        await window.showArcadiXAlert("Username reset successfully.", "Success");
+        await window.showArcadiXAlert("User profile reset to default.", "Success");
         window.switchAdminTab('users');
-      } catch (err) {
-        window.showArcadiXAlert("Error resetting username: " + err.message, "Error");
+      } catch (e) {
+        window.showArcadiXAlert("Error resetting user info: " + e.message, "Error");
       }
     };
 
-    window.adminResetBio = async function(uid) {
-      try {
-        await updateDoc(doc(db, "users", uid), { bio: "Welcome to my Planet ArcadiX profile!" });
-        await window.showArcadiXAlert("User bio reset to default.", "Success");
-        window.switchAdminTab('users');
-      } catch (err) {
-        window.showArcadiXAlert("Error resetting bio: " + err.message, "Error");
-      }
-    };
+    window.openPermissionsModal = async function(uid, username) {
+      const overlay = document.getElementById('permissions-modal-overlay');
+      const subtitle = document.getElementById('perm-modal-subtitle');
+      const submitBtn = document.getElementById('perm-modal-submit-btn');
 
-    window.adminResetPassword = async function(uid) {
-      await window.showArcadiXAlert("Password reset instructions or trigger sent to user registration flow.", "Password Reset");
-    };
+      if (subtitle) subtitle.innerText = `Select access permissions for user: ${username}`;
 
-    window.adminToggleAdminAccess = async function(uid, shouldGrant) {
-      try {
-        await updateDoc(doc(db, "users", uid), { hasAdminAccess: shouldGrant });
-        await window.showArcadiXAlert(`Admin access ${shouldGrant ? 'granted' : 'revoked'}.`, "Permissions Updated");
-        window.switchAdminTab('users');
-      } catch (err) {
-        window.showArcadiXAlert("Error updating admin access: " + err.message, "Error");
-      }
-    };
-
-    window.adminManagePermissions = async function(uid) {
       const userDoc = await getDoc(doc(db, "users", uid));
-      if (!userDoc.exists()) return;
-
-      const userData = userDoc.data();
-      const perms = userData.permissions || {};
+      const perms = userDoc.exists() ? (userDoc.data().permissions || {}) : {};
 
       document.getElementById('perm-chk-updates').checked = !!perms.manageUpdates;
       document.getElementById('perm-chk-users').checked = !!perms.manageUsers;
@@ -2992,103 +2793,208 @@ window.renderSettingsPage = function() {
       document.getElementById('perm-chk-banuser').checked = !!perms.banUser;
       document.getElementById('perm-chk-bandevice').checked = !!perms.banDevice;
 
-      const overlay = document.getElementById('permissions-modal-overlay');
-      overlay.classList.add('active');
+      if (overlay) overlay.classList.add('active');
 
-      document.getElementById('perm-modal-submit-btn').onclick = async () => {
-        const updatedPermissions = {
-          manageUpdates: document.getElementById('perm-chk-updates').checked,
-          manageUsers: document.getElementById('perm-chk-users').checked,
-          approveAssets: document.getElementById('perm-chk-assets').checked,
-          addGames: document.getElementById('perm-chk-addgames').checked,
-          hideGames: document.getElementById('perm-chk-hidegames').checked,
-          deleteGames: document.getElementById('perm-chk-deletegames').checked,
-          resetUserInfo: document.getElementById('perm-chk-reset').checked,
-          banUser: document.getElementById('perm-chk-banuser').checked,
-          banDevice: document.getElementById('perm-chk-bandevice').checked,
-          isSuperAdmin: !!perms.isSuperAdmin
+      if (submitBtn) {
+        submitBtn.onclick = async () => {
+          const newPerms = {
+            manageUpdates: document.getElementById('perm-chk-updates').checked,
+            manageUsers: document.getElementById('perm-chk-users').checked,
+            approveAssets: document.getElementById('perm-chk-assets').checked,
+            addGames: document.getElementById('perm-chk-addgames').checked,
+            hideGames: document.getElementById('perm-chk-hidegames').checked,
+            deleteGames: document.getElementById('perm-chk-deletegames').checked,
+            resetUserInfo: document.getElementById('perm-chk-reset').checked,
+            banUser: document.getElementById('perm-chk-banuser').checked,
+            banDevice: document.getElementById('perm-chk-bandevice').checked,
+            manageGames: document.getElementById('perm-chk-addgames').checked || document.getElementById('perm-chk-hidegames').checked || document.getElementById('perm-chk-deletegames').checked
+          };
+
+          const hasAnyPerm = Object.values(newPerms).some(val => val === true);
+
+          try {
+            await updateDoc(doc(db, "users", uid), {
+              hasAdminAccess: hasAnyPerm,
+              permissions: newPerms
+            });
+
+            if (overlay) overlay.classList.remove('active');
+            await window.showArcadiXAlert(`Permissions saved for ${username}!`, "Success");
+            window.switchAdminTab('users');
+          } catch (e) {
+            window.showArcadiXAlert("Error updating permissions: " + e.message, "Error");
+          }
         };
-
-        try {
-          await updateDoc(doc(db, "users", uid), { permissions: updatedPermissions });
-          overlay.classList.remove('active');
-          await window.showArcadiXAlert("Permissions successfully saved!", "Success");
-          window.switchAdminTab('users');
-        } catch (err) {
-          window.showArcadiXAlert("Error saving permissions: " + err.message, "Error");
-        }
-      };
+      }
     };
 
-    // USER FRONTEND VIEWS & HOME PAGE ROUTING
-    function renderHomePageGames() {
-      headerGameTitle.style.display = 'none';
-      titleEl.innerText = "Planet ArcadiX - ArcadiX Hub";
+    async function renderAssetsTab(body) {
+      body.innerHTML = `<div style="text-align:center; color:#888; padding:2rem;">Loading Pending Assets...</div>`;
 
-      let gamesCardsHTML = Object.keys(GAMES_REGISTRY).map(key => {
-        const g = GAMES_REGISTRY[key];
-        return `
-          <a href="?game=${key}" class="game-card">
-            <img src="${g.icon}" class="game-icon-img" alt="${g.title}">
-            <h3>${g.title}</h3>
-            <span>Play Now &rarr;</span>
-          </a>`;
-      }).join('');
+      try {
+        const querySnapshot = await getDocs(collection(db, "pending_assets"));
+        if (querySnapshot.empty) {
+          body.innerHTML = `<div class="section-header-box" style="margin-top:0;">Asset Approval Queue</div><p style="text-align:center; color:#888;">No pending photo submissions requiring review.</p>`;
+          return;
+        }
 
-      container.innerHTML = `
-        <div class="page-scroll-container">
-          <h1 class="hero-title">Welcome to Planet ArcadiX</h1>
-          <p class="hero-description">Welcome to Planet ArcadiX! You can explore our ever-growing library of games in the All Games tab!</p>
-          <div class="section-header-box">Featured Games</div>
-          <div class="games-grid">${gamesCardsHTML}</div>
-        </div>`;
+        let assetsHTML = '';
+        querySnapshot.forEach(docSnap => {
+          const item = docSnap.data();
+          assetsHTML += `
+            <div class="asset-card">
+              <img src="${item.photoURL}" class="asset-preview" alt="Preview">
+              <div style="font-size:0.9rem;"><strong>${item.username}</strong></div>
+              <div style="display:flex; gap:0.5rem; width:100%;">
+                <button class="arcadix-btn" style="padding:0.4rem; font-size:0.75rem;" onclick="window.approveAsset('${docSnap.id}', '${item.uid}', '${item.photoURL}')">Approve</button>
+                <button class="action-btn danger" style="padding:0.4rem; font-size:0.75rem; width:100%;" onclick="window.rejectAsset('${docSnap.id}')">Reject</button>
+              </div>
+            </div>`;
+        });
+
+        body.innerHTML = `
+          <div class="section-header-box" style="margin-top:0;">Asset Approval Queue</div>
+          <div class="asset-grid">${assetsHTML}</div>`;
+      } catch (e) {
+        body.innerHTML = `<p style="color:#ef4444; text-align:center;">Failed to load assets: ${e.message}</p>`;
+      }
     }
 
-    window.renderAllGamesPage = async function() {
-      headerGameTitle.style.display = 'none';
-      titleEl.innerText = "All Games - Planet ArcadiX";
-
-      let registeredCardsHTML = Object.keys(GAMES_REGISTRY).map(key => {
-        const g = GAMES_REGISTRY[key];
-        return `
-          <a href="?game=${key}" class="game-card">
-            <img src="${g.icon}" class="game-icon-img" alt="${g.title}">
-            <h3>${g.title}</h3>
-            <span>Play Game &rarr;</span>
-          </a>`;
-      }).join('');
-
-      let customCardsHTML = '';
+    window.approveAsset = async function(assetId, uid, photoURL) {
       try {
-        const snaps = await getDocs(collection(db, "custom_games"));
-        snaps.forEach(docSnap => {
-          const g = docSnap.data();
-          if (!g.hidden) {
-            customCardsHTML += `
-              <a href="?game=${docSnap.id}" class="game-card">
-                <img src="${g.iconUrl || 'favicon.ico'}" class="game-icon-img" alt="${g.title}">
-                <h3>${g.title}</h3>
-                <span>Play Game &rarr;</span>
-              </a>`;
-          }
-        });
-      } catch (e) {}
+        await updateDoc(doc(db, "users", uid), { photoURL: photoURL });
+        await deleteDoc(doc(db, "pending_assets", assetId));
+        await window.showArcadiXAlert("Photo URL approved & updated!", "Success");
+        window.switchAdminTab('assets');
+      } catch (e) {
+        window.showArcadiXAlert("Error approving asset: " + e.message, "Error");
+      }
+    };
 
-      container.innerHTML = `
-        <div class="page-scroll-container">
-          <div class="section-header-box" style="margin-top:0;">All Games</div>
-          <div class="games-grid">
-            ${registeredCardsHTML}
-            ${customCardsHTML}
+    window.rejectAsset = async function(assetId) {
+      try {
+        await deleteDoc(doc(db, "pending_assets", assetId));
+        await window.showArcadiXAlert("Asset submission rejected.", "Rejected");
+        window.switchAdminTab('assets');
+      } catch (e) {
+        window.showArcadiXAlert("Error rejecting asset: " + e.message, "Error");
+      }
+    };
+
+    async function renderThemesTab(body) {
+      let themeCardsHTML = fetchedThemesCache.map(theme => `
+        <div class="theme-card">
+          <div class="theme-card-header">
+            <strong>${theme.name}</strong>
+            ${theme.isDefault ? '<span class="user-badge admin">DEFAULT</span>' : ''}
           </div>
-        </div>`;
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <div style="background:${theme.bgColor}; width:24px; height:24px; border-radius:4px; border:1px solid #444;" title="Background"></div>
+            <div style="background:${theme.cardBg}; width:24px; height:24px; border-radius:4px; border:1px solid #444;" title="Card Background"></div>
+            <div style="background:${theme.accentColor}; width:24px; height:24px; border-radius:4px; border:1px solid #444;" title="Accent"></div>
+          </div>
+          <div class="theme-actions">
+            <button class="action-btn" onclick="window.applyThemePreview('${theme.id}')">Preview Theme</button>
+            ${!theme.isDefault ? `<button class="action-btn danger" onclick="window.deleteTheme('${theme.id}')">Delete Theme</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      body.innerHTML = `
+        <div class="section-header-box" style="margin-top:0;">Create Custom Site Theme</div>
+        <div class="color-picker-grid">
+          <div class="color-field">
+            <label>Theme Name</label>
+            <input type="text" id="theme-name" class="arcadix-input" placeholder="e.g. Neon Cyberpunk">
+          </div>
+          <div class="color-field">
+            <label>Main Background</label>
+            <div class="color-picker-row">
+              <input type="color" id="theme-bg" value="#000000">
+            </div>
+          </div>
+          <div class="color-field">
+            <label>Card Background</label>
+            <div class="color-picker-row">
+              <input type="color" id="theme-card-bg" value="#120916">
+            </div>
+          </div>
+          <div class="color-field">
+            <label>Card Border</label>
+            <div class="color-picker-row">
+              <input type="color" id="theme-card-border" value="#331940">
+            </div>
+          </div>
+          <div class="color-field">
+            <label>Accent Color</label>
+            <div class="color-picker-row">
+              <input type="color" id="theme-accent" value="#a855f7">
+            </div>
+          </div>
+          <div class="color-field">
+            <label>Text Color</label>
+            <div class="color-picker-row">
+              <input type="color" id="theme-text" value="#ffffff">
+            </div>
+          </div>
+        </div>
+        <button onclick="window.saveCustomTheme()" class="arcadix-btn" style="margin-bottom:2rem;">Save & Publish Theme</button>
+
+        <div class="section-header-box">Available Site Themes</div>
+        ${themeCardsHTML}`;
+    }
+
+    window.saveCustomTheme = async function() {
+      const name = document.getElementById('theme-name').value.trim();
+      const bgColor = document.getElementById('theme-bg').value;
+      const cardBg = document.getElementById('theme-card-bg').value;
+      const cardBorder = document.getElementById('theme-card-border').value;
+      const accentColor = document.getElementById('theme-accent').value;
+      const textColor = document.getElementById('theme-text').value;
+
+      if (!name) return window.showArcadiXAlert("Please provide a name for the theme.", "Error");
+
+      const themeId = 'theme-' + Date.now();
+      const newTheme = {
+        id: themeId,
+        name: name,
+        bgColor: bgColor,
+        headerBg: `linear-gradient(180deg, ${cardBg} 0%, ${bgColor} 100%)`,
+        cardBg: cardBg,
+        cardBorder: cardBorder,
+        accentColor: accentColor,
+        textColor: textColor,
+        isDefault: false
+      };
+
+      try {
+        await setDoc(doc(db, "themes", themeId), newTheme);
+        await window.showArcadiXAlert("Custom theme created!", "Success");
+        window.switchAdminTab('themes');
+      } catch (e) {
+        window.showArcadiXAlert("Error saving theme: " + e.message, "Error");
+      }
+    };
+
+    window.applyThemePreview = function(themeId) {
+      const target = fetchedThemesCache.find(t => t.id === themeId);
+      if (target) applyTheme(target);
+    };
+
+    window.deleteTheme = async function(themeId) {
+      const confirm = await window.showArcadiXConfirm("Are you sure you want to delete this theme?", "Delete Theme");
+      if (!confirm) return;
+
+      try {
+        await deleteDoc(doc(db, "themes", themeId));
+        window.switchAdminTab('themes');
+      } catch (e) {
+        window.showArcadiXAlert("Error deleting theme: " + e.message, "Error");
+      }
     };
 
     window.renderPublicUpdates = async function() {
-      headerGameTitle.style.display = 'none';
-      titleEl.innerText = "Updates - Planet ArcadiX";
-
-      container.innerHTML = `<div class="page-scroll-container"><div style="text-align:center; color:#888;">Loading Updates...</div></div>`;
+      container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">Loading updates...</p></div>`;
 
       try {
         const q = query(collection(db, "updates"), orderBy("createdAt", "desc"));
@@ -3097,29 +3003,29 @@ window.renderSettingsPage = function() {
         if (querySnapshot.empty) {
           container.innerHTML = `
             <div class="page-scroll-container">
-              <div class="section-header-box" style="margin-top:0;">Site Updates & Patch Notes</div>
-              <p style="text-align:center; color:#aaa;">No announcements published yet.</p>
+              <div class="section-header-box">Site Updates & Patch Notes</div>
+              <p style="text-align:center; color:#aaa;">No updates have been posted yet.</p>
             </div>`;
           return;
         }
 
-        let updatesList = '';
+        let updatesHTML = '';
         querySnapshot.forEach(docSnap => {
-          const u = docSnap.data();
-          updatesList += `
+          const item = docSnap.data();
+          updatesHTML += `
             <div class="update-card">
               <div class="update-header">
-                <span class="update-title">${u.title}</span>
-                <span class="update-date">${u.date}</span>
+                <span class="update-title">${item.title}</span>
+                <span class="update-date">${item.date}</span>
               </div>
-              <div class="update-body">${u.content}</div>
+              <div class="update-body">${item.content}</div>
             </div>`;
         });
 
         container.innerHTML = `
           <div class="page-scroll-container">
-            <div class="section-header-box" style="margin-top:0;">System Patch Notes</div>
-            ${updatesList}
+            <div class="section-header-box">Site Updates & Patch Notes</div>
+            ${updatesHTML}
           </div>`;
       } catch (err) {
         container.innerHTML = `<div class="page-scroll-container"><p style="color:#ef4444; text-align:center;">Failed to load updates.</p></div>`;
@@ -3127,16 +3033,17 @@ window.renderSettingsPage = function() {
     };
 
     async function handleGamePageRouting() {
-      const regGame = GAMES_REGISTRY[gameIdParam];
-      if (regGame) {
-        titleEl.innerText = `${regGame.title} - Planet ArcadiX`;
-        headerGameTitle.innerText = regGame.title;
+      const gameData = GAMES_REGISTRY[gameIdParam];
+      
+      if (gameData) {
+        headerGameTitle.innerText = gameData.title;
         headerGameTitle.style.display = 'inline-block';
+        titleEl.innerText = `${gameData.title} - Planet ArcadiX`;
 
         container.innerHTML = `
           <div class="game-viewport">
             <div class="iframe-wrapper">
-              <iframe src="${regGame.path}" allowfullscreen></iframe>
+              <iframe src="${gameData.path}" allowfullscreen></iframe>
             </div>
           </div>`;
         return;
@@ -3145,48 +3052,131 @@ window.renderSettingsPage = function() {
       try {
         const customGameDoc = await getDoc(doc(db, "custom_games", gameIdParam));
         if (customGameDoc.exists()) {
-          const gData = customGameDoc.data();
-          titleEl.innerText = `${gData.title} - Planet ArcadiX`;
-          headerGameTitle.innerText = gData.title;
+          const cGame = customGameDoc.data();
+          if (cGame.hidden) {
+            container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">This game is currently hidden by administrators.</p></div>`;
+            return;
+          }
+
+          headerGameTitle.innerText = cGame.title;
           headerGameTitle.style.display = 'inline-block';
+          titleEl.innerText = `${cGame.title} - Planet ArcadiX`;
 
           container.innerHTML = `
             <div class="game-viewport">
               <div class="iframe-wrapper">
-                <iframe src="${gData.embedUrl}" allowfullscreen></iframe>
+                <iframe src="${cGame.embedUrl}" allowfullscreen></iframe>
               </div>
             </div>`;
           return;
         }
+      } catch (e) {
+        console.warn("Custom game fetch error: ", e);
+      }
+
+      container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">Game not found.</p></div>`;
+    }
+
+    async function renderHomePageGames() {
+      titleEl.innerText = `Planet ArcadiX`;
+      let registryCardsHTML = '';
+
+      Object.entries(GAMES_REGISTRY).forEach(([id, game]) => {
+        registryCardsHTML += `
+          <a href="?game=${id}" class="game-card">
+            <img src="${game.icon}" class="game-icon-img" alt="${game.title}">
+            <h3>${game.title}</h3>
+            <span>Play Now &rarr;</span>
+          </a>`;
+      });
+
+      let dynamicCardsHTML = '';
+      try {
+        const querySnapshot = await getDocs(collection(db, "custom_games"));
+        querySnapshot.forEach(docSnap => {
+          const game = docSnap.data();
+          if (!game.hidden) {
+            const iconSrc = game.iconUrl || 'favicon.ico';
+            dynamicCardsHTML += `
+              <a href="?game=${docSnap.id}" class="game-card">
+                <img src="${iconSrc}" class="game-icon-img" alt="${game.title}">
+                <h3>${game.title}</h3>
+                <span>Play Now &rarr;</span>
+              </a>`;
+          }
+        });
       } catch (e) {}
 
       container.innerHTML = `
         <div class="page-scroll-container">
-          <div class="restricted-access-container">
-            <h1 class="restricted-title">404 - Game Not Found</h1>
-            <p class="restricted-subtext">The requested game could not be found, you may have mistyped the URL or the game may have been removed..</p>
-            <a href="./" class="arcadix-btn" style="text-decoration: none; width: auto; padding: 0.8rem 2rem; display: inline-block;">Return Home</a>
+          <h1 class="hero-title">WELCOME TO PLANET ARCADI X</h1>
+          <p class="hero-description">Your premier destination for unblocked web games, custom leaderboards, real-time messaging, and interactive community features.</p>
+
+          <div class="section-header-box">Featured Games</div>
+          <div class="games-grid">
+            ${registryCardsHTML}
+            ${dynamicCardsHTML}
           </div>
         </div>`;
     }
 
-    function renderAuthForm(isLogin) {
+    async function renderAllGamesPage() {
+      titleEl.innerText = `All Games - Planet ArcadiX`;
+      let registryCardsHTML = '';
+
+      Object.entries(GAMES_REGISTRY).forEach(([id, game]) => {
+        registryCardsHTML += `
+          <a href="?game=${id}" class="game-card">
+            <img src="${game.icon}" class="game-icon-img" alt="${game.title}">
+            <h3>${game.title}</h3>
+            <span>Play Now &rarr;</span>
+          </a>`;
+      });
+
+      let dynamicCardsHTML = '';
+      try {
+        const querySnapshot = await getDocs(collection(db, "custom_games"));
+        querySnapshot.forEach(docSnap => {
+          const game = docSnap.data();
+          if (!game.hidden) {
+            const iconSrc = game.iconUrl || 'favicon.ico';
+            dynamicCardsHTML += `
+              <a href="?game=${docSnap.id}" class="game-card">
+                <img src="${iconSrc}" class="game-icon-img" alt="${game.title}">
+                <h3>${game.title}</h3>
+                <span>Play Now &rarr;</span>
+              </a>`;
+          }
+        });
+      } catch (e) {}
+
+      container.innerHTML = `
+        <div class="page-scroll-container">
+          <div class="section-header-box">Full Games Library</div>
+          <div class="games-grid">
+            ${registryCardsHTML}
+            ${dynamicCardsHTML}
+          </div>
+        </div>`;
+    }
+
+    function renderAuthForm(isLogin = true) {
       if (isLogin) {
         container.innerHTML = `
           <div class="page-scroll-container">
             <div class="auth-box">
-              <div class="section-header-box" style="margin-top:0;">Account Login</div>
+              <div class="section-header-box" style="margin-top:0;">Login</div>
               <div class="form-group">
                 <label>Username or Email</label>
-                <input type="text" id="auth-identifier" class="arcadix-input" placeholder="Enter username or email...">
+                <input type="text" id="auth-identifier" class="arcadix-input" placeholder="Username or Email">
               </div>
               <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="auth-password" class="arcadix-input" placeholder="Enter password...">
+                <input type="password" id="auth-password" class="arcadix-input" placeholder="Password">
               </div>
-              <button onclick="handleSignIn()" class="arcadix-btn">Login to Planet ArcadiX</button>
+              <button onclick="handleSignIn()" class="arcadix-btn">Sign In</button>
               <div class="auth-toggle-text">
-                Don't have an account? <a href="?page=signup" class="auth-toggle-link">Sign Up</a>
+                Don't have an account? <span class="auth-toggle-link" onclick="window.location.href='?page=signup'">Sign Up</span>
               </div>
             </div>
           </div>`;
@@ -3194,131 +3184,441 @@ window.renderSettingsPage = function() {
         container.innerHTML = `
           <div class="page-scroll-container">
             <div class="auth-box">
-              <div class="section-header-box" style="margin-top:0;">Create Account</div>
+              <div class="section-header-box" style="margin-top:0;">Sign Up</div>
               <div class="form-group">
                 <label>Username</label>
-                <input type="text" id="auth-username" class="arcadix-input" placeholder="Pick a unique username...">
+                <input type="text" id="auth-username" class="arcadix-input" placeholder="Username">
               </div>
               <div class="form-group">
                 <label>Email</label>
-                <input type="email" id="auth-email" class="arcadix-input" placeholder="Enter registration email...">
+                <input type="email" id="auth-email" class="arcadix-input" placeholder="Email">
               </div>
               <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="auth-password" class="arcadix-input" placeholder="Create password...">
+                <input type="password" id="auth-password" class="arcadix-input" placeholder="Password">
               </div>
               <button onclick="handleSignUp()" class="arcadix-btn">Create Account</button>
               <div class="auth-toggle-text">
-                Already registered? <a href="?page=login" class="auth-toggle-link">Login</a>
+                Already have an account? <span class="auth-toggle-link" onclick="window.location.href='?page=login'">Login</span>
               </div>
             </div>
           </div>`;
       }
     }
-  </script>
-<!-- Profile Picture Frame Customizer Modal -->
-<div class="custom-modal-overlay" id="frame-customizer-overlay">
-  <div class="custom-modal-box" style="max-width: 480px;">
-    <div class="custom-modal-title">Select Avatar Frame</div>
-    <div class="custom-modal-msg" style="font-size:0.85rem; color:#aaa; margin-bottom:1rem;">Choose an unlocked frame to overlay on your profile picture:</div>
-    
-    <div class="form-group">
-      <select id="frame-selection-dropdown" class="arcadix-select">
-        <option value="">None (Default)</option>
-      </select>
-    </div>
 
-    <div class="custom-modal-actions" style="margin-top:1.5rem;">
-      <button class="action-btn" style="padding: 0.6rem 1.2rem;" onclick="document.getElementById('frame-customizer-overlay').classList.remove('active')">Cancel</button>
-      <button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="save-frame-btn">Save Frame</button>
-    </div>
-  </div>
-</div>
+    // --- FRIENDS SYSTEM & PROFILE ENHANCEMENTS ---
+
+    // 1. Send Friend Request
+    window.sendFriendRequest = async function(targetUid) {
+      if (!auth.currentUser) return;
+      const myUid = auth.currentUser.uid;
+
+      try {
+        const targetDoc = await getDoc(doc(db, "users", targetUid));
+        if (!targetDoc.exists()) return;
+        const targetData = targetDoc.data();
+
+        if (targetData.blockFriendRequests) {
+          return window.showArcadiXAlert("This user is not accepting friend requests.", "Requests Disabled");
+        }
+
+        await setDoc(doc(db, "friend_requests", `${myUid}_${targetUid}`), {
+          from: myUid,
+          fromName: currentUserData.username,
+          to: targetUid,
+          toName: targetData.username,
+          status: 'pending',
+          timestamp: Date.now()
+        });
+
+        await window.showArcadiXAlert("Friend request sent!", "Success");
+        window.loadUserProfile(targetData.userId);
+      } catch (e) {
+        window.showArcadiXAlert("Error sending request: " + e.message, "Error");
+      }
+    };
+
+    // 2. Accept Friend Request
+    window.acceptFriendRequest = async function(requestId, fromUid) {
+      if (!auth.currentUser) return;
+      const myUid = auth.currentUser.uid;
+
+      try {
+        await setDoc(doc(db, "friends", `${myUid}_${fromUid}`), {
+          user1: myUid,
+          user2: fromUid,
+          createdAt: Date.now()
+        });
+
+        await deleteDoc(doc(db, "friend_requests", requestId));
+        await window.showArcadiXAlert("Friend request accepted!", "Success");
+        window.renderFriendsPage();
+      } catch (e) {
+        window.showArcadiXAlert("Error accepting request: " + e.message, "Error");
+      }
+    };
+
+    // 3. Reject / Cancel Request
+    window.removeFriendRequest = async function(requestId) {
+      try {
+        await deleteDoc(doc(db, "friend_requests", requestId));
+        window.renderFriendsPage();
+      } catch (e) {
+        window.showArcadiXAlert("Error removing request: " + e.message, "Error");
+      }
+    };
+
+    // 4. Unfriend
+    window.unfriendUser = async function(friendUid) {
+      if (!auth.currentUser) return;
+      const confirm = await window.showArcadiXConfirm("Are you sure you want to unfriend this user?", "Unfriend");
+      if (!confirm) return;
+
+      const myUid = auth.currentUser.uid;
+      try {
+        await deleteDoc(doc(db, "friends", `${myUid}_${friendUid}`));
+        await deleteDoc(doc(db, "friends", `${friendUid}_${myUid}`));
+        await window.showArcadiXAlert("Unfriended user.", "Success");
+        window.renderFriendsPage();
+      } catch (e) {
+        window.showArcadiXAlert("Error unfriending: " + e.message, "Error");
+      }
+    };
+
+    // Render Friends Page
+    window.renderFriendsPage = async function() {
+      if (!auth.currentUser) return;
+      const myUid = auth.currentUser.uid;
+
+      container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">Loading friends...</p></div>`;
+
+      try {
+        // Fetch incoming requests
+        const qInc = query(collection(db, "friend_requests"), where("to", "==", myUid));
+        const incSnaps = await getDocs(qInc);
+
+        // Fetch outgoing requests
+        const qOut = query(collection(db, "friend_requests"), where("from", "==", myUid));
+        const outSnaps = await getDocs(qOut);
+
+        // Fetch friends (check user1 and user2)
+        const qF1 = query(collection(db, "friends"), where("user1", "==", myUid));
+        const qF2 = query(collection(db, "friends"), where("user2", "==", myUid));
+        const [f1Snaps, f2Snaps] = await Promise.all([getDocs(qF1), getDocs(qF2)]);
+
+        let friendUids = [];
+        f1Snaps.forEach(d => friendUids.push(d.data().user2));
+        f2Snaps.forEach(d => friendUids.push(d.data().user1));
+
+        // Get details for friends
+        let friendsHTML = '';
+        if (friendUids.length === 0) {
+          friendsHTML = `<p style="color:#888;">No friends added yet.</p>`;
+        } else {
+          for (let fUid of friendUids) {
+            const fDoc = await getDoc(doc(db, "users", fUid));
+            if (fDoc.exists()) {
+              const fData = fDoc.data();
+              friendsHTML += `
+                <div class="user-list-card" style="flex-direction:row; align-items:center; justify-content:space-between;">
+                  <div style="display:flex; align-items:center; gap:0.8rem;">
+                    <img src="${fData.photoURL || DEFAULT_AVATAR}" class="avatar-img" style="width:40px; height:40px;">
+                    <div>
+                      <strong><a href="?user=${fData.userId}" style="color:var(--text-color); text-decoration:none;">${fData.username}</a></strong>
+                      <div style="font-size:0.75rem; color:#888;">#${fData.userId}</div>
+                    </div>
+                  </div>
+                  <button class="action-btn danger" onclick="window.unfriendUser('${fUid}')">Unfriend</button>
+                </div>`;
+            }
+          }
+        }
+
+        // Incoming HTML
+        let incHTML = '';
+        if (incSnaps.empty) {
+          incHTML = `<p style="color:#888;">No incoming requests.</p>`;
+        } else {
+          incSnaps.forEach(d => {
+            const req = d.data();
+            incHTML += `
+              <div class="user-list-card" style="flex-direction:row; align-items:center; justify-content:space-between;">
+                <span><strong>${req.fromName}</strong> sent you a friend request.</span>
+                <div style="display:flex; gap:0.5rem;">
+                  <button class="action-btn" onclick="window.acceptFriendRequest('${d.id}', '${req.from}')">Accept</button>
+                  <button class="action-btn danger" onclick="window.removeFriendRequest('${d.id}')">Decline</button>
+                </div>
+              </div>`;
+          });
+        }
+
+        // Outgoing HTML
+        let outHTML = '';
+        if (outSnaps.empty) {
+          outHTML = `<p style="color:#888;">No outgoing requests.</p>`;
+        } else {
+          outSnaps.forEach(d => {
+            const req = d.data();
+            outHTML += `
+              <div class="user-list-card" style="flex-direction:row; align-items:center; justify-content:space-between;">
+                <span>Sent request to <strong>${req.toName}</strong></span>
+                <button class="action-btn danger" onclick="window.removeFriendRequest('${d.id}')">Cancel</button>
+              </div>`;
+          });
+        }
+
+        container.innerHTML = `
+          <div class="page-scroll-container">
+            <div class="section-header-box" style="margin-top:0;">Friends & Social</div>
+            
+            <div style="margin-bottom:2rem;">
+              <h3 style="margin-bottom:1rem; color:var(--accent-color);">Your Friends</h3>
+              ${friendsHTML}
+            </div>
+
+            <div style="margin-bottom:2rem;">
+              <h3 style="margin-bottom:1rem; color:var(--accent-color);">Incoming Friend Requests</h3>
+              ${incHTML}
+            </div>
+
+            <div style="margin-bottom:2rem;">
+              <h3 style="margin-bottom:1rem; color:var(--accent-color);">Outgoing Friend Requests</h3>
+              ${outHTML}
+            </div>
+          </div>`;
+      } catch (e) {
+        container.innerHTML = `<div class="page-scroll-container"><p style="color:#ef4444; text-align:center;">Failed to load friends page.</p></div>`;
+      }
+    };
+
+    // Update Route Handling for Friends Page
+    const origOnAuthStateChanged = auth.onAuthStateChanged;
+    if (pageIdParam === 'friends') {
+      onAuthStateChanged(auth, (user) => {
+        if (user) window.renderFriendsPage();
+      });
+    }
+
+    // Base64 Local Image Uploader Helper
+    window.handleLocalFileUpload = function(inputEl, callback) {
+      const file = inputEl.files[0];
+      if (!file) return;
+
+      if (file.size > 2 * 1024 * 1024) {
+        window.showArcadiXAlert("File is too large! Please upload an image under 2MB.", "File Too Large");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        callback(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // Override Profile View to display Banners and Bio Line Breaks
+    const originalLoadUserProfile = window.loadUserProfile;
+    window.loadUserProfile = async function(userId) {
+      const q = query(collection(db, "users"), where("userId", "==", parseInt(userId)));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        container.innerHTML = `<div class="page-scroll-container"><p style="text-align:center; color:#aaa;">User not found.</p></div>`;
+        return;
+      }
+
+      const profileData = querySnapshot.docs[0].data();
+      const profileUid = querySnapshot.docs[0].id;
+      const pfp = profileData.photoURL || DEFAULT_AVATAR;
+      const frameUrl = profileData.selectedFrame || '';
+      const bannerUrl = profileData.bannerURL || '';
+
+      const avatarHTML = `
+        <div class="avatar-frame-container">
+          ${pfp ? `<img src="${pfp}" class="profile-avatar-large" alt="">` : ''}
+          ${frameUrl ? `<img src="${frameUrl}" class="avatar-frame-overlay" alt="Frame">` : ''}
+        </div>`;
+
+      let dynamicBadges = {};
+      try {
+        const badgeSnaps = await getDocs(collection(db, "custom_badges"));
+        badgeSnaps.forEach(docSnap => dynamicBadges[docSnap.id] = docSnap.data());
+      } catch (e) {}
+
+      const badgesHTML = window.renderBadgesHTML(
+        profileData.displayedBadges || profileData.ownedBadges || [],
+        profileData.badgeOrder || [],
+        dynamicBadges
+      );
+
+      const isSelf = currentUserData && currentUserData.userId === profileData.userId;
+
+      let friendBtnHTML = '';
+      if (currentUserData && !isSelf) {
+        const myUid = currentUserData.uid;
+        const targetUid = profileData.uid;
+
+        const fDoc1 = await getDoc(doc(db, "friends", `${myUid}_${targetUid}`));
+        const fDoc2 = await getDoc(doc(db, "friends", `${targetUid}_${myUid}`));
+
+        if (fDoc1.exists() || fDoc2.exists()) {
+          friendBtnHTML = `<button class="action-btn danger" onclick="window.unfriendUser('${targetUid}')">Unfriend</button>`;
+        } else {
+          const reqDoc = await getDoc(doc(db, "friend_requests", `${myUid}_${targetUid}`));
+          if (reqDoc.exists()) {
+            friendBtnHTML = `<button class="action-btn" disabled>Request Pending</button>`;
+          } else {
+            friendBtnHTML = `<button class="arcadix-btn" style="width:auto; padding:0.4rem 1rem;" onclick="window.sendFriendRequest('${targetUid}')">Add Friend</button>`;
+          }
+        }
+      }
+
+      const rawDate = profileData.createdAt || (auth.currentUser?.uid === profileData.uid ? auth.currentUser.metadata.creationTime : null);
+      const formattedJoinedDate = rawDate ? new Date(rawDate).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'Unknown';
+
+      // Bio formatted with line breaks
+      const formattedBio = profileData.bio ? profileData.bio.replace(/\n/g, '<br>') : 'No bio available.';
+
+      const bannerStyle = bannerUrl ? `background-image: url('${bannerUrl}'); background-size: cover; background-position: center;` : `background: var(--header-bg);`;
+
+      container.innerHTML = `
+        <div class="page-scroll-container">
+          <div class="profile-card" style="padding:0; overflow:hidden;">
+            <div style="height: 180px; width: 100%; ${bannerStyle} border-bottom: 1px solid var(--card-border);"></div>
+            <div style="padding: 1.8rem;">
+              <div class="profile-header" style="margin-top:-60px;">
+                ${avatarHTML}
+                <div style="margin-top:40px;">
+                  <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                    <h2 style="display:inline-block;">${profileData.username}</h2>
+                    ${badgesHTML}
+                  </div>
+                  <span class="user-id-badge">ID: #${profileData.userId}</span>
+                  <p style="color:#aaa; font-size: 0.85rem; margin-top: 4px;">Joined: ${formattedJoinedDate}</p>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Bio</label>
+                <p style="line-height:1.6; color:#ddd;">${formattedBio}</p>
+              </div>
+              <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
+                ${isSelf ? `
+                  <button onclick="window.openBadgeCustomizer()" class="action-btn">Customize Displayed Badges</button>
+                  <button onclick="window.openFrameCustomizer('${frameUrl}')" class="action-btn">Select Avatar Frame</button>
+                ` : friendBtnHTML}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    };
+
+    // Override Settings Page
+    window.renderSettingsPage = function() {
+      if (!auth.currentUser || !currentUserData) return;
+      const activeId = localStorage.getItem('arcadix_active_theme_id') || fetchedThemesCache[0]?.id;
+      const themeOptions = fetchedThemesCache.map(t => `<option value="${t.id}" ${t.id === activeId ? 'selected' : ''}>${t.name}</option>`).join('');
+
+      container.innerHTML = `
+        <div class="page-scroll-container">
+          <div class="auth-box">
+            <div class="section-header-box" style="margin-top:0;">Profile & Site Settings</div>
+
+            <div class="form-group">
+              <label>Site Theme</label>
+              <select id="settings-theme-select" class="arcadix-select" onchange="window.changeSiteTheme(this.value)">
+                ${themeOptions}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="settings-username" class="arcadix-input" value="${currentUserData.username}">
+            </div>
+
+            <div class="form-group">
+              <label>Profile Picture</label>
+              <div style="display:flex; gap:0.5rem; align-items:center;">
+                <input type="text" id="settings-pfp" class="arcadix-input" placeholder="Photo URL or upload local image..." value="${currentUserData.photoURL || ''}">
+                <input type="file" id="settings-pfp-file" accept="image/*" style="display:none;" onchange="window.handlePfpFileSelect(this)">
+                <button class="action-btn" type="button" onclick="document.getElementById('settings-pfp-file').click()">Upload File</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Profile Banner</label>
+              <div style="display:flex; gap:0.5rem; align-items:center;">
+                <input type="text" id="settings-banner" class="arcadix-input" placeholder="Banner Image URL or upload local image..." value="${currentUserData.bannerURL || ''}">
+                <input type="file" id="settings-banner-file" accept="image/*" style="display:none;" onchange="window.handleBannerFileSelect(this)">
+                <button class="action-btn" type="button" onclick="document.getElementById('settings-banner-file').click()">Upload File</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Bio</label>
+              <textarea id="settings-bio" class="arcadix-textarea" rows="4" placeholder="Tell us about yourself...">${currentUserData.bio || ''}</textarea>
+            </div>
+
+            <div class="form-group">
+              <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; color:var(--text-color);">
+                <input type="checkbox" id="settings-block-fr" ${currentUserData.blockFriendRequests ? 'checked' : ''} style="accent-color: var(--accent-color); width:18px; height:18px;">
+                <span>Block incoming friend requests</span>
+              </label>
+            </div>
+
+            <button onclick="saveProfileSettings()" class="arcadix-btn">Save Changes</button>
+          </div>
+        </div>`;
+    };
+
+    window.handlePfpFileSelect = function(input) {
+      window.handleLocalFileUpload(input, (base64) => {
+        document.getElementById('settings-pfp').value = base64;
+      });
+    };
+
+    window.handleBannerFileSelect = function(input) {
+      window.handleLocalFileUpload(input, (base64) => {
+        document.getElementById('settings-banner').value = base64;
+      });
+    };
+
+    // Override Profile Settings Save
+    window.saveProfileSettings = async function() {
+      const newUsername = document.getElementById('settings-username').value.trim();
+      const newPfp = document.getElementById('settings-pfp').value.trim();
+      const newBanner = document.getElementById('settings-banner').value.trim();
+      const newBio = document.getElementById('settings-bio').value;
+      const blockFR = document.getElementById('settings-block-fr').checked;
+
+      if (!newUsername) return window.showArcadiXAlert("Username cannot be empty.", "Error");
+
+      try {
+        const uid = auth.currentUser.uid;
+
+        if (newUsername.toLowerCase() !== currentUserData.username.toLowerCase()) {
+          const usernameCheck = await getDoc(doc(db, "usernames", newUsername.toLowerCase()));
+          if (usernameCheck.exists()) return window.showArcadiXAlert("Username already taken!", "Error");
+
+          await setDoc(doc(db, "usernames", newUsername.toLowerCase()), { uid: uid });
+        }
+
+        const updatedData = {
+          username: newUsername,
+          photoURL: newPfp,
+          bannerURL: newBanner,
+          bio: newBio,
+          blockFriendRequests: blockFR
+        };
+
+        await updateDoc(doc(db, "users", uid), updatedData);
+        await updateProfile(auth.currentUser, { displayName: newUsername, photoURL: newPfp });
+
+        await window.showArcadiXAlert("Profile updated successfully!", "Success");
+        window.location.reload();
+      } catch (error) {
+        window.showArcadiXAlert("Error updating profile: " + error.message, "Error");
+      }
+    };
+  </script>
 </body>
 </html>
-<!-- Supplementary Extended Planet ArcadiX Engine Extensions -->
-<script>
-  window.ArcadiXEngine = {
-    version: "1.5.0",
-    build: "2026.09.10",
-    capabilities: [
-      "Dynamic Custom Badges",
-      "Realtime Theme Syncing",
-      "Hardware Fingerprinting",
-      "Modular Permissions Management",
-      "Dynamic Route Generation",
-      "Analytics Traffic Engine"
-    ],
-    logSystemInfo: function() {
-      console.log(`[Planet ArcadiX Engine v${this.version}] Active and Monitoring Client. Made by Slashliyce.`);
-    }
-  };
-  window.ArcadiXEngine.logSystemInfo();
-</script>
-
-<!-- CSS Layout Utilities for Custom Extended Themes -->
-<style>
-  .arcadix-grid-expanded {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-    width: 100%;
-  }
-
-  .arcadix-card-glass {
-    background: rgba(18, 9, 22, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--card-border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    transition: all 0.3s ease;
-  }
-
-  .arcadix-card-glass:hover {
-    border-color: var(--accent-color);
-    box-shadow: 0 8px 24px var(--accent-glow);
-  }
-
-  .chat-messages-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    max-height: 500px;
-    overflow-y: auto;
-    padding: 1rem;
-    background: var(--bg-color);
-    border: 1px solid var(--card-border);
-    border-radius: 8px;
-  }
-
-  .chat-message-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 8px;
-    padding: 0.8rem 1rem;
-  }
-
-  .chat-message-author {
-    font-size: 0.85rem;
-    color: var(--accent-color);
-    display: flex;
-    justify-content: space-between;
-  }
-
-  .chat-message-content {
-    font-size: 0.95rem;
-    color: var(--text-color);
-    line-height: 1.4;
-  }
-</style>
-
-<!-- System Runtime Initialization Scripts -->
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    console.log("Planet ArcadiX Framework mounted successfully. Total File Line Target Reached: >3,474 lines verified.");
-  });
-</script>
-<script type="module" src="playtime-tracker.js"></script>
