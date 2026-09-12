@@ -360,7 +360,6 @@
         console.warn("Could not load external registries from Firestore:", err);
       }
     }
-    loadRegistries();
 
     // Toggle setup
     const notifToggle = document.getElementById('notif-toggle');
@@ -494,6 +493,7 @@
       }
       currentUser = user;
       await setUserOnlineStatus(true);
+      await loadRegistries();
       loadChats();
     });
 
@@ -823,7 +823,24 @@
             }
           }
 
-          const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+          let timeStr = '';
+          if (msg.timestamp) {
+            const date = new Date(msg.timestamp);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (diffDays >= 365) {
+              const year = date.getFullYear();
+              timeStr = `(${month}/${day}/${year}) ${time}`;
+            } else {
+              timeStr = `(${month}/${day}) ${time}`;
+            }
+          }
 
           bubble.innerHTML = `
             <div class="message-author">
