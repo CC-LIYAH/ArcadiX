@@ -81,6 +81,11 @@
       text-shadow: 0 0 10px var(--accent-glow); 
     }
 
+    /* Admin link hidden by default */
+    #admin-nav-link {
+      display: none;
+    }
+
     /* Profile Pill & Dropdown */
     .user-pill-wrapper {
       position: relative;
@@ -333,8 +338,9 @@
       <a href="./?page=all-games">All Games</a>
       <a href="leaderboards.html" class="active">Leaderboards</a>
       <a href="./?page=updates">Updates</a>
+      <a href="./?page=friends">Friends</a>
       <a href="messages.html">Messages</a>
-      <a href="./?page=admin">Admin</a>
+      <a href="./?page=admin" id="admin-nav-link">Admin</a>
 
       <!-- Profile Pill & Dropdown -->
       <div class="user-pill-wrapper">
@@ -388,10 +394,10 @@
     &copy; Planet ArcadiX 2026, All rights reserved
   </footer>
 
-  <script type="module">
+ <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, arrayUnion, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBIvUkO_paPfmMlbo5jNaXoteZL0fkZYa4",
@@ -408,7 +414,6 @@
 
     const defaultAvatar = "/ArcadiX/PAXIcons/PlaceholderPFP.png";
 
-    // Toggle Dropdown Menu
     const userPillBtn = document.getElementById('user-pill-btn');
     const profileDropdown = document.getElementById('profile-dropdown');
 
@@ -421,18 +426,17 @@
       profileDropdown.classList.remove('show');
     });
 
-    // Logout Action
     document.getElementById('logout-btn').addEventListener('click', () => {
       signOut(auth).then(() => {
         window.location.href = "./";
       });
     });
 
-    // Dynamic Header User Data Sync
     onAuthStateChanged(auth, async (user) => {
       const nameElem = document.getElementById('nav-user-name');
       const avatarElem = document.getElementById('nav-user-avatar');
       const profileLink = document.getElementById('dropdown-profile-link');
+      const adminNavLink = document.getElementById('admin-nav-link');
 
       if (user) {
         try {
@@ -441,7 +445,12 @@
           if (userDoc.exists()) {
             const userData = userDoc.data();
             
-            // Reads the exact 'userId' sequential number field from the document
+            if (userData.hasAdminAccess === true) {
+              adminNavLink.style.display = 'inline-block';
+            } else {
+              adminNavLink.style.display = 'none';
+            }
+
             const sequentialId = userData.userId !== undefined ? userData.userId : user.uid;
 
             nameElem.textContent = userData.username || userData.displayName || user.displayName || user.email?.split('@')[0] || 'Player';
@@ -450,16 +459,19 @@
 
             profileLink.href = `./?user=${sequentialId}`;
           } else {
+            adminNavLink.style.display = 'none';
             nameElem.textContent = user.displayName || user.email?.split('@')[0] || 'Player';
             if (user.photoURL) avatarElem.src = user.photoURL;
 
             profileLink.href = `./?user=${user.uid}`;
           }
         } catch (e) {
+          adminNavLink.style.display = 'none';
           nameElem.textContent = user.displayName || user.email?.split('@')[0] || 'Player';
           profileLink.href = `./?user=${user.uid}`;
         }
       } else {
+        adminNavLink.style.display = 'none';
         nameElem.textContent = "Guest";
         profileLink.href = "./?page=login";
       }
@@ -495,13 +507,37 @@
         listContainer.innerHTML = '';
         let rank = 1;
 
-        snapshot.forEach((docSnap) => {
-          // Ignore the special counter document if its ID is "1"
-          if (docSnap.id === "1") return;
+        for (const docSnap of snapshot.docs) {
+          if (docSnap.id === "1") continue;
 
           const data = docSnap.data();
           const rawValue = data[sortField] || 0;
           const formattedValue = formatPlaytime(rawValue);
+
+          if (gameId === 'global' && rank <= 5) {
+            const ownedBadges = data.ownedBadges || [];
+            const displayedBadges = data.displayedBadges || [...ownedBadges];
+            let needsUpdate = false;
+            const updatePayload = {};
+
+            if (!ownedBadges.includes("trophy")) {
+              updatePayload.ownedBadges = arrayUnion("trophy");
+              needsUpdate = true;
+            }
+
+            if (!displayedBadges.includes("trophy")) {
+              updatePayload.displayedBadges = arrayUnion("trophy");
+              needsUpdate = true;
+            }
+
+            if (needsUpdate) {
+              try {
+                await updateDoc(doc(db, "users", docSnap.id), updatePayload);
+              } catch (badgeErr) {
+                console.error(`Failed to assign trophy badge to ${docSnap.id}:`, badgeErr);
+              }
+            }
+          }
 
           const row = document.createElement('div');
           row.className = 'row';
@@ -522,7 +558,7 @@
 
           listContainer.appendChild(row);
           rank++;
-        });
+        }
 
       } catch (err) {
         console.error("Error loading leaderboard:", err);
@@ -530,7 +566,6 @@
       }
     }
 
-    // Attach tab click events
     document.querySelectorAll('.game-tab').forEach(button => {
       button.addEventListener('click', (e) => {
         document.querySelectorAll('.game-tab').forEach(b => b.classList.remove('active'));
