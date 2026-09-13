@@ -1402,22 +1402,22 @@
       },
       'geometry-dash': {
         title: 'Geometry Dash',
-        icon: '/Games/GameIcons/geometry-dash.png',
+        icon: 'Games/GameIcons/geometry-dash.png',
         path: './Games/gdl-main/index.html'
       },
       'tomb-of-the-mask': {
         title: 'Tomb of The Mask',
-        icon: '/Games/GameIcons/tomb-of-the-mask.png',
+        icon: '/ames/GameIcons/tomb-of-the-mask.png',
         path: './Games/totm-main/index.html'
       },
       'moto-x3m': {
         title: 'Moto X3M',
-        icon: '/Games/GameIcons/moto-x3m-logo.avif',
+        icon: 'Games/GameIcons/moto-x3m-logo.avif',
         path: './Games/Moto-X3M-main/index.html'
       },
       'drive-mad': {
         title: 'Drive Mad',
-        icon: '/Games/drive-mad-main/menu-assets/classic-logo.png',
+        icon: 'Games/drive-mad-main/menu-assets/classic-logo.png',
         path: './Games/drive-mad-main/index.html'
       }
     };
@@ -3286,7 +3286,7 @@ async function saveProfileSettings() {
 
   container.innerHTML = `
     <div class="page-scroll-container">
-      <div class="section-header-box">Full Games Library</div>
+      <div class="section-header-box">All Games</div>
       <div class="games-grid">
         ${registryCardsHTML}
         ${dynamicCardsHTML}
@@ -3340,9 +3340,9 @@ async function saveProfileSettings() {
       }
     }
 
-    // --- FRIENDS SYSTEM & PROFILE ENHANCEMENTS ---
+    // --- FRIENDS SYSTEM I HATE THIS OH M YGOD ---
 
-    // 1. Send Friend Request
+    //  Send Friend Request
     window.sendFriendRequest = async function(targetUid) {
       if (!auth.currentUser) return;
       const myUid = auth.currentUser.uid;
@@ -3372,7 +3372,7 @@ async function saveProfileSettings() {
       }
     };
 
-    // 2. Accept Friend Request
+    //  Accept Friend Request
     window.acceptFriendRequest = async function(requestId, fromUid) {
       if (!auth.currentUser) return;
       const myUid = auth.currentUser.uid;
@@ -3392,7 +3392,7 @@ async function saveProfileSettings() {
       }
     };
 
-    // 3. Reject / Cancel Request
+    // Reject / Cancel Request
     window.removeFriendRequest = async function(requestId) {
       try {
         await deleteDoc(doc(db, "friend_requests", requestId));
