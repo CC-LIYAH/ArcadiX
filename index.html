@@ -3254,45 +3254,45 @@ async function saveProfileSettings() {
         </div>`;
     }
 
-    async function renderAllGamesPage() {
-      titleEl.innerText = `All Games - Planet ArcadiX`;
-      let registryCardsHTML = '';
+    window.renderAllGamesPage = async function() {
+  titleEl.innerText = `All Games - Planet ArcadiX`;
+  let registryCardsHTML = '';
 
-      Object.entries(GAMES_REGISTRY).forEach(([id, game]) => {
-        registryCardsHTML += `
-          <a href="?game=${id}" class="game-card">
-            <img src="${game.icon}" class="game-icon-img" alt="${game.title}">
+  Object.entries(GAMES_REGISTRY).forEach(([id, game]) => {
+    registryCardsHTML += `
+      <a href="?game=${id}" class="game-card">
+        <img src="${game.icon}" class="game-icon-img" alt="${game.title}">
+        <h3>${game.title}</h3>
+        <span>Play Now &rarr;</span>
+      </a>`;
+  });
+
+  let dynamicCardsHTML = '';
+  try {
+    const querySnapshot = await getDocs(collection(db, "custom_games"));
+    querySnapshot.forEach(docSnap => {
+      const game = docSnap.data();
+      if (!game.hidden) {
+        const iconSrc = game.iconUrl || 'favicon.ico';
+        dynamicCardsHTML += `
+          <a href="?game=${docSnap.id}" class="game-card">
+            <img src="${iconSrc}" class="game-icon-img" alt="${game.title}">
             <h3>${game.title}</h3>
             <span>Play Now &rarr;</span>
           </a>`;
-      });
+      }
+    });
+  } catch (e) {}
 
-      let dynamicCardsHTML = '';
-      try {
-        const querySnapshot = await getDocs(collection(db, "custom_games"));
-        querySnapshot.forEach(docSnap => {
-          const game = docSnap.data();
-          if (!game.hidden) {
-            const iconSrc = game.iconUrl || 'favicon.ico';
-            dynamicCardsHTML += `
-              <a href="?game=${docSnap.id}" class="game-card">
-                <img src="${iconSrc}" class="game-icon-img" alt="${game.title}">
-                <h3>${game.title}</h3>
-                <span>Play Now &rarr;</span>
-              </a>`;
-          }
-        });
-      } catch (e) {}
-
-      container.innerHTML = `
-        <div class="page-scroll-container">
-          <div class="section-header-box">Full Games Library</div>
-          <div class="games-grid">
-            ${registryCardsHTML}
-            ${dynamicCardsHTML}
-          </div>
-        </div>`;
-    }
+  container.innerHTML = `
+    <div class="page-scroll-container">
+      <div class="section-header-box">Full Games Library</div>
+      <div class="games-grid">
+        ${registryCardsHTML}
+        ${dynamicCardsHTML}
+      </div>
+    </div>`;
+};
 
     function renderAuthForm(isLogin = true) {
       if (isLogin) {
