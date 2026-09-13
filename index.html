@@ -1007,11 +1007,46 @@
     </div>
   </div>
 
+  <!-- avatar frame customizer popup and im too lazy to capitalize it this time -->
+<div class="custom-modal-overlay" id="frame-customizer-overlay">
+  <div class="custom-modal-box">
+    <div class="custom-modal-title">Select Avatar Frame</div>
+    <div class="form-group" style="margin-top: 1rem;">
+      <label>Choose Frame</label>
+      <select id="frame-selection-dropdown" class="arcadix-select">
+        <option value="none">None</option>
+      </select>
+    </div>
+    <div class="custom-modal-actions" style="margin-top: 1.5rem;">
+      <button class="action-btn" onclick="document.getElementById('frame-customizer-overlay').classList.remove('active')">Cancel</button>
+      <button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="save-frame-btn">Save Frame</button>
+    </div>
+  </div>
+</div>
+
+<!-- Banner Crop popup -->
+<div class="custom-modal-overlay" id="banner-crop-overlay">
+  <div class="custom-modal-box" style="max-width: 600px;">
+    <div class="custom-modal-title">Crop Profile Banner</div>
+    <div style="margin: 1rem 0; text-align: center;">
+      <canvas id="banner-crop-canvas" style="max-width: 100%; height: auto; border: 1px solid var(--border-color);"></canvas>
+    </div>
+    <div class="form-group">
+      <label>Vertical Position</label>
+      <input type="range" id="banner-crop-offset-y" min="0" max="100" value="50" style="width: 100%;">
+    </div>
+    <div class="custom-modal-actions" style="margin-top: 1.5rem;">
+      <button class="action-btn" onclick="document.getElementById('banner-crop-overlay').classList.remove('active')">Cancel</button>
+      <button class="arcadix-btn" style="width: auto; padding: 0.6rem 1.8rem;" id="confirm-banner-crop-btn">Apply Crop</button>
+    </div>
+  </div>
+</div> 
+
 <!-- Friends Management View Page -->
 <div id="friends-page" class="page-view" style="display: none; padding: 2rem;">
   <div class="section-header-box" style="margin-top: 0;">Friends & Social Hub</div>
   
-  <!-- Add Friend Input Form -->
+  <!-- Add Friend Form -->
   <div class="auth-box" style="max-width: 100%; margin-bottom: 1.5rem;">
     <div class="form-group" style="margin-bottom: 0;">
       <label>Send Friend Request (Enter Username or Player ID #)</label>
@@ -2106,47 +2141,72 @@ window.renderSettingsPage = function() {
       }
     };
 
-    window.saveProfileSettings = async function() {
-      const newUsername = document.getElementById('settings-username').value.trim();
-      const newPfp = document.getElementById('settings-pfp').value.trim();
-      const newBio = document.getElementById('settings-bio').value.trim();
 
-      if (!newUsername) return window.showArcadiXAlert("Username cannot be empty.", "Error");
+async function uploadImageToStorage(file, path) {
+  const storageRef = firebase.storage().ref(path);
+  const snapshot = await storageRef.put(file);
+  return await snapshot.getDownloadURL();
+}
 
-      try {
-        const uid = auth.currentUser.uid;
 
-        if (newUsername.toLowerCase() !== currentUserData.username.toLowerCase()) {
-          const usernameCheck = await getDoc(doc(db, "usernames", newUsername.toLowerCase()));
-          if (usernameCheck.exists()) return window.showArcadiXAlert("Username already taken!", "Error");
+async function saveProfileSettings() {
+  const user = firebase.auth().currentUser;
+  if (!user) return;
 
-          await setDoc(doc(db, "usernames", newUsername.toLowerCase()), { uid: uid });
-        }
+  const pfpFileInput = document.getElementById('pfp-file-input');
+  const bannerFileInput = document.getElementById('banner-file-input');
+  
+  const updates = {};
+  const pendingAssets = [];
 
-        if (newPfp && newPfp !== currentUserData.photoURL) {
-          await addDoc(collection(db, "pending_assets"), {
-            uid: uid,
-            username: newUsername,
-            photoURL: newPfp,
-            createdAt: new Date().toISOString()
-          });
-          await window.showArcadiXAlert("Your new photo URL has been submitted for admin approval.", "Submitted");
-        }
+  try {
 
-        const updatedData = {
-          username: newUsername,
-          bio: newBio
-        };
+    if (pfpFileInput && pfpFileInput.files[0]) {
+      const pfpUrl = await uploadImageToStorage(
+        pfpFileInput.files[0], 
+        `pending_assets/pfp_${user.uid}_${Date.now()}`
+      );
+      pendingAssets.push({
+        uid: user.uid,
+        type: 'pfp',
+        url: pfpUrl,
+        status: 'pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
 
-        await updateDoc(doc(db, "users", uid), updatedData);
-        await updateProfile(auth.currentUser, { displayName: newUsername });
 
-        await window.showArcadiXAlert("Profile updated successfully!", "Success");
-        window.location.reload();
-      } catch (error) {
-        window.showArcadiXAlert("Error updating profile: " + error.message, "Error");
-      }
-    };
+    if (bannerFileInput && bannerFileInput.files[0]) {
+      const bannerUrl = await uploadImageToStorage(
+        bannerFileInput.files[0], 
+        `pending_assets/banner_${user.uid}_${Date.now()}`
+      );
+      pendingAssets.push({
+        uid: user.uid,
+        type: 'banner',
+        url: bannerUrl,
+        status: 'pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+
+    const db = firebase.firestore();
+    const batch = db.batch();
+
+    pendingAssets.forEach(asset => {
+      const docRef = db.collection('pending_assets').doc();
+      batch.set(docRef, asset);
+    });
+
+    await batch.commit();
+    alert('Changes submitted for moderation approval!');
+
+  } catch (error) {
+    console.error('Error saving profile settings:', error);
+    alert('Failed to save settings. Please try again.');
+  }
+}
     // ADMIN PANEL FUNCTIONS
     window.renderAdminLayout = function() {
       const isAuthorizedAdmin = currentUserData && currentUserData.hasAdminAccess;
