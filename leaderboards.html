@@ -394,7 +394,7 @@
     &copy; Planet ArcadiX 2026, All rights reserved
   </footer>
 
-  <script type="module">
+ <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, updateDoc, arrayUnion, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -414,7 +414,6 @@
 
     const defaultAvatar = "/ArcadiX/PAXIcons/PlaceholderPFP.png";
 
-    // Toggle Dropdown Menu
     const userPillBtn = document.getElementById('user-pill-btn');
     const profileDropdown = document.getElementById('profile-dropdown');
 
@@ -427,14 +426,12 @@
       profileDropdown.classList.remove('show');
     });
 
-    // Logout Action
     document.getElementById('logout-btn').addEventListener('click', () => {
       signOut(auth).then(() => {
         window.location.href = "./";
       });
     });
 
-    // Dynamic Header User Data Sync & Admin Check
     onAuthStateChanged(auth, async (user) => {
       const nameElem = document.getElementById('nav-user-name');
       const avatarElem = document.getElementById('nav-user-avatar');
@@ -448,7 +445,6 @@
           if (userDoc.exists()) {
             const userData = userDoc.data();
             
-            // Check for admin permission
             if (userData.hasAdminAccess === true) {
               adminNavLink.style.display = 'inline-block';
             } else {
@@ -512,23 +508,33 @@
         let rank = 1;
 
         for (const docSnap of snapshot.docs) {
-          // Ignore the special counter document if its ID is "1"
           if (docSnap.id === "1") continue;
 
           const data = docSnap.data();
           const rawValue = data[sortField] || 0;
           const formattedValue = formatPlaytime(rawValue);
 
-          // Top 5 Global Badge Award Logic
           if (gameId === 'global' && rank <= 5) {
-            const currentBadges = data.badges || [];
-            if (!currentBadges.includes("trophy")) {
+            const ownedBadges = data.ownedBadges || [];
+            const displayedBadges = data.displayedBadges || [...ownedBadges];
+            let needsUpdate = false;
+            const updatePayload = {};
+
+            if (!ownedBadges.includes("trophy")) {
+              updatePayload.ownedBadges = arrayUnion("trophy");
+              needsUpdate = true;
+            }
+
+            if (!displayedBadges.includes("trophy")) {
+              updatePayload.displayedBadges = arrayUnion("trophy");
+              needsUpdate = true;
+            }
+
+            if (needsUpdate) {
               try {
-                await updateDoc(doc(db, "users", docSnap.id), {
-                  badges: arrayUnion("trophy")
-                });
+                await updateDoc(doc(db, "users", docSnap.id), updatePayload);
               } catch (badgeErr) {
-                console.error(`Failed to assign badge to ${docSnap.id}:`, badgeErr);
+                console.error(`Failed to assign trophy badge to ${docSnap.id}:`, badgeErr);
               }
             }
           }
@@ -560,7 +566,6 @@
       }
     }
 
-    // Attach tab click events
     document.querySelectorAll('.game-tab').forEach(button => {
       button.addEventListener('click', (e) => {
         document.querySelectorAll('.game-tab').forEach(b => b.classList.remove('active'));
