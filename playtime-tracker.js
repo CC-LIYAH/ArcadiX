@@ -48,37 +48,44 @@ setInterval(() => {
 }, 5000);
 
 let sessionStartTime = Date.now();
-
 async function savePlaytime() {
   const currentGameId = detectGameId();
   
-  if (!currentGameId || isAfk) return;
+  if (!currentGameId) {
+    console.warn("[Playtime Tracker] Skipped: No '?game=' parameter found in the URL.");
+    return;
+  }
+  
+  if (!currentUser) {
+    console.warn("[Playtime Tracker] Skipped: User is not logged in or Firebase Auth is still loading.");
+    return;
+  }
 
-  const user = auth.currentUser;
-  if (!user) return;
+  if (isAfk) {
+    console.warn("[Playtime Tracker] Skipped: User is currently marked as AFK.");
+    return;
+  }
 
   const now = Date.now();
   const secondsPlayed = Math.floor((now - sessionStartTime) / 1000);
 
-
-  if (secondsPlayed < 5) return;
+  if (secondsPlayed < 2) return;
 
   sessionStartTime = now;
 
   try {
-    const userRef = doc(db, "users", user.uid);
+    const userRef = doc(db, "users", currentUser.uid);
 
-    const updates = {
+    await updateDoc(userRef, {
       playtime: increment(secondsPlayed),
       [`playtime_${currentGameId}`]: increment(secondsPlayed)
-    };
+    });
 
-    await updateDoc(userRef, updates);
+    console.log(`[Playtime Tracker] SUCCESS: Added ${secondsPlayed}s to '${currentGameId}' for user ${currentUser.uid}`);
   } catch (err) {
-    console.error("Failed to save playtime:", err);
+    console.error("[Playtime Tracker] FIRESTORE ERROR:", err);
   }
 }
-
 
 setInterval(savePlaytime, 60000);
 
