@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -15,24 +15,29 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => {
+  currentUser = user;
+});
+
 function detectGameId() {
   const urlParams = new URLSearchParams(window.location.search);
   const gameParam = urlParams.get('game');
   return gameParam ? gameParam.trim().toLowerCase() : null;
 }
 
-const AFK_TIMEOUT = 60000;
+const AFK_TIMEOUT = 90000;
 let isAfk = false;
 let lastActivityTime = Date.now();
+let sessionStartTime = Date.now();
 
 function resetAfkTimer() {
   const now = Date.now();
-  
   if (isAfk) {
     isAfk = false;
     sessionStartTime = now;
   }
-  
   lastActivityTime = now;
 }
 
@@ -40,31 +45,29 @@ function resetAfkTimer() {
   window.addEventListener(event, resetAfkTimer, { passive: true });
 });
 
+window.addEventListener('focus', resetAfkTimer);
+window.addEventListener('blur', () => {
+  if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
+    resetAfkTimer();
+  }
+});
+
 setInterval(() => {
+  if (document.activeElement && document.activeElement.tagName === 'IFRAME') {
+    lastActivityTime = Date.now();
+  }
+
   if (!isAfk && (Date.now() - lastActivityTime >= AFK_TIMEOUT)) {
-    savePlaytime(); 
+    savePlaytime();
     isAfk = true;
   }
 }, 5000);
 
-let sessionStartTime = Date.now();
 async function savePlaytime() {
   const currentGameId = detectGameId();
-  
-  if (!currentGameId) {
-    console.warn("[Playtime Tracker] Skipped: No '?game=' parameter found in the URL.");
-    return;
-  }
-  
-  if (!currentUser) {
-    console.warn("[Playtime Tracker] Skipped: User is not logged in or Firebase Auth is still loading.");
-    return;
-  }
+  const user = currentUser || auth.currentUser;
 
-  if (isAfk) {
-    console.warn("[Playtime Tracker] Skipped: User is currently marked as AFK.");
-    return;
-  }
+  if (!currentGameId || isAfk || !user) return;
 
   const now = Date.now();
   const secondsPlayed = Math.floor((now - sessionStartTime) / 1000);
@@ -74,22 +77,20 @@ async function savePlaytime() {
   sessionStartTime = now;
 
   try {
-    const userRef = doc(db, "users", currentUser.uid);
+    const userRef = doc(db, "users", user.uid);
 
     await updateDoc(userRef, {
       playtime: increment(secondsPlayed),
       [`playtime_${currentGameId}`]: increment(secondsPlayed)
     });
 
-    console.log(`[Playtime Tracker] SUCCESS: Added ${secondsPlayed}s to '${currentGameId}' for user ${currentUser.uid}`);
+    console.log(`[Playtime Tracker] Saved ${secondsPlayed}s for game '${currentGameId}'`);
   } catch (err) {
-    console.error("[Playtime Tracker] FIRESTORE ERROR:", err);
+    console.error("[Playtime Tracker] Failed to save playtime:", err);
   }
 }
 
-setInterval(savePlaytime, 60000);
-
-window.addEventListener("beforeunload", savePlaytime);
+setInterval(savePlaytime, 15000);
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
